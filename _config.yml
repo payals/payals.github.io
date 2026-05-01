@@ -1,0 +1,17 @@
+title: Payal Singh
+description: Notes on AI systems, markets, software, and research.
+url: "https://payals.github.io"
+baseurl: ""
+lang: en
+permalink: /:categories/:year/:month/:day/:title/
+markdown: kramdown
+kramdown:
+  input: GFM
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor/
