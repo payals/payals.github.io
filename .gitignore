@@ -5,3 +5,11 @@ _site/
 .bundle/
 vendor/
 .DS_Store
+.env
+.env.*
+!.env.example
+
+# OMC runtime state (not specs/plans/design — those are intentionally tracked)
+.omc/state/
+.omc/sessions/
+.omc/project-memory.json

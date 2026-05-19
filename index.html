@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Payal Singh — personal site.">
+  <title>Payal Singh</title>
+  <link rel="stylesheet" href="assets/css/terminal.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="page-shell">
+
+    <header class="site-header" role="banner">
+      <div class="header-inner">
+        <div class="portrait-wrap" aria-hidden="true">
+          <pre class="portrait" data-portrait>        ___________
+       /           \
+      /  .---.      \
+     /  /     \      \
+    /  | () () |      \
+   /    \  ^  /        \
+  /  ~~~~`---'~~~~      \
+ /________________________\
+|  ______________________  |
+| |  > payal@terminal   | |
+| |  $ cat about        | |
+| |  loading...         | |
+| |_____________________| |
+ \________________________/
+        |___|___|</pre>
+        </div>
+        <div class="identity-block">
+          <p class="identity-host"><span class="prompt-symbol">payal</span><span class="identity-at">@</span><span class="identity-domain">payals.github.io</span></p>
+          <p class="identity-name">Payal Singh</p>
+          <p class="identity-status" aria-label="Status bar">researcher · engineer · writer</p>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="site-main" role="main">
+
+      <!-- Terminal block -->
+      <section class="terminal-block" aria-label="Terminal">
+        <div class="terminal-output" data-terminal-output role="log" aria-live="polite" aria-label="Terminal output"></div>
+        <div class="terminal-input-row" data-terminal-input-row>
+          <span class="prompt-symbol" aria-hidden="true">&gt;</span>
+          <label for="terminal-input" class="sr-only">Terminal input</label>
+          <input
+            id="terminal-input"
+            class="terminal-input"
+            type="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-label="Enter a command"
+            data-terminal-input
+            placeholder="type a command or click a chip below"
+          >
+          <span class="cursor" data-cursor aria-hidden="true"></span>
+        </div>
+      </section>
+
+      <!-- Chip menu -->
+      <nav class="chip-menu" data-chip-menu aria-label="Quick commands">
+        <!-- JS-on: chips trigger terminal commands -->
+        <!-- JS-off: direct links to external destinations, visible by default -->
+        <ul class="chip-list" role="list">
+          <li><button class="chip" data-command="help" type="button">help</button></li>
+          <li><button class="chip" data-command="about" type="button">about</button></li>
+          <li><button class="chip" data-command="now" type="button">now</button></li>
+          <li><button class="chip" data-command="talks" type="button">talks</button></li>
+          <li><button class="chip" data-command="resume" type="button">resume</button></li>
+          <li><a class="chip chip--link" href="https://github.com/payals" target="_blank" rel="noopener noreferrer" data-command="github">github</a></li>
+          <li><a class="chip chip--link" href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener noreferrer" data-command="linkedin">linkedin</a></li>
+          <li><a class="chip chip--link" href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener noreferrer" data-command="medium">medium</a></li>
+          <li><a class="chip chip--link" href="https://makeworld.dev" target="_blank" rel="noopener noreferrer" data-command="blog">blog</a></li>
+          <li><a class="chip chip--link" href="https://penningpence.blogspot.com" target="_blank" rel="noopener noreferrer" data-command="older">older</a></li>
+          <li><a class="chip chip--link" href="mailto:psinghpayal@outlook.com" data-command="email">email</a></li>
+          <li><button class="chip" data-command="clear" type="button">clear</button></li>
+        </ul>
+      </nav>
+
+      <!-- Panel area — panels are injected here by JS -->
+      <section class="panel-area" data-panel-area aria-label="Content panels" aria-live="polite"></section>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p class="footer-text">
+        &copy; Payal Singh &nbsp;&middot;&nbsp;
+        <a href="https://github.com/payals/payals.github.io" target="_blank" rel="noopener noreferrer">source</a>
+        &nbsp;&middot;&nbsp; CC-BY
+      </p>
+    </footer>
+
+  </div><!-- .page-shell -->
+
+  <!-- No-JS fallback: shown only when JS is disabled -->
+  <noscript>
+    <div class="nojs-fallback">
+      <p class="nojs-note">JavaScript is disabled. Direct links:</p>
+      <ul class="nojs-links">
+        <li><a href="https://github.com/payals" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener noreferrer">Medium</a></li>
+        <li><a href="https://makeworld.dev" target="_blank" rel="noopener noreferrer">Blog (makeworld.dev)</a></li>
+        <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener noreferrer">Older blog</a></li>
+        <li><a href="mailto:psinghpayal@outlook.com">Email</a></li>
+      </ul>
+    </div>
+  </noscript>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
