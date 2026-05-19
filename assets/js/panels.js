@@ -130,12 +130,12 @@ async function loadPanelContent(id, panelEl) {
       // about, resume — markdown
       const md = await fetchText(`data/${id}.md`);
       body.innerHTML = '';
-      renderMarkdown(md, body);
 
-      // Resume: show PDF download button if the file exists
+      // Resume: probe for PDF and prepend the download button BEFORE markdown.
       if (id === 'resume') {
         maybeAddPdfButton(body);
       }
+      renderMarkdown(md, body);
     }
   } catch (err) {
     body.innerHTML = '';
@@ -243,16 +243,21 @@ function talkLink(label, url) {
 // ── PDF button ────────────────────────────────────────────────────────────
 
 function maybeAddPdfButton(containerEl) {
-  // Probe with a HEAD request; only show button if file is reachable
+  // Probe with a HEAD request; only show button if file is reachable.
+  // Prepended to the container so the button sits at the TOP of the resume panel,
+  // before the markdown body.
   fetch('data/resume.pdf', { method: 'HEAD' })
     .then((r) => {
       if (!r.ok) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'resume-pdf-button-row';
       const btn = document.createElement('a');
       btn.className = 'chip chip--download';
       btn.href = 'data/resume.pdf';
       btn.download = 'payal-singh-resume.pdf';
       btn.textContent = 'download PDF ↓';
-      containerEl.appendChild(btn);
+      wrap.appendChild(btn);
+      containerEl.insertBefore(wrap, containerEl.firstChild);
     })
     .catch(() => { /* file absent — silent */ });
 }
