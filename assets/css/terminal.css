@@ -32,7 +32,7 @@
   --space-lg:       1.5rem;
   --space-xl:       2rem;
   --space-2xl:      3rem;
-  --terminal-width: 720px;
+  --terminal-width: 880px;
   --chip-height:    1.75rem;
 
   /* Font stacks from typography.md */
@@ -341,7 +341,7 @@ a:hover {
   line-height: 1.6;
   letter-spacing: 0;
   font-variant-ligatures: none;
-  caret-color: transparent; /* we use a custom cursor element */
+  caret-color: var(--accent); /* native caret tracks typing position */
   padding: 0;
   min-width: 0;
 }
@@ -351,7 +351,9 @@ a:hover {
   font-style: normal;
 }
 
-/* Custom blinking cursor */
+/* Custom blinking cursor — used standalone on 404.html.
+   On the main page, the input row uses the native caret (caret-color above);
+   the .cursor span inside .terminal-input-row is hidden to avoid double-cursor. */
 .cursor {
   display: inline-block;
   width: 0.5ch;
@@ -359,8 +361,10 @@ a:hover {
   background: var(--accent);
   vertical-align: text-bottom;
   flex-shrink: 0;
-  opacity: 0; /* hidden during boot */
+  opacity: 0;
 }
+
+.terminal-input-row .cursor { display: none; }
 
 .cursor--active {
   animation: blink 1.1s step-end infinite;
