@@ -135,7 +135,13 @@ async function loadPanelContent(id, panelEl) {
       if (id === 'resume') {
         maybeAddPdfButton(body);
       }
-      renderMarkdown(md, body);
+
+      // Wrap markdown in .panel-prose so existing h1/h2/h3/p/ul/li/hr/code/strong
+      // styles apply. Renderer outputs raw elements; the wrapper gives them context.
+      const prose = document.createElement('div');
+      prose.className = 'panel-prose';
+      renderMarkdown(md, prose);
+      body.appendChild(prose);
     }
   } catch (err) {
     body.innerHTML = '';
