@@ -1,0 +1,164 @@
+---
+---
+
+/* ============================================================
+   payalsingh.me — overrides on top of Clean Blog Jekyll theme.
+   Light is default. Dark mode is applied via [data-theme="dark"]
+   on <html>. The toggle button lives in the navbar.
+   ============================================================ */
+
+/* --- Theme toggle button (works in both modes) --- */
+
+.theme-toggle.nav-link {
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 1rem;
+  color: inherit;
+  line-height: 1;
+}
+.theme-toggle.nav-link:hover { opacity: 0.7; }
+.theme-toggle.nav-link i { vertical-align: middle; }
+
+/* --- Dark mode overrides --- */
+
+html[data-theme="dark"] body {
+  background-color: #0f0f0e;
+  color: #d8d6cf;
+}
+
+html[data-theme="dark"] p,
+html[data-theme="dark"] li,
+html[data-theme="dark"] .post-meta,
+html[data-theme="dark"] .post-subtitle {
+  color: #c0bdb3 !important;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] .post-title,
+html[data-theme="dark"] .page-heading h1,
+html[data-theme="dark"] .post-heading h1 {
+  color: #f0eee7;
+}
+
+/* Navbar in dark mode */
+html[data-theme="dark"] #mainNav {
+  background-color: rgba(15, 15, 14, 0.95);
+  border-bottom: 1px solid #2a2925;
+}
+html[data-theme="dark"] #mainNav.is-fixed {
+  background-color: rgba(15, 15, 14, 0.95);
+}
+html[data-theme="dark"] #mainNav .navbar-brand,
+html[data-theme="dark"] #mainNav .nav-link {
+  color: #e8e6df !important;
+}
+html[data-theme="dark"] #mainNav .nav-link:hover,
+html[data-theme="dark"] #mainNav .navbar-brand:hover {
+  color: #7ec5d6 !important;
+}
+html[data-theme="dark"] .navbar-toggler {
+  color: #e8e6df;
+  border-color: #2a2925;
+}
+
+/* Masthead: keep dark overlay, lighten heading text */
+html[data-theme="dark"] .masthead {
+  background-color: #1a1917;
+}
+html[data-theme="dark"] .masthead .overlay {
+  background-color: rgba(15, 15, 14, 0.6);
+}
+html[data-theme="dark"] .masthead .subheading,
+html[data-theme="dark"] .masthead .meta,
+html[data-theme="dark"] .masthead .meta a {
+  color: #e8e6df !important;
+}
+
+/* Post preview cards */
+html[data-theme="dark"] .post-preview > a,
+html[data-theme="dark"] .post-preview > a:focus,
+html[data-theme="dark"] .post-preview > a:hover {
+  color: #f0eee7;
+  text-decoration: none;
+}
+html[data-theme="dark"] .post-preview > a:hover .post-title {
+  color: #7ec5d6;
+}
+
+/* Links in body */
+html[data-theme="dark"] .container a:not(.btn):not(.navbar-brand):not(.nav-link) {
+  color: #7ec5d6;
+}
+html[data-theme="dark"] .container a:not(.btn):not(.navbar-brand):not(.nav-link):hover {
+  color: #b4e0ec;
+}
+
+/* Code */
+html[data-theme="dark"] code,
+html[data-theme="dark"] kbd,
+html[data-theme="dark"] samp {
+  background-color: #1a1917;
+  color: #e8e6df;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+html[data-theme="dark"] pre {
+  background-color: #0a0a09;
+  color: #e8e6df;
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+html[data-theme="dark"] pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Blockquote */
+html[data-theme="dark"] blockquote {
+  border-left: 3px solid #2a2925;
+  color: #b8b5ab;
+}
+
+/* hr */
+html[data-theme="dark"] hr {
+  border-color: #2a2925;
+}
+
+/* Buttons: keep readable */
+html[data-theme="dark"] .btn-primary {
+  background-color: #0a4a5e;
+  border-color: #0a4a5e;
+}
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .btn-primary:focus {
+  background-color: #0d5a72;
+  border-color: #0d5a72;
+}
+
+/* Footer */
+html[data-theme="dark"] footer .copyright {
+  color: #9a978c !important;
+}
+html[data-theme="dark"] footer .fa-circle {
+  color: #2a2925;
+}
+html[data-theme="dark"] footer .fa-inverse {
+  color: #d8d6cf;
+}
+
+/* Selection */
+html[data-theme="dark"] ::selection {
+  background-color: #4a3a1a;
+  color: #f0eee7;
+}
+
+/* Small consistency tweaks for both themes */
+.theme-toggle.nav-link:focus { outline: 2px solid currentColor; outline-offset: 2px; }

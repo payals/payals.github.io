@@ -1,0 +1,41 @@
+title: Payal Singh
+description: Notes on data, AI, engineering, and research.
+url: "https://payalsingh.me"
+baseurl: ""
+lang: en
+author: Payal Singh
+email: psinghpayal@outlook.com
+
+remote_theme: StartBootstrap/startbootstrap-clean-blog-jekyll
+
+permalink: /blog/:year/:month/:day/:title/
+
+markdown: kramdown
+markdown_ext: "markdown"
+kramdown:
+  input: GFM
+  smart_quotes: ["apos", "apos", "quot", "quot"]
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-remote-theme
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor/
+  - .bundle/
+  - .venv/
+  - .omc/
+  - .env
+  - .env.example
+  - napkin.md

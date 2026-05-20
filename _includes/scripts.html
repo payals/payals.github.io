@@ -1,0 +1,29 @@
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ '/assets/vendor/startbootstrap-clean-blog/js/scripts.js' | relative_url }}"></script>
+<script src="{{ '/assets/scripts.js' | relative_url }}"></script>
+
+<script>
+  (function () {
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    function current() {
+      try { return localStorage.getItem('theme') || 'dark'; } catch (e) { return 'dark'; }
+    }
+    function setIcon(state) {
+      btn.innerHTML = state === 'dark'
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+      btn.setAttribute('aria-label', state === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    }
+    function apply(state) {
+      document.documentElement.setAttribute('data-theme', state);
+      try { localStorage.setItem('theme', state); } catch (e) {}
+      setIcon(state);
+    }
+    setIcon(current());
+    btn.addEventListener('click', function () {
+      apply(current() === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>

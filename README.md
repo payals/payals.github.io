@@ -1,9 +1,6 @@
 # payals.github.io
 
-Single-page static terminal landing for <https://payals.github.io>.
-No Jekyll. No build step. Pure HTML + CSS + vanilla JS.
-
-The blog moved to <https://makeworld.dev>.
+Source for <https://payalsingh.me>. Terminal landing at `/` (vanilla HTML + CSS + ES modules, passed through Jekyll unchanged) plus a Jekyll-rendered blog at `/blog/`.
 
 ---
 

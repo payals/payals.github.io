@@ -4,4 +4,4 @@ Researcher and engineer working at the intersection of AI systems, software, and
 
 ## find me
 
-[github](https://github.com/payals) · [linkedin](https://linkedin.com/in/payalsingh) · [medium](https://medium.com/@reliable-by-design) · [blog](https://makeworld.dev) · [older](https://penningpence.blogspot.com) · [email](mailto:psinghpayal@outlook.com)
+[github](https://github.com/payals) · [linkedin](https://linkedin.com/in/payalsingh) · [medium](https://medium.com/@reliable-by-design) · [blog](/blog/) · [older](https://penningpence.blogspot.com) · [email](mailto:psinghpayal@outlook.com)

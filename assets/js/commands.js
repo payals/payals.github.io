@@ -11,7 +11,7 @@ const LINKS = {
   github:   'https://github.com/payals',
   linkedin: 'https://linkedin.com/in/payalsingh',
   medium:   'https://medium.com/@reliable-by-design',
-  blog:     'https://makeworld.dev',
+  blog:     '/blog/',
   older:    'https://penningpence.blogspot.com',
   email:    'mailto:psinghpayal@outlook.com',
 };
@@ -37,7 +37,7 @@ export const commands = {
         '  github   — github.com/payals',
         '  linkedin — linkedin profile',
         '  medium   — medium writing',
-        '  blog     — makeworld.dev',
+        '  blog     — /blog/',
         '  older    — penningpence.blogspot.com',
         '  email    — get in touch',
         '',
@@ -115,8 +115,11 @@ export const commands = {
   },
 
   blog: {
-    description: 'open makeworld.dev',
-    handler(_args, term) { openLink(LINKS.blog, 'blog (makeworld.dev)', term); },
+    description: 'open blog',
+    handler(_args, term) {
+      term.print('opening blog…', { className: 'terminal-line--muted' });
+      window.location.href = LINKS.blog;
+    },
   },
 
   older: {

@@ -2,14 +2,14 @@
  * now.js — render the "now" panel.
  * Fetches data/now.json (static hand-edited fields) plus two live signals:
  *   • GitHub events API  → latest push commit
- *   • makeworld.dev feed.xml → latest blog post
+ *   • /feed.xml → latest blog post
  * Live signals are non-blocking; panel renders immediately with static content.
  */
 
 import { esc } from './panels.js';
 
 const GITHUB_EVENTS_URL = 'https://api.github.com/users/payals/events/public';
-const BLOG_FEED_URL     = 'https://makeworld.dev/feed.xml';
+const BLOG_FEED_URL     = '/feed.xml';
 const API_TIMEOUT_MS    = 4000;
 
 /**
@@ -178,9 +178,7 @@ function fillPostSlot(wrapper, result) {
   const link = document.createElement('a');
   link.className = 'now-signal-value';
   const validated = esc(url || '');
-  link.href = validated === '#' ? 'https://makeworld.dev' : validated;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
+  link.href = validated === '#' ? '/blog/' : validated;
   link.textContent = title;
 
   const timeSep = document.createTextNode('  ·  ');
@@ -242,7 +240,7 @@ async function fetchLatestPost() {
 
   // Atom uses <link href="…">, RSS uses <link>text</link>
   const linkEl = entry.querySelector('link');
-  const url = linkEl?.getAttribute('href') || linkEl?.textContent?.trim() || 'https://makeworld.dev';
+  const url = linkEl?.getAttribute('href') || linkEl?.textContent?.trim() || '/blog/';
 
   // Atom: <published> or <updated>; RSS: <pubDate>
   const dateStr =
