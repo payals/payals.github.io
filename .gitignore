@@ -13,3 +13,6 @@ vendor/
 .omc/state/
 .omc/sessions/
 .omc/project-memory.json
+
+# Local drafts and outlines (not for publish)
+drafts/
