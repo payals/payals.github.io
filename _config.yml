@@ -21,6 +21,10 @@ plugins:
   - jekyll-sitemap
   - jekyll-remote-theme
 
+feed:
+  categories:
+    - postgres
+
 defaults:
   - scope:
       path: ""
