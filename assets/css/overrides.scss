@@ -162,3 +162,65 @@ html[data-theme="dark"] ::selection {
 
 /* Small consistency tweaks for both themes */
 .theme-toggle.nav-link:focus { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* ===== Blog UX: topic tags, series nav, topics page, post meta ===== */
+
+.blog-toolbar { font-size: 0.9rem; margin: 0 0 2rem; }
+
+.tag-chip {
+  display: inline-block;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0.32em 0.66em;
+  margin: 0.15em 0.3em 0.15em 0;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 999px;
+  color: #555;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tag-chip:hover,
+.tag-chip:focus { border-color: #0085a1; color: #0085a1; }
+
+.post-tags { margin-top: 0.5rem; }
+.post-tags--footer { margin: 1.5rem 0 0; }
+
+.series-box {
+  margin: 2.5rem 0 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-left: 4px solid #0085a1;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.02);
+}
+.series-box__label { margin: 0 0 0.5rem; font-size: 0.95rem; }
+.series-box__list { margin: 0; padding-left: 1.3rem; }
+.series-box__list li { margin: 0.25rem 0; }
+.series-box__list li.is-current { font-weight: 700; }
+
+.topic-heading { margin-top: 2.25rem; }
+.topic-count {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #888;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  padding: 0.1em 0.55em;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
+.topic-list { list-style: none; padding-left: 0; }
+.topic-list li { margin: 0.4rem 0; }
+.topic-date { color: #999; font-size: 0.85rem; margin-left: 0.4rem; }
+
+/* Dark mode */
+html[data-theme="dark"] .tag-chip { border-color: #2a2925; color: #b8b5ab; }
+html[data-theme="dark"] .tag-chip:hover,
+html[data-theme="dark"] .tag-chip:focus { border-color: #7ec5d6; color: #7ec5d6; }
+html[data-theme="dark"] .series-box {
+  border-color: #2a2925;
+  border-left-color: #7ec5d6;
+  background: rgba(255, 255, 255, 0.03);
+}
+html[data-theme="dark"] .topic-count { color: #9a978c; border-color: #2a2925; }
+html[data-theme="dark"] .topic-date { color: #7a776e; }

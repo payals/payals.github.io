@@ -5,6 +5,9 @@ subtitle: "Three OS-level failures that show up as database outages, and what to
 date: 2026-05-27 09:00:00 -0400
 author: Payal
 categories: postgres
+tags: [postgres, reliability, linux]
+series: "Postgres War Stories"
+part: 1
 ---
 
 This series is aimed at recounting, explaining, and cataloging issues pertaining to Postgres in large-scale production environments that affected a wide section of users and clients. The idea occured to me when discussing one specific issue (covered in a later part in this series) that was my first experience dealing with such issues on a wide scale (multiple clients and clusters affected). This specific part focuses on issues that were caused not by Postgres itself, but by the tools, OS, and ecosystems that Postgres relies on.
@@ -87,3 +90,5 @@ After these three, a new cluster picks up four lines that have nothing to do wit
 None of these are clever. They are all known. The pattern worth keeping is that Postgres trusts the layer beneath it, that sometimes has its own bugs. When the database logs are clean and something is still wrong, look down before you look in.
 
 Next post in the series: corruption that lives inside Postgres itself. TOAST chunk errors, multixact wraparound, and the question of how you find out before your users do.
+
+{% include post-footer.html %}

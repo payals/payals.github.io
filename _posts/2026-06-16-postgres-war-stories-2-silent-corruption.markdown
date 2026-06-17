@@ -5,6 +5,9 @@ subtitle: "Three ways data goes wrong inside Postgres with nothing in the log, a
 date: 2026-06-16 09:00:00 -0400
 author: Payal
 categories: postgres
+tags: [postgres, reliability, data-integrity]
+series: "Postgres War Stories"
+part: 2
 ---
 
 [Part 1]({% post_url 2026-05-27-postgres-war-stories-1-the-bugs-that-arent-postgres %}) was about failures that start one layer below Postgres: the kernel, glibc, the page allocator. This post is about the worse class, where the failure is inside Postgres itself. The logs are clean. Recovery never runs. And a query either returns the wrong answer or drops rows that are still sitting on disk.
@@ -99,3 +102,5 @@ After these three, a cluster picks up five lines that are all about asking the d
 Part 1 closed with look down before you look in. This one closes with the harder habit: the database will not tell you it is corrupt. You have to ask it, on a schedule, when nothing is wrong.
 
 Next post in the series: the corruption you cause yourself by upgrading. `pg_upgrade`, the 9.4 and 9.5 freeze-map bug, and why a fast upgrade is also a fast way to lose data.
+
+{% include post-footer.html %}
