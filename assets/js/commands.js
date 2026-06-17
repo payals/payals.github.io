@@ -9,6 +9,7 @@ import { openPanel } from './panels.js';
 // URLs hard-coded per supplement spec — edit here to update everywhere
 const LINKS = {
   github:   'https://github.com/payals',
+  codeberg: 'https://codeberg.org/sillygoose',
   linkedin: 'https://linkedin.com/in/payalsingh',
   medium:   'https://medium.com/@reliable-by-design',
   blog:     '/blog/',
@@ -35,6 +36,7 @@ export const commands = {
         '  resume   — work history',
         '',
         '  github   — github.com/payals',
+        '  codeberg — codeberg.org/sillygoose',
         '  linkedin — linkedin profile',
         '  medium   — medium writing',
         '  blog     — /blog/',
@@ -102,6 +104,11 @@ export const commands = {
   github: {
     description: 'open GitHub profile',
     handler(_args, term) { openLink(LINKS.github, 'github', term); },
+  },
+
+  codeberg: {
+    description: 'open Codeberg profile',
+    handler(_args, term) { openLink(LINKS.codeberg, 'codeberg', term); },
   },
 
   linkedin: {
