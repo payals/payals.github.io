@@ -16,3 +16,10 @@ vendor/
 
 # Local drafts and outlines (not for publish)
 drafts/
+.omx/
+
+# here.now local state / claim tokens — never publish to this public repo
+.herenow/
+
+# Operator notes: contains private home-server IPs — keep out of the public repo
+CLAUDE.md
