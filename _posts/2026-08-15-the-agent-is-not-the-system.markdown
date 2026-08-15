@@ -68,11 +68,9 @@ None of this is original, which I take as a good sign. [Paperclip](https://githu
 
 ## Postgres as the coordination layer
 
-None of the design in this section or the next three has run yet. I am describing what I have committed to and started building, in the tense of a plan.
+The center of gravity of the design moved into Postgres, and I want to be precise about what that means, because "use a database" is not the lesson. I already had Postgres running a governance schema, for warrants, exercises, escalations, leases. What it lacked was traffic: nothing in the fleet was required to write through it, so those tables sat at zero rows, and a table nobody writes to is just another check that does not bind.
 
-The center of gravity of the design moved into Postgres, and "use a database" is the wrong lesson to take from that. I already had Postgres. The governance schema was in Postgres. It had no rows. A table nobody writes is just another check that does not bind.
-
-The realization is narrower: the durable state has to be the only path, and every verb the system performs has to be a transition on it. Once that holds, several things become possible that were out of reach while the civilization lived in prompts, markdown, JSONL files, per-loop directories, and the model's own context.
+The real realization is narrower: the durable state has to be the only path, and every verb the system performs has to be a transition on it. That is the design below. It is in progress, not yet proven, and I will keep flagging results as they land. Once the single-path rule holds, several things become possible that were out of reach while the civilization lived in prompts, markdown, JSONL files, per-loop directories, and the model's own context.
 
 Work outlives the worker. A model session is transient by nature; a context window fills, a provider hiccups, a laptop sleeps. When the objective is a row, none of those events lose the objective. They lose an attempt, which is recorded as an attempt.
 
