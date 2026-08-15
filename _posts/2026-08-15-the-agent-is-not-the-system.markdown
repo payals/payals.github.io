@@ -1,18 +1,16 @@
 ---
 layout: post
-title: "The agent is not the system"
-subtitle: "Notes from rebuilding an autonomous-agent system around durable state, verification, and bounded authority instead of an org chart."
+title: "The agent is not the system. Postgres is."
+subtitle: "Notes from rebuilding an autonomous-agent system around a Postgres work ledger, verification, and bounded authority instead of an org chart."
 author: Payal
 date: 2026-08-15 17:00:00 -0400
-categories: ai
+categories: [ai, postgres]
 tags: [ai, agents, reliability, systems, postgres]
 ---
 
 *The numbers here come from my own audit and design records as of 2026-08-15. Everything described as a redesign is a plan I have started building and have not proven yet.*
 
-Since June I have been building Looper, an experimental system for running long-lived autonomous loops against real work. In [July](/blog/2026/07/03/loops-i-can-trust/) I wrote about the control-theory core: every loop is a closed-loop controller, and the actuator must never reach its own sensor. This post is about the layer above that, and about a change in my mental model that came from measuring the system rather than admiring it.
-
-The short version: I spent most of the summer designing the organization of the agents, and the thing that turned out to matter was the mechanism that keeps work alive after any particular agent disappears. The rest of this post is the evidence for that sentence and what I rebuilt because of it.
+Since June I have been building Looper, an experimental system for running long-lived autonomous loops against real work. In [July](/blog/2026/07/03/loops-i-can-trust/) I wrote about the control-theory core: every loop is a closed-loop controller, and the actuator must never reach its own sensor. This post is about the layer above that, and about a change in my mental model that came from measuring the system rather than admiring it. I spent most of the summer designing the organization of the agents, and what turned out to matter was the mechanism that keeps work alive after any particular agent disappears. In the rebuild that mechanism is a Postgres schema: a campaign row per open piece of work, leases with fencing tokens, a state machine enforced by triggers, append-only hash-chained events, and a stored-function API as the only write path. The agents became replaceable workers that Postgres wakes, hands a claim to, and outlives. If you read one section, read "Postgres as the coordination layer." The rest of this post is the evidence for that sentence and what I rebuilt because of it.
 
 ## What I built, and what held up
 
