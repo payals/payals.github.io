@@ -1,6 +1,7 @@
 # napkin.md — persistent scratchpad (see global CLAUDE.md protocol)
 
 ## Repo Surprises
+- 2026-08-28 Public repo hygiene: `.omo/` runtime state and `AGENTS.md` operator notes were not ignored; keep both out because operator notes contain private network details.
 - 2026-07-03 `drafts/` (gitignored, untracked) holds the War Stories series plan + per-post outlines; check it before answering "what was the plan" — `_drafts/` does not exist.
 - 2026-07-03 ~~Founding incident of the Postgres War Stories series = the freeze-map bug~~ CORRECTED 2026-07-27: it was the 9.3 multixact saga (2014–15) with a fleet-wide minor-version downgrade; freeze-map label was misremembered. Details in `drafts/postgres-war-stories-series-plan.md` under Post 3.
 

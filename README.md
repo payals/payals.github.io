@@ -11,9 +11,10 @@ All hand-edited content lives in `data/` and `assets/img/`:
 | File | What it controls |
 |------|-----------------|
 | `data/now.json` | "What's true this month" widget — `reading`, `shipping`, `city`, `updated` fields |
-| `data/talks.json` | Talks list — array of `{ title, venue, date, slides_url, video_url, image }` |
+| `data/talks.json` | Talks list — array of `{ title, venue, date, status, event_url, slides_url, video_url, image }` |
 | `data/about.md` | Bio panel content (rendered as markdown in the `about` panel) |
-| `data/resume.md` | Resume panel content; drop `data/resume.pdf` to enable the download button |
+| `data/cv.md` | CV panel content |
+| `data/cv.pdf` | CV download; enables the panel download button when present |
 | `assets/img/portrait.txt` | ASCII portrait displayed in the header |
 
 ---

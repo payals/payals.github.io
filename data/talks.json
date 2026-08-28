@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "title": "Using PostgreSQL as a Control Plane for Reliable AI Workflows",
+    "venue": "Postgres Summit US 2026, New York City",
+    "date": "2026-09-30",
+    "status": "upcoming",
+    "event_url": "https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/"
+  },
+  {
+    "title": "Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database",
+    "venue": "SCaLE 23x",
+    "date": "2026-03-06",
+    "event_url": "https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-control-plane-building-rag-mcp-workflows-inside-database",
+    "slides_url": "https://www.socallinuxexpo.org/sites/default/files/2026-03/postgres_as_an_ai_control_plane.pdf"
+  },
+  {
+    "title": "Securing Your Data on PostgreSQL",
+    "venue": "SCaLE 16x",
+    "date": "2018-03-09",
+    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql"
+  },
+  {
+    "title": "Pandas - Lazy at Mating, Lively at Mining!",
+    "venue": "SCaLE 16x",
+    "date": "2018-03-10",
+    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining"
+  },
+  {
+    "title": "Think Your Postgres Backups and Disaster Recovery Are Safe? Let's Talk.",
+    "venue": "SCaLE 15x",
+    "date": "2017-03-02",
+    "event_url": "https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk"
+  }
+]

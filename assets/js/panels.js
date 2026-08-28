@@ -16,7 +16,7 @@ const PANEL_AREA = () => document.querySelector('[data-panel-area]');
 
 /**
  * Open a panel by id. Closes any current panel first.
- * @param {string} id — 'about' | 'now' | 'talks' | 'resume'
+ * @param {string} id — 'about' | 'now' | 'talks' | 'cv'
  */
 export async function openPanel(id) {
   const area = PANEL_AREA();
@@ -127,12 +127,12 @@ async function loadPanelContent(id, panelEl) {
       body.innerHTML = '';
       renderTalks(data, body);
     } else {
-      // about, resume — markdown
+      // about, cv — markdown
       const md = await fetchText(`data/${id}.md`);
       body.innerHTML = '';
 
-      // Resume: probe for PDF and prepend the download button BEFORE markdown.
-      if (id === 'resume') {
+      // CV: probe for PDF and prepend the download button BEFORE markdown.
+      if (id === 'cv') {
         maybeAddPdfButton(body);
       }
 
@@ -164,6 +164,10 @@ function renderTalks(talks, containerEl) {
   }
 
   const INITIAL_SHOW = 6;
+  const intro = document.createElement('p');
+  intro.className = 'talks-intro';
+  intro.textContent = 'Talks on PostgreSQL, data reliability, and AI systems. Upcoming sessions appear first.';
+
   const grid = document.createElement('div');
   grid.className = 'talks-grid';
 
@@ -176,6 +180,7 @@ function renderTalks(talks, containerEl) {
     grid.appendChild(card);
   });
 
+  containerEl.appendChild(intro);
   containerEl.appendChild(grid);
 
   if (talks.length > INITIAL_SHOW) {
@@ -197,38 +202,63 @@ function renderTalks(talks, containerEl) {
 function buildTalkCard(talk) {
   const card = document.createElement('article');
   card.className = 'talks-card';
+  if (talk.status === 'upcoming') card.classList.add('talks-card--upcoming');
 
-  // Image slot
-  const imgWrap = document.createElement('div');
-  imgWrap.className = 'talks-card-image';
   if (talk.image) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'talks-card-image';
     const img = document.createElement('img');
     img.src = esc(talk.image);
-    img.alt = talk.title || '';
+    img.alt = talk.title || 'Talk presentation';
+    img.width = 640;
+    img.height = 360;
     img.loading = 'lazy';
     imgWrap.appendChild(img);
+    card.appendChild(imgWrap);
   }
-  card.appendChild(imgWrap);
 
   const info = document.createElement('div');
   info.className = 'talks-card-info';
 
+  const titleRow = document.createElement('div');
+  titleRow.className = 'talks-card-title-row';
+
   const titleEl = document.createElement('h3');
   titleEl.className = 'talks-card-title';
   titleEl.textContent = talk.title || '(untitled)';
-  info.appendChild(titleEl);
+  titleRow.appendChild(titleEl);
+
+  if (talk.status === 'upcoming') {
+    const badge = document.createElement('span');
+    badge.className = 'talks-card-badge';
+    badge.textContent = 'upcoming';
+    titleRow.appendChild(badge);
+  }
+  info.appendChild(titleRow);
 
   const meta = document.createElement('p');
   meta.className = 'talks-card-meta terminal-line--muted';
-  const parts = [talk.venue, talk.date].filter(Boolean);
-  meta.textContent = parts.join(' · ');
+  if (talk.venue) meta.appendChild(document.createTextNode(talk.venue));
+  if (talk.date) {
+    if (talk.venue) meta.appendChild(document.createTextNode(' · '));
+    const time = document.createElement('time');
+    time.dateTime = talk.date;
+    time.textContent = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(`${talk.date}T00:00:00Z`));
+    meta.appendChild(time);
+  }
   info.appendChild(meta);
 
-  if (talk.slides_url || talk.video_url) {
+  if (talk.event_url || talk.slides_url || talk.video_url) {
     const links = document.createElement('div');
     links.className = 'talks-card-links';
-    if (talk.slides_url) links.appendChild(talkLink('slides', talk.slides_url));
-    if (talk.video_url) links.appendChild(talkLink('video', talk.video_url));
+    if (talk.event_url) links.appendChild(talkLink('details', talk.event_url, talk.title));
+    if (talk.slides_url) links.appendChild(talkLink('slides', talk.slides_url, talk.title));
+    if (talk.video_url) links.appendChild(talkLink('video', talk.video_url, talk.title));
     info.appendChild(links);
   }
 
@@ -236,13 +266,14 @@ function buildTalkCard(talk) {
   return card;
 }
 
-function talkLink(label, url) {
+function talkLink(label, url, title) {
   const a = document.createElement('a');
   a.className = 'chip chip--sm';
   a.href = esc(url);
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.textContent = label;
+  a.setAttribute('aria-label', `${label}: ${title || '(untitled)'}`);
   return a;
 }
 
@@ -250,18 +281,18 @@ function talkLink(label, url) {
 
 function maybeAddPdfButton(containerEl) {
   // Probe with a HEAD request; only show button if file is reachable.
-  // Prepended to the container so the button sits at the TOP of the resume panel,
+  // Prepended to the container so the button sits at the TOP of the CV panel,
   // before the markdown body.
-  fetch('data/resume.pdf', { method: 'HEAD' })
+  fetch('data/cv.pdf', { method: 'HEAD' })
     .then((r) => {
       if (!r.ok) return;
       const wrap = document.createElement('div');
-      wrap.className = 'resume-pdf-button-row';
+      wrap.className = 'cv-pdf-button-row';
       const btn = document.createElement('a');
       btn.className = 'chip chip--download';
-      btn.href = 'data/resume.pdf';
-      btn.download = 'payal-singh-resume.pdf';
-      btn.textContent = 'download PDF ↓';
+      btn.href = 'data/cv.pdf';
+      btn.download = 'payal-singh-cv.pdf';
+      btn.textContent = 'download CV PDF ↓';
       wrap.appendChild(btn);
       containerEl.insertBefore(wrap, containerEl.firstChild);
     })

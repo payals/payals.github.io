@@ -33,7 +33,7 @@ export const commands = {
         '  about    — who I am',
         '  now      — what I\'m up to right now',
         '  talks    — talks and slides',
-        '  resume   — work history',
+        '  cv       — work history',
         '',
         '  github   — github.com/payals',
         '  codeberg — codeberg.org/sillygoose',
@@ -76,25 +76,25 @@ export const commands = {
     },
   },
 
-  resume: {
-    description: 'open resume panel',
+  cv: {
+    description: 'open CV panel',
     handler(_args, term) {
-      openPanel('resume');
-      term.print('opening resume…', { className: 'terminal-line--muted' });
+      openPanel('cv');
+      term.print('opening cv…', { className: 'terminal-line--muted' });
     },
   },
 
   // cat <panel> aliases — registered separately below
   cat: {
-    description: 'cat about | now | talks | resume',
+    description: 'cat about | now | talks | cv',
     handler(args, term) {
       const target = (args[0] || '').toLowerCase();
-      const panels = ['about', 'now', 'talks', 'resume'];
+      const panels = ['about', 'now', 'talks', 'cv'];
       if (panels.includes(target)) {
         openPanel(target);
         term.print(`opening ${target}…`, { className: 'terminal-line--muted' });
       } else if (target === '') {
-        term.print('usage: cat <about|now|talks|resume>', { className: 'terminal-line--muted' });
+        term.print('usage: cat <about|now|talks|cv>', { className: 'terminal-line--muted' });
       } else {
         term.print(`cat: ${target}: no such file`, { className: 'terminal-line--err' });
       }

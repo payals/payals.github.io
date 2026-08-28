@@ -128,7 +128,7 @@ function setupHashRouter() {
   });
 }
 
-const PANEL_IDS = new Set(['about', 'now', 'talks', 'resume']);
+const PANEL_IDS = new Set(['about', 'now', 'talks', 'cv']);
 
 function openPanelByHash(id) {
   if (PANEL_IDS.has(id)) {

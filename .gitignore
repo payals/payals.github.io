@@ -13,6 +13,7 @@ vendor/
 .omc/state/
 .omc/sessions/
 .omc/project-memory.json
+.omo/
 
 # Local drafts and outlines (not for publish)
 drafts/
@@ -23,3 +24,4 @@ drafts/
 
 # Operator notes: contains private home-server IPs — keep out of the public repo
 CLAUDE.md
+AGENTS.md

@@ -154,7 +154,7 @@ export class Terminal {
     // "cat " prefix — complete panel names
     if (val.startsWith('cat ')) {
       const partial = val.slice(4);
-      const panels = ['about', 'now', 'talks', 'resume'];
+      const panels = ['about', 'now', 'talks', 'cv'];
       const matches = panels.filter(p => p.startsWith(partial));
       if (matches.length === 1) {
         this._input.value = `cat ${matches[0]}`;
