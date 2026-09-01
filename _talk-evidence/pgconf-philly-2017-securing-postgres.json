@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "pgconf-philly-2017-securing-postgres",
+  "title": "Securing Your Data on Postgres",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "PGConf Local: Philly 2017 [PgConf.US]",
+  "city": "Philadelphia",
+  "date": null,
+  "status": "official_program_listing",
+  "evidence_level": "official_program_listing",
+  "source_url": "https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres",
+  "context_sources": [{"url":"https://postgresconf.org/conferences/Philly2017","excerpt":"Philadelphia, PA / United States\nJuly 13 - 14, 2017"}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Securing Your Data on Postgres\nPresented by: Payal Singh\nDate:\nConference: PGConf Local: Philly 2017 [PgConf.US]",
+  "wayback": {"url":"https://web.archive.org/web/20260611191350/https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres","timestamp":"20260611191350","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":12113,"fetched_content_sha256":"57e0280ad001e82d14fb5693ab14bb9aa3f2710543ec214c0f223305b9c84c73","source_excerpt_sha256":"ade8ca5d58b7e451011cfd2d848261d97ec8f1a8032f7c582fef31c46990c455","normalized_payload_sha256":"1ea67c859cc135495233ef965d8a2c200ff0bf8db00d197a7095b4b9e7be511a"}
+}

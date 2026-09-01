@@ -33,6 +33,7 @@ defaults:
       layout: post
 
 exclude:
+  - _talk-evidence/
   - Gemfile
   - Gemfile.lock
   - README.md

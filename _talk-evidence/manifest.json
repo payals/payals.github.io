@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28T09:36:40Z",
+  "record_count": 12,
+  "collection_provenance": {
+    "url": "https://archive.org/details/@p_s623/web-archive",
+    "relationship": "Payal Singh first-party Internet Archive collection"
+  },
+  "first_party_captures": [
+    {"type":"speaker_profile","url":"https://web.archive.org/web/20260114181703/https://www.socallinuxexpo.org/scale/speaker/payal-singh","scope":"Supplementary identity provenance for SCaLE 23x; not delivery proof."},
+    {"type":"earlier_title_talk_page","url":"https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database","scope":"Primary Wayback replay for scale-23x-ai-control-plane; archived title is metadata only."},
+    {"type":"speaker_profile","url":"https://web.archive.org/web/20260114183635/https://www.socallinuxexpo.org/scale/16x/speakers/payal-singh/index.html","scope":"Supplementary identity provenance for both SCaLE 16x records; not delivery proof."}
+  ],
+  "save_page_now_summary": {
+    "attempted": 12,
+    "saved": 0,
+    "failed": 12,
+    "failure": "HTTP 429 from https://web.archive.org/save/<source-url>"
+  },
+  "records": [
+    {"id":"postgressummit-us-2026-control-plane","source_url":"https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/","wayback_url":null,"json":"postgressummit-us-2026-control-plane.json","html":"postgressummit-us-2026-control-plane.html"},
+    {"id":"scale-23x-ai-control-plane","source_url":"https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-control-plane-building-rag-mcp-workflows-inside-database","wayback_url":"https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database","json":"scale-23x-ai-control-plane.json","html":"scale-23x-ai-control-plane.html"},
+    {"id":"scale-16x-securing-postgresql","source_url":"https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql","wayback_url":"https://web.archive.org/web/20260118200310/https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql/","json":"scale-16x-securing-postgresql.json","html":"scale-16x-securing-postgresql.html"},
+    {"id":"scale-16x-pandas","source_url":"https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining","wayback_url":"https://web.archive.org/web/20260116131642/https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining/","json":"scale-16x-pandas.json","html":"scale-16x-pandas.html"},
+    {"id":"scale-15x-postgres-backups","source_url":"https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk","wayback_url":"https://web.archive.org/web/20260114181728/https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk/","json":"scale-15x-postgres-backups.json","html":"scale-15x-postgres-backups.html"},
+    {"id":"pgconf-us-2015-postgres-backups","source_url":"https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015","wayback_url":"https://web.archive.org/web/20260412064404/https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015","json":"pgconf-us-2015-postgres-backups.json","html":"pgconf-us-2015-postgres-backups.html"},
+    {"id":"pgconf-us-2017-ha-aws-ec2","source_url":"https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2","wayback_url":"https://web.archive.org/web/20260514134750/https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2","json":"pgconf-us-2017-ha-aws-ec2.json","html":"pgconf-us-2017-ha-aws-ec2.html"},
+    {"id":"pgcon-2017-ha-aws-ec2","source_url":"https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html","wayback_url":"https://web.archive.org/web/20221001232114/https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html","json":"pgcon-2017-ha-aws-ec2.json","html":"pgcon-2017-ha-aws-ec2.html"},
+    {"id":"pgconf-philly-2017-securing-postgres","source_url":"https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres","wayback_url":"https://web.archive.org/web/20260611191350/https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres","json":"pgconf-philly-2017-securing-postgres.json","html":"pgconf-philly-2017-securing-postgres.html"},
+    {"id":"pgcon-2018-securing-postgresql","source_url":"https://www.pgcon.org/2018/schedule/track/DBA/1144.en.html","wayback_url":null,"json":"pgcon-2018-securing-postgresql.json","html":"pgcon-2018-securing-postgresql.html"},
+    {"id":"postgresconf-us-2018-securing-postgresql","source_url":"https://postgresconf.org/conferences/2018/program/proposals/securing-your-data-on-postgresql","wayback_url":"https://web.archive.org/web/20251212181637/https://postgresconf.org/conferences/2018/program/proposals/securing-your-data-on-postgresql","json":"postgresconf-us-2018-securing-postgresql.json","html":"postgresconf-us-2018-securing-postgresql.html"},
+    {"id":"postgres-conference-2019-performance-tuning","source_url":"https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning","wayback_url":"https://web.archive.org/web/20251010123647/https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning","json":"postgres-conference-2019-performance-tuning.json","html":"postgres-conference-2019-performance-tuning.html"}
+  ]
+}

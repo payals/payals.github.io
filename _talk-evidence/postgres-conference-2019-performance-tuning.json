@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "postgres-conference-2019-performance-tuning",
+  "title": "Essential Postgres Performance tuning",
+  "title_variants": ["Essential Postgres Performance Tuning"],
+  "speaker": "Payal Singh",
+  "event": "Postgres Conference",
+  "city": "New York",
+  "date": "2019-03-21",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning",
+  "context_sources": [{"url":"https://postgresconf.org/conferences/2019","excerpt":"New York / United States\nMarch 18 - 22, 2019"}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Essential Postgres Performance tuning\nPresented by: Payal Singh\nDate: 2019 March 21 14:00 EDT\nConference: Postgres Conference",
+  "wayback": {"url":"https://web.archive.org/web/20251010123647/https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning","timestamp":"20251010123647","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":22380,"fetched_content_sha256":"22d026481c8467cb9ba130f4433ce8ace5dc2845f69da29eac4ae9db52d1fe15","source_excerpt_sha256":"0960ff49c34adc6ff215ca4ba9cd357c2cbcc4e3af0991841ce22a065e8f173f","normalized_payload_sha256":"004760993a054bec63f23f797e0243884ba77c6792926ac08e87f0ea0aa45ca2"}
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "postgressummit-us-2026-control-plane",
+  "title": "Using PostgreSQL as a Control Plane for Reliable AI Workflows",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "Postgres Summit US 2026",
+  "city": "New York City",
+  "date": "2026-09-30",
+  "status": "scheduled_upcoming",
+  "evidence_level": "scheduled_upcoming",
+  "source_url": "https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/",
+  "context_sources": [],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Using PostgreSQL as a Control Plane for Reliable AI Workflows\nWednesday, September 30 · 13:30–14:20\nPayal Singh\nPostgres Summit US 2026\nSeptember 30 - October 2\nNew York City",
+  "wayback": {"url":null,"timestamp":null,"availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":10836,"fetched_content_sha256":"92f32c568f701f20864ab4792d892b8ff9b270c65a0c72626072c509ee7f7797","source_excerpt_sha256":"b731d319effffc5538c5bae7ef3961b46227f6d007c65c5789c65807d6020986","normalized_payload_sha256":"2b5f31ab5ca92ec6aad344f85e32ac2f45f2e2f5400b5c3e9ef381e5908cf9c5"}
+}

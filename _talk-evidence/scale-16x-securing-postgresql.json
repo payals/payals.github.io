@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "scale-16x-securing-postgresql",
+  "title": "Securing Your Data on PostgreSQL",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "SCaLE 16x",
+  "city": "Pasadena",
+  "date": "2018-03-09",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql",
+  "context_sources": [{"url":"https://www.socallinuxexpo.org/scale/16x","excerpt":"SCaLE 16X – the 16th annual Southern California Linux Expo – will take place on March. 8-11, 2018, at the Pasadena Convention Center."}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Securing Your Data on PostgreSQL\nPayal Singh\nRoom: Room 107\nTime: Friday, March 9, 2018 - 15:00 to 16:00",
+  "archive_provenance": {"collection_url":"https://archive.org/details/@p_s623/web-archive","relationship":"Payal Singh first-party Internet Archive collection","supplementary_captures":[{"type":"speaker_profile","url":"https://web.archive.org/web/20260114183635/https://www.socallinuxexpo.org/scale/16x/speakers/payal-singh/index.html","scope":"Supplementary first-party speaker identity provenance; not delivery proof."}]},
+  "wayback": {"url":"https://web.archive.org/web/20260118200310/https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql/","timestamp":"20260118200310","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":55598,"fetched_content_sha256":"905f9e9a9ba216306dbf41b29e3f8707b806aab8fc2c9d2f4af76a7d694397b2","source_excerpt_sha256":"e3e2bbe1faa5a15ba477ce00dc1d6dbb2bea53f89440273c2e65a264cb4e5c62","normalized_payload_sha256":"c17802a2c1bd62111ac3cc7497a4fbabdd1647c900e96b8ce9b9245c3106ad75"}
+}

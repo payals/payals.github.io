@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "scale-15x-postgres-backups",
+  "title": "Think Your Postgres Backups and Disaster Recovery Are Safe? Let's Talk.",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "SCaLE 15x",
+  "city": "Pasadena",
+  "date": "2017-03-02",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk",
+  "context_sources": [{"url":"https://www.socallinuxexpo.org/scale/15x","excerpt":"We will be returning to the Pasadena Convention Center March 2-5, 2017."}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Think Your Postgres Backups and Disaster Recovery Are Safe? Let's Talk.\nPayal Singh\nRoom: Room 106\nTime: Thursday, March 2, 2017 - 14:00 to 15:00",
+  "wayback": {"url":"https://web.archive.org/web/20260114181728/https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk/","timestamp":"20260114181728","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":58330,"fetched_content_sha256":"41471a72e340d89183432000d30f11d81007502599c58414b804e7c18d82879e","source_excerpt_sha256":"5e358056899ee12a5161ed6939c8a9244ffb4ef35ddb0a5c4dbd1097c7cd6ae4","normalized_payload_sha256":"2314962a4b02f6d948821f802ec96d01d682efbee395351921532a3b7c88c2d6"}
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "pgconf-us-2017-ha-aws-ec2",
+  "title": "Provisioning and Automating High Availability Postgres on AWS EC2",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "PGConf US 2017 [PgConf.US]",
+  "city": "Jersey City",
+  "date": "2017-03-31",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2",
+  "context_sources": [{"url":"https://postgresconf.org/conferences/2017","excerpt":"Jersey City / United States\nMarch 28 - 31, 2017"}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Provisioning and Automating High Availability Postgres on AWS EC2\nPresented by: Payal Singh\nDate: 2017 March 31 09:00 EDT\nConference: PGConf US 2017 [PgConf.US]",
+  "wayback": {"url":"https://web.archive.org/web/20260514134750/https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2","timestamp":"20260514134750","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":14244,"fetched_content_sha256":"ffac76171eec11cf08e7e735ecd4a79bbc921829a0feb6b866d9351d1addedb7","source_excerpt_sha256":"57b0d9d7f9a500d664c4427747f2a5fc8480f0103ca73c8244586968d44393d1","normalized_payload_sha256":"dd6eeb57a2af0b884c928866f233a50b398c4f18e13ebbae47fbffd1d1f9b87a"}
+}

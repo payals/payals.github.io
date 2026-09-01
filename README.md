@@ -11,7 +11,7 @@ All hand-edited content lives in `data/` and `assets/img/`:
 | File | What it controls |
 |------|-----------------|
 | `data/now.json` | "What's true this month" widget — `reading`, `shipping`, `city`, `updated` fields |
-| `data/talks.json` | Talks list — array of `{ title, venue, date, status, event_url, slides_url, video_url, image }` |
+| `data/talks.json` | Ordered sourced speaking records followed by clearly labeled archive leads; see `data/talks.README.md` |
 | `data/about.md` | Bio panel content (rendered as markdown in the `about` panel) |
 | `data/cv.md` | CV panel content |
 | `data/cv.pdf` | CV download; enables the panel download button when present |
@@ -26,6 +26,10 @@ python3 -m http.server 8000
 ```
 
 Then open <http://localhost:8000>. No install, no build.
+
+## Talk evidence
+
+`_talk-evidence/` is the private provenance archive for sourced speaking records and is excluded from Jekyll output. Its manifest maps public records to official event pages and available archive snapshots. Validate the records with `node scripts/verify-talk-records.mjs` after changing talk data or evidence.
 
 ---
 

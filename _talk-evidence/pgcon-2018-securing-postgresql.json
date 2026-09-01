@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "pgcon-2018-securing-postgresql",
+  "title": "Securing Your Data On PostgreSQL",
+  "title_variants": ["Securing Your Data on PostgreSQL"],
+  "speaker": "Payal Singh",
+  "event": "PGCon 2018",
+  "city": "Ottawa",
+  "date": "2018-06-01",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.pgcon.org/2018/schedule/track/DBA/1144.en.html",
+  "context_sources": [{"url":"https://www.pgcon.org/2018/","excerpt":"Location\nUniversity of Ottawa, in the DMS (Desmarais) building."}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "PGCon 2018\nSpeakers\nPayal Singh\nDay Talks - Day 2: Friday - 2018-06-01\nSecuring Your Data On PostgreSQL",
+  "wayback": {"url":null,"timestamp":null,"availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":8899,"fetched_content_sha256":"62b1f67390bf95498f1c70b58b1f75024c13dce432edcfaacc71cc85937bfcfc","source_excerpt_sha256":"b1cdc92a00960b1ae847ce3226dd40d8b76422bf1c04e52e63ee81efc4129e93","normalized_payload_sha256":"5127ca39f499567ace00243ffd50bec39a9cc24d33e3789972f62fd9c03de74a"}
+}

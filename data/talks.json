@@ -1,34 +1,179 @@
 [
   {
+    "id": "postgressummit-us-2026-control-plane",
+    "record_type": "sourced",
     "title": "Using PostgreSQL as a Control Plane for Reliable AI Workflows",
     "venue": "Postgres Summit US 2026, New York City",
     "date": "2026-09-30",
+    "evidence_level": "scheduled_upcoming",
+    "evidence_id": "postgressummit-us-2026-control-plane",
+    "event_url": "https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/",
     "status": "upcoming",
-    "event_url": "https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/"
+    "note": "The official schedule lists this upcoming session."
   },
   {
+    "id": "scale-23x-ai-control-plane",
+    "record_type": "sourced",
     "title": "Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database",
     "venue": "SCaLE 23x",
     "date": "2026-03-06",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "scale-23x-ai-control-plane",
     "event_url": "https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-control-plane-building-rag-mcp-workflows-inside-database",
-    "slides_url": "https://www.socallinuxexpo.org/sites/default/files/2026-03/postgres_as_an_ai_control_plane.pdf"
+    "archive_url": "https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database",
+    "archive_label": "earlier-title metadata capture",
+    "slides_url": "https://www.socallinuxexpo.org/sites/default/files/2026-03/postgres_as_an_ai_control_plane.pdf",
+    "status": "past",
+    "note": "The official schedule provides the session date; organizer-hosted slides are retained."
   },
   {
+    "id": "postgres-conference-2019-performance-tuning",
+    "record_type": "sourced",
+    "title": "Essential Postgres Performance tuning",
+    "venue": "Postgres Conference 2019, New York",
+    "date": "2019-03-21",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "postgres-conference-2019-performance-tuning",
+    "event_url": "https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning",
+    "archive_url": "https://web.archive.org/web/20251010123647/https://postgresconf.org/conferences/2019/program/proposals/essential-postgres-performance-tuning",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "pgcon-2018-securing-postgresql",
+    "record_type": "sourced",
+    "title": "Securing Your Data On PostgreSQL",
+    "venue": "PGCon 2018, Ottawa",
+    "date": "2018-06-01",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "pgcon-2018-securing-postgresql",
+    "event_url": "https://www.pgcon.org/2018/schedule/track/DBA/1144.en.html",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "postgresconf-us-2018-securing-postgresql",
+    "record_type": "sourced",
     "title": "Securing Your Data on PostgreSQL",
-    "venue": "SCaLE 16x",
-    "date": "2018-03-09",
-    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql"
+    "venue": "PostgresConf US 2018, Jersey City",
+    "date_label": "Apr 16-20, 2018",
+    "evidence_level": "official_program_listing",
+    "evidence_id": "postgresconf-us-2018-securing-postgresql",
+    "event_url": "https://postgresconf.org/conferences/2018/program/proposals/securing-your-data-on-postgresql",
+    "archive_url": "https://web.archive.org/web/20251212181637/https://postgresconf.org/conferences/2018/program/proposals/securing-your-data-on-postgresql",
+    "status": "past",
+    "note": "The official program lists the session, but the surviving schedule has no dated slot. This record does not claim delivery."
   },
   {
+    "id": "scale-16x-pandas",
+    "record_type": "sourced",
     "title": "Pandas - Lazy at Mating, Lively at Mining!",
     "venue": "SCaLE 16x",
     "date": "2018-03-10",
-    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining"
+    "evidence_level": "dated_schedule",
+    "evidence_id": "scale-16x-pandas",
+    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining",
+    "archive_url": "https://web.archive.org/web/20260116131642/https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining/",
+    "status": "past",
+    "note": "The official schedule provides the session date."
   },
   {
+    "id": "scale-16x-securing-postgresql",
+    "record_type": "sourced",
+    "title": "Securing Your Data on PostgreSQL",
+    "venue": "SCaLE 16x",
+    "date": "2018-03-09",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "scale-16x-securing-postgresql",
+    "event_url": "https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql",
+    "archive_url": "https://web.archive.org/web/20260118200310/https://www.socallinuxexpo.org/scale/16x/presentations/securing-your-data-postgresql/",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "pgconf-philly-2017-securing-postgres",
+    "record_type": "sourced",
+    "title": "Securing Your Data on Postgres",
+    "venue": "PGConf Local: Philly 2017, Philadelphia",
+    "date_label": "Jul 13-14, 2017",
+    "evidence_level": "official_program_listing",
+    "evidence_id": "pgconf-philly-2017-securing-postgres",
+    "event_url": "https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres",
+    "archive_url": "https://web.archive.org/web/20260611191350/https://postgresconf.org/conferences/Philly2017/program/proposals/securing-your-data-on-postgres",
+    "status": "past",
+    "note": "The official program lists the session, but the surviving schedule has no dated slot. This record does not claim delivery."
+  },
+  {
+    "id": "pgcon-2017-ha-aws-ec2",
+    "record_type": "sourced",
+    "title": "Provisioning and Automating High Availability Postgres on AWS EC2",
+    "venue": "PGCon 2017, Ottawa",
+    "date": "2017-05-26",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "pgcon-2017-ha-aws-ec2",
+    "event_url": "https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html",
+    "archive_url": "https://web.archive.org/web/20221001232114/https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "pgconf-us-2017-ha-aws-ec2",
+    "record_type": "sourced",
+    "title": "Provisioning and Automating High Availability Postgres on AWS EC2",
+    "venue": "PGConf US 2017, Jersey City",
+    "date": "2017-03-31",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "pgconf-us-2017-ha-aws-ec2",
+    "event_url": "https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2",
+    "archive_url": "https://web.archive.org/web/20260514134750/https://postgresconf.org/conferences/2017/program/proposals/provisioning-and-automating-high-availability-postgres-on-aws-ec2",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "scale-15x-postgres-backups",
+    "record_type": "sourced",
     "title": "Think Your Postgres Backups and Disaster Recovery Are Safe? Let's Talk.",
     "venue": "SCaLE 15x",
     "date": "2017-03-02",
-    "event_url": "https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk"
+    "evidence_level": "dated_schedule",
+    "evidence_id": "scale-15x-postgres-backups",
+    "event_url": "https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk",
+    "archive_url": "https://web.archive.org/web/20260114181728/https://www.socallinuxexpo.org/scale/15x/presentations/think-your-postgres-backups-and-disaster-recovery-are-safe-lets-talk/",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "pgconf-us-2015-postgres-backups",
+    "record_type": "sourced",
+    "title": "Think your Postgres backups and recovery are safe? Let's talk.",
+    "venue": "PGConf US 2015, New York",
+    "date": "2015-03-27",
+    "evidence_level": "dated_schedule",
+    "evidence_id": "pgconf-us-2015-postgres-backups",
+    "event_url": "https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015",
+    "archive_url": "https://web.archive.org/web/20260412064404/https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015",
+    "status": "past",
+    "note": "The official schedule provides the session date."
+  },
+  {
+    "id": "earlier-nyc-postgresql-conference",
+    "record_type": "archive_lead",
+    "label": "Earlier NYC PostgreSQL conference appearance",
+    "era": "circa 2014",
+    "detail": "Backups and disaster recovery, likely an earlier version of the later verified talk. The program record has not yet been recovered."
+  },
+  {
+    "id": "cposc-automation-talk",
+    "record_type": "archive_lead",
+    "label": "CPOSC automation talk",
+    "era": "circa 2016-2018",
+    "detail": "Automation using configuration-management tools including Chef and Puppet. The exact title and year are under reconstruction."
+  },
+  {
+    "id": "nyc-philadelphia-meetups",
+    "record_type": "archive_lead",
+    "label": "NYC and Philadelphia meetup appearances",
+    "era": "dates under reconstruction",
+    "detail": "Event archives are incomplete, and titles and dates have not yet been recovered."
   }
 ]

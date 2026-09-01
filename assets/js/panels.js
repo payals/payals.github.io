@@ -164,6 +164,8 @@ function renderTalks(talks, containerEl) {
   }
 
   const INITIAL_SHOW = 6;
+  const sourced = talks.filter((talk) => talk.record_type === 'sourced');
+  const leads = talks.filter((talk) => talk.record_type === 'archive_lead');
   const intro = document.createElement('p');
   intro.className = 'talks-intro';
   intro.textContent = 'Talks on PostgreSQL, data reliability, and AI systems. Upcoming sessions appear first.';
@@ -171,7 +173,7 @@ function renderTalks(talks, containerEl) {
   const grid = document.createElement('div');
   grid.className = 'talks-grid';
 
-  talks.forEach((talk, i) => {
+  sourced.forEach((talk, i) => {
     const card = buildTalkCard(talk);
     if (i >= INITIAL_SHOW) {
       card.classList.add('talks-card--hidden');
@@ -183,19 +185,47 @@ function renderTalks(talks, containerEl) {
   containerEl.appendChild(intro);
   containerEl.appendChild(grid);
 
-  if (talks.length > INITIAL_SHOW) {
+  if (sourced.length > INITIAL_SHOW) {
     const more = document.createElement('button');
     more.className = 'chip talks-load-more';
     more.type = 'button';
     more.textContent = 'load more ↓';
     more.addEventListener('click', () => {
-      grid.querySelectorAll('.talks-card--hidden').forEach((c) => {
+      const hiddenCards = [...grid.querySelectorAll('.talks-card--hidden')];
+      const firstHidden = hiddenCards[0];
+      firstHidden.setAttribute('tabindex', '-1');
+      hiddenCards.forEach((c) => {
         c.classList.remove('talks-card--hidden');
         c.removeAttribute('aria-hidden');
       });
+      firstHidden.focus();
       more.remove();
     });
     containerEl.appendChild(more);
+  }
+
+  if (leads.length > 0) {
+    const section = document.createElement('section');
+    section.className = 'talks-archive-leads';
+    section.setAttribute('aria-labelledby', 'talks-archive-leads-title');
+
+    const heading = document.createElement('h3');
+    heading.id = 'talks-archive-leads-title';
+    heading.className = 'talks-archive-leads-title';
+    heading.textContent = 'Archive leads';
+
+    const caveat = document.createElement('p');
+    caveat.className = 'talks-archive-leads-caveat';
+    caveat.textContent = 'These remembered appearances are still being reconstructed. No exact title or date is claimed without a recovered record.';
+
+    const list = document.createElement('div');
+    list.className = 'talks-archive-leads-list';
+    leads.forEach((lead) => list.appendChild(buildArchiveLead(lead)));
+
+    section.appendChild(heading);
+    section.appendChild(caveat);
+    section.appendChild(list);
+    containerEl.appendChild(section);
   }
 }
 
@@ -228,10 +258,18 @@ function buildTalkCard(talk) {
   titleEl.textContent = talk.title || '(untitled)';
   titleRow.appendChild(titleEl);
 
-  if (talk.status === 'upcoming') {
+  const badgeLabels = {
+    scheduled_upcoming: 'upcoming',
+    dated_schedule: 'schedule record',
+    official_program_listing: 'program listing',
+  };
+  if (badgeLabels[talk.evidence_level]) {
     const badge = document.createElement('span');
     badge.className = 'talks-card-badge';
-    badge.textContent = 'upcoming';
+    if (talk.evidence_level === 'official_program_listing') {
+      badge.classList.add('talks-card-badge--program');
+    }
+    badge.textContent = badgeLabels[talk.evidence_level];
     titleRow.appendChild(badge);
   }
   info.appendChild(titleRow);
@@ -239,30 +277,72 @@ function buildTalkCard(talk) {
   const meta = document.createElement('p');
   meta.className = 'talks-card-meta terminal-line--muted';
   if (talk.venue) meta.appendChild(document.createTextNode(talk.venue));
-  if (talk.date) {
+  if (talk.date || talk.date_label) {
     if (talk.venue) meta.appendChild(document.createTextNode(' · '));
-    const time = document.createElement('time');
-    time.dateTime = talk.date;
-    time.textContent = new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(new Date(`${talk.date}T00:00:00Z`));
-    meta.appendChild(time);
+    if (talk.date) {
+      const time = document.createElement('time');
+      time.dateTime = talk.date;
+      time.textContent = talk.date_label || new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(`${talk.date}T00:00:00Z`));
+      meta.appendChild(time);
+    } else {
+      const dateLabel = document.createElement('span');
+      dateLabel.textContent = talk.date_label;
+      meta.appendChild(dateLabel);
+    }
   }
   info.appendChild(meta);
 
-  if (talk.event_url || talk.slides_url || talk.video_url) {
+  if (talk.evidence_level === 'official_program_listing' && talk.note) {
+    const note = document.createElement('p');
+    note.className = 'talks-card-note';
+    note.textContent = talk.note;
+    info.appendChild(note);
+  }
+
+  if (talk.event_url || talk.archive_url || talk.slides_url || talk.video_url) {
     const links = document.createElement('div');
     links.className = 'talks-card-links';
     if (talk.event_url) links.appendChild(talkLink('details', talk.event_url, talk.title));
+    if (talk.archive_url) links.appendChild(talkLink(talk.archive_label || 'archive', talk.archive_url, talk.title));
     if (talk.slides_url) links.appendChild(talkLink('slides', talk.slides_url, talk.title));
     if (talk.video_url) links.appendChild(talkLink('video', talk.video_url, talk.title));
     info.appendChild(links);
   }
 
   card.appendChild(info);
+  return card;
+}
+
+function buildArchiveLead(lead) {
+  const card = document.createElement('article');
+  card.className = 'talks-archive-lead';
+
+  const titleRow = document.createElement('div');
+  titleRow.className = 'talks-card-title-row';
+  const title = document.createElement('h4');
+  title.className = 'talks-card-title';
+  title.textContent = lead.label;
+  const badge = document.createElement('span');
+  badge.className = 'talks-card-badge talks-card-badge--lead';
+  badge.textContent = 'archive lead';
+  titleRow.appendChild(title);
+  titleRow.appendChild(badge);
+
+  const era = document.createElement('p');
+  era.className = 'talks-card-meta terminal-line--muted';
+  era.textContent = lead.era;
+  const detail = document.createElement('p');
+  detail.className = 'talks-card-note';
+  detail.textContent = lead.detail;
+
+  card.appendChild(titleRow);
+  card.appendChild(era);
+  card.appendChild(detail);
   return card;
 }
 

@@ -751,6 +751,11 @@ a:hover {
   border-color: var(--text-faint);
 }
 
+.talks-card:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 3px;
+}
+
 .talks-card--upcoming,
 .talks-card--upcoming:hover {
   border-color: var(--accent-2);
@@ -803,9 +808,9 @@ a:hover {
 }
 
 .talks-card-badge {
-  border: 1px solid var(--accent-2);
+  border: 1px solid var(--accent-dim);
   border-radius: 2px;
-  color: var(--accent-2);
+  color: var(--accent);
   flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 0.625rem;
@@ -813,6 +818,21 @@ a:hover {
   line-height: 1;
   padding: var(--space-xs) var(--space-sm);
   text-transform: lowercase;
+}
+
+.talks-card--upcoming .talks-card-badge {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.talks-card-badge--program {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.talks-card-badge--lead {
+  border-color: var(--text-faint);
+  color: var(--text-dim);
 }
 
 .talks-card-meta {
@@ -823,6 +843,14 @@ a:hover {
   color: var(--text-dim);
   margin-top: var(--space-xs);
   overflow-wrap: anywhere;
+}
+
+.talks-card-note {
+  color: var(--text-dim);
+  font-family: var(--font-prose);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  margin-top: var(--space-sm);
 }
 
 .talks-card-links {
@@ -840,6 +868,41 @@ a:hover {
 
 .talks-load-more {
   margin-top: var(--space-md);
+}
+
+.talks-archive-leads {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+}
+
+.talks-archive-leads-title {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.talks-archive-leads-caveat {
+  color: var(--text-dim);
+  font-family: var(--font-prose);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  margin-top: var(--space-xs);
+}
+
+.talks-archive-leads-list {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: var(--space-md);
+}
+
+.talks-archive-lead {
+  background: var(--bg-input);
+  border: 1px dashed var(--text-faint);
+  min-width: 0;
+  padding: var(--space-md);
 }
 
 .talks-empty {
@@ -975,6 +1038,10 @@ noscript .nojs-fallback {
   }
 
   .talks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .talks-archive-leads-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

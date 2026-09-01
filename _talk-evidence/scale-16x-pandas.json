@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "scale-16x-pandas",
+  "title": "Pandas - Lazy at Mating, Lively at Mining!",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "SCaLE 16x",
+  "city": "Pasadena",
+  "date": "2018-03-10",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining",
+  "context_sources": [{"url":"https://www.socallinuxexpo.org/scale/16x","excerpt":"SCaLE 16X – the 16th annual Southern California Linux Expo – will take place on March. 8-11, 2018, at the Pasadena Convention Center."}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Pandas - Lazy at Mating, Lively at Mining!\nPayal Singh\nRoom: Room 104\nTime: Saturday, March 10, 2018 - 13:30 to 14:30",
+  "archive_provenance": {"collection_url":"https://archive.org/details/@p_s623/web-archive","relationship":"Payal Singh first-party Internet Archive collection","supplementary_captures":[{"type":"speaker_profile","url":"https://web.archive.org/web/20260114183635/https://www.socallinuxexpo.org/scale/16x/speakers/payal-singh/index.html","scope":"Supplementary first-party speaker identity provenance; not delivery proof."}]},
+  "wayback": {"url":"https://web.archive.org/web/20260116131642/https://www.socallinuxexpo.org/scale/16x/presentations/pandas-lazy-mating-lively-mining/","timestamp":"20260116131642","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":54917,"fetched_content_sha256":"65e076c7865b10b83a2768de3e4d96455de91ebf87ccd8a879d49a891361110b","source_excerpt_sha256":"52c03190b47573f0ffdb5b072eab176cd655f3e3bb96c5530ec12fd0a6182b5c","normalized_payload_sha256":"ec2d5dfe2bed03f87f257f858371d569996dd003ca5dff31134517a2725c9e65"}
+}

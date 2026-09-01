@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "scale-23x-ai-control-plane",
+  "title": "Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database",
+  "title_variants": ["Postgres AI Application Server: Building RAG & MCP Workflows Inside the Database"],
+  "title_variant_provenance": [{"title":"Postgres AI Application Server: Building RAG & MCP Workflows Inside the Database","basis":"metadata_only","archive_url":"https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database","claim_limit":"Archived title metadata only; no fetched page-body evidence is claimed."}],
+  "speaker": "Payal Singh",
+  "event": "SCaLE 23x",
+  "city": "Pasadena",
+  "date": "2026-03-06",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-control-plane-building-rag-mcp-workflows-inside-database",
+  "context_sources": [{"url":"https://www.socallinuxexpo.org/scale/23x","excerpt":"SCALE returns to Pasadena March 5-8, 2026!"}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database\nPayal Singh / Senior Database Reliability Engineer / NetApp\nThe presentation will take place in Ballroom G on Friday, March 6, 2026 - 15:45 to 16:45",
+  "archive_provenance": {"collection_url":"https://archive.org/details/@p_s623/web-archive","relationship":"Payal Singh first-party Internet Archive collection","primary_capture":{"type":"earlier_title_talk_page","url":"https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database","scope":"Primary archive replay; metadata-only title variant, not fetched page-body evidence."},"supplementary_captures":[{"type":"speaker_profile","url":"https://web.archive.org/web/20260114181703/https://www.socallinuxexpo.org/scale/speaker/payal-singh","scope":"Supplementary first-party speaker identity provenance; not delivery proof."}]},
+  "wayback": {"url":"https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database","timestamp":"20260114181720","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":44630,"fetched_content_sha256":"0946ccfaf662ef88e014bf4747992f9e4e202145a3ee3c46c19624e3ae3802a1","source_excerpt_sha256":"653ecf138c669d0b4e80379798f7d1fef30159bf24437a85832d4875be389ecd","normalized_payload_sha256":"4ae70d1c86e90bfbf2aba1ac779a2506e88e15b9120fc72c46fd1b5e6f980d25"}
+}

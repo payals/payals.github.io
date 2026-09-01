@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "pgcon-2017-ha-aws-ec2",
+  "title": "Provisioning and Automating High Availability Postgres on AWS EC2",
+  "title_variants": [],
+  "speaker": "Payal Singh",
+  "event": "PGCon 2017",
+  "city": "Ottawa",
+  "date": "2017-05-26",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html",
+  "context_sources": [{"url":"https://www.pgcon.org/2017/","excerpt":"Location\nUniversity of Ottawa, in the DMS (Desmarais) building."}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "PGCon 2017\nSpeakers\nPayal Singh\nDay Talks - Day 2 - 2017-05-26\nProvisioning and Automating High Availability Postgres on AWS EC2",
+  "wayback": {"url":"https://web.archive.org/web/20221001232114/https://www.pgcon.org/2017/schedule/track/DBA/1085.en.html","timestamp":"20221001232114","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":9306,"fetched_content_sha256":"604ede7b7099ce2b86d1dd08894184b5bc959b4eee1607c4538899916a80e94b","source_excerpt_sha256":"f607cf67b09c28188c0298c94752158e4c77e64dfee41171701d593ee9918c7e","normalized_payload_sha256":"6b8f0e2487f00d9d58b221d2d954d99f585dea613c36cb1b8b6ac0d32d65fb23"}
+}

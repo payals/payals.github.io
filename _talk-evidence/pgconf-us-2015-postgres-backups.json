@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "pgconf-us-2015-postgres-backups",
+  "title": "Think your Postgres backups and recovery are safe? Let's talk.",
+  "title_variants": ["Think Your Postgres Backups and Disaster Recovery Are Safe? Let's Talk."],
+  "speaker": "Payal Singh",
+  "event": "PGConf US 2015",
+  "city": "New York",
+  "date": "2015-03-27",
+  "status": "dated_schedule",
+  "evidence_level": "dated_schedule",
+  "source_url": "https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015",
+  "context_sources": [{"url":"https://wiki.postgresql.org/wiki/Events","excerpt":"PGConf US 2015 | March 25 - 27, 2015 | USA | New York | Training, Talks, Summit"}],
+  "retrieved_at": "2026-08-28T09:36:40Z",
+  "source_excerpt": "Sessions: Friday, 27 Mar 2015\nEmpire\nThink your Postgres backups and recovery are safe? Let's talk. Payal Singh",
+  "wayback": {"url":"https://web.archive.org/web/20260412064404/https://wiki.postgresql.org/wiki/PgConfUS_Talks_2015","timestamp":"20260412064404","availability_checked_at":"2026-08-28T09:36:40Z","save_page_now":{"attempted_at":"2026-08-28T09:36:40Z","result":"failed","http_status":429,"detail":"HTTP 429 from Save Page Now"}},
+  "integrity": {"fetched_http_status":200,"fetched_bytes":22134,"fetched_content_sha256":"71984b6721f3d7bdc4e98ce7d2f96cd8a05911b44378f95e43caa5f597c3ebdc","source_excerpt_sha256":"e0a1f4383defba0fbd8cfc3c834c0043c065a9bc1c7a36ea5f7a56dc8e09d1ee","normalized_payload_sha256":"055a21b220e4cb0eae4bd453aefb50b991753a432ea587174a48f293cdd4c4e6"}
+}
