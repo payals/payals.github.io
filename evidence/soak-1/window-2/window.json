@@ -1,0 +1,1609 @@
+{
+    "state": "failed",
+    "closed_at": "2026-08-28T00:42:23.846922-04:00",
+    "closes_at": "2026-08-28T00:41:34.020998-04:00",
+    "opened_at": "2026-08-21T00:41:34.020972-04:00",
+    "window_id": 2,
+    "restart_of": null,
+    "plist_sha256": {
+        "/Library/LaunchDaemons/com.looper.kernel.plist": "5031a0a40c17cc13e612c98053ba69d845789aa2434907f87d232cad0aa2a3eb",
+        "/Library/LaunchDaemons/com.looper.reaper.plist": "759cc9f70f96b264ce1923bd2b3b3559d9ae17136cd267855b67ef0b4d1c8e38",
+        "/Library/LaunchDaemons/com.looper.test-controller.plist": "cd187b30252a0d152b20ee3f85cf7bde76aee3ae48ee811a87e535681fbf324f"
+    },
+    "config_sha256": {
+        "/Users/looper/looper/sandbox/looper-verify.sb": "355372538c38dd15e5bdf467268d275acc824c698182639ee4a119c6129c9b5c",
+        "/Users/looper-test/test-controller/config.json": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+        "/Users/looper/looper/kernel/campaigns/prompts/repair-role.md": "4113f9088d9a3347340bc501763075b849066d2ffc6dc3ef46e4ba22ce83af58",
+        "/Users/looper/looper/kernel/campaigns/config/kernel.fleet.json": "812a51b9d7a09f3c1f809a2a00e1eb867fccd865e7e1ccde9a1b7cfff9555513",
+        "/Users/looper/looper/kernel/campaigns/prompts/result.schema.json": "d7aa5635b8ed3c7530d2c9281720011948cb3ae3c7d7c5bd8fd121ba8ed5de6d"
+    },
+    "fleet_head_sha": "1f8bb2d6e2c318d358609eb3f3c1d85720ea8a95",
+    "contaminated_at": null,
+    "accept_not_armed": false,
+    "audit_fingerprint": {
+        "triggers": {
+            "campaigns": "O",
+            "observations": "O",
+            "kill_requests": "O",
+            "desired_states": "O",
+            "campaign_events": "O",
+            "campaign_attempts": "O"
+        },
+        "function_sha256": "3fe9d0466bffc62b8a688056223cc193f6f0e478e55fda67791b195c000610fb"
+    },
+    "revealed_schedule": [
+        {
+            "day": 2,
+            "minute": 1141
+        },
+        {
+            "day": 3,
+            "minute": 270
+        },
+        {
+            "day": 6,
+            "minute": 135
+        }
+    ],
+    "schema_generation": "22",
+    "baseline_window_id": null,
+    "catalog_fingerprint": {
+        "triggers": [
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER attempts_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON campaign_attempts FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.campaign_attempts",
+                "trigger_name": "attempts_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaign_attempts_nodel BEFORE DELETE ON campaign_attempts FOR EACH ROW EXECUTE FUNCTION campaign_attempts_nodel()",
+                "table_name": "loop.campaign_attempts",
+                "trigger_name": "campaign_attempts_nodel"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaign_attempts_noupd BEFORE UPDATE ON campaign_attempts FOR EACH ROW EXECUTE FUNCTION campaign_attempts_noupd()",
+                "table_name": "loop.campaign_attempts",
+                "trigger_name": "campaign_attempts_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON campaign_attempts FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.campaign_attempts",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaign_events_nodel BEFORE DELETE ON campaign_events FOR EACH ROW EXECUTE FUNCTION campaign_events_nodel()",
+                "table_name": "loop.campaign_events",
+                "trigger_name": "campaign_events_nodel"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaign_events_noupd BEFORE UPDATE ON campaign_events FOR EACH ROW EXECUTE FUNCTION campaign_events_noupd()",
+                "table_name": "loop.campaign_events",
+                "trigger_name": "campaign_events_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER events_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON campaign_events FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.campaign_events",
+                "trigger_name": "events_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER events_seal BEFORE INSERT ON campaign_events FOR EACH ROW EXECUTE FUNCTION campaign_events_seal()",
+                "table_name": "loop.campaign_events",
+                "trigger_name": "events_seal"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON campaign_events FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.campaign_events",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaigns_disabled_claim_guard BEFORE UPDATE ON campaigns FOR EACH ROW EXECUTE FUNCTION campaign_disabled_claim_guard()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "campaigns_disabled_claim_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaigns_disabled_insert_guard BEFORE INSERT ON campaigns FOR EACH ROW EXECUTE FUNCTION campaign_disabled_insert_guard()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "campaigns_disabled_insert_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaigns_guard BEFORE UPDATE ON campaigns FOR EACH ROW EXECUTE FUNCTION campaigns_guard()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "campaigns_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER campaigns_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON campaigns FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "campaigns_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE CONSTRAINT TRIGGER campaigns_transition_event_guard AFTER UPDATE ON campaigns DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION campaign_transition_event_guard()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "campaigns_transition_event_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON campaigns FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.campaigns",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER fable_optimizer_activation_guard BEFORE INSERT ON daily_learning_policies FOR EACH ROW EXECUTE FUNCTION guard_fable_optimizer_activation()",
+                "table_name": "loop.daily_learning_policies",
+                "trigger_name": "fable_optimizer_activation_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER desired_states_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON desired_states FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.desired_states",
+                "trigger_name": "desired_states_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON desired_states FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.desired_states",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER dispatch_attempts_notrunc BEFORE TRUNCATE ON dispatch_attempts FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.dispatch_attempts",
+                "trigger_name": "dispatch_attempts_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER dispatch_attempts_noupd BEFORE DELETE OR UPDATE ON dispatch_attempts FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.dispatch_attempts",
+                "trigger_name": "dispatch_attempts_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER dispatch_runs_notrunc BEFORE TRUNCATE ON dispatch_runs FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.dispatch_runs",
+                "trigger_name": "dispatch_runs_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER dispatch_runs_noupd BEFORE DELETE OR UPDATE ON dispatch_runs FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.dispatch_runs",
+                "trigger_name": "dispatch_runs_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER eval_runs_notrunc BEFORE TRUNCATE ON eval_runs FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.eval_runs",
+                "trigger_name": "eval_runs_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER eval_runs_noupd BEFORE DELETE OR UPDATE ON eval_runs FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.eval_runs",
+                "trigger_name": "eval_runs_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER gate_results_notrunc BEFORE TRUNCATE ON gate_results FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.gate_results",
+                "trigger_name": "gate_results_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER gate_results_noupd BEFORE DELETE OR UPDATE ON gate_results FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.gate_results",
+                "trigger_name": "gate_results_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER kill_requests_guard BEFORE DELETE OR UPDATE ON kill_requests FOR EACH ROW EXECUTE FUNCTION kill_requests_guard()",
+                "table_name": "loop.kill_requests",
+                "trigger_name": "kill_requests_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER kills_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON kill_requests FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.kill_requests",
+                "trigger_name": "kills_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON kill_requests FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.kill_requests",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER lifecycle_events_notrunc BEFORE TRUNCATE ON lifecycle_events FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.lifecycle_events",
+                "trigger_name": "lifecycle_events_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER lifecycle_events_noupd BEFORE DELETE OR UPDATE ON lifecycle_events FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.lifecycle_events",
+                "trigger_name": "lifecycle_events_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER lifecycle_guard BEFORE INSERT ON lifecycle_events FOR EACH ROW EXECUTE FUNCTION guard_governance()",
+                "table_name": "loop.lifecycle_events",
+                "trigger_name": "lifecycle_guard"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER lifecycle_seal BEFORE INSERT ON lifecycle_events FOR EACH ROW EXECUTE FUNCTION seal_lifecycle()",
+                "table_name": "loop.lifecycle_events",
+                "trigger_name": "lifecycle_seal"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER lifecycles_freeze BEFORE UPDATE ON lifecycles FOR EACH ROW EXECUTE FUNCTION freeze_mission()",
+                "table_name": "loop.lifecycles",
+                "trigger_name": "lifecycles_freeze"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER metrics_notrunc BEFORE TRUNCATE ON metrics FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.metrics",
+                "trigger_name": "metrics_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER metrics_noupd BEFORE DELETE OR UPDATE ON metrics FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.metrics",
+                "trigger_name": "metrics_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER observations_nodel BEFORE DELETE ON observations FOR EACH ROW EXECUTE FUNCTION observations_nodel()",
+                "table_name": "loop.observations",
+                "trigger_name": "observations_nodel"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER observations_noupd BEFORE UPDATE ON observations FOR EACH ROW EXECUTE FUNCTION observations_noupd()",
+                "table_name": "loop.observations",
+                "trigger_name": "observations_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER observations_runtime_preflight BEFORE INSERT OR DELETE OR UPDATE ON observations FOR EACH ROW EXECUTE FUNCTION campaign_authority_preflight_guard()",
+                "table_name": "loop.observations",
+                "trigger_name": "observations_runtime_preflight"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER soak_audit AFTER INSERT OR DELETE OR UPDATE ON observations FOR EACH ROW EXECUTE FUNCTION audit_loop_write()",
+                "table_name": "loop.observations",
+                "trigger_name": "soak_audit"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER pipeline_dissents_notrunc BEFORE TRUNCATE ON pipeline_dissents FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.pipeline_dissents",
+                "trigger_name": "pipeline_dissents_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER pipeline_dissents_noupd BEFORE DELETE OR UPDATE ON pipeline_dissents FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.pipeline_dissents",
+                "trigger_name": "pipeline_dissents_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER pipeline_stage_records_notrunc BEFORE TRUNCATE ON pipeline_stage_records FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.pipeline_stage_records",
+                "trigger_name": "pipeline_stage_records_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER pipeline_stage_records_noupd BEFORE DELETE OR UPDATE ON pipeline_stage_records FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.pipeline_stage_records",
+                "trigger_name": "pipeline_stage_records_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER routing_decisions_notrunc BEFORE TRUNCATE ON routing_decisions FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.routing_decisions",
+                "trigger_name": "routing_decisions_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER routing_decisions_noupd BEFORE DELETE OR UPDATE ON routing_decisions FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.routing_decisions",
+                "trigger_name": "routing_decisions_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER violations_notrunc BEFORE TRUNCATE ON violations FOR EACH STATEMENT EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.violations",
+                "trigger_name": "violations_notrunc"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER violations_noupd BEFORE DELETE OR UPDATE ON violations FOR EACH ROW EXECUTE FUNCTION forbid_mutation()",
+                "table_name": "loop.violations",
+                "trigger_name": "violations_noupd"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER violations_seal BEFORE INSERT ON violations FOR EACH ROW EXECUTE FUNCTION seal_violation()",
+                "table_name": "loop.violations",
+                "trigger_name": "violations_seal"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER ledger_append_only BEFORE DELETE OR UPDATE ON ledger FOR EACH ROW EXECUTE FUNCTION ledger_append_only()",
+                "table_name": "soak.ledger",
+                "trigger_name": "ledger_append_only"
+            },
+            {
+                "tgenabled": "O",
+                "definition": "CREATE TRIGGER ledger_chain BEFORE INSERT ON ledger FOR EACH ROW EXECUTE FUNCTION ledger_chain()",
+                "table_name": "soak.ledger",
+                "trigger_name": "ledger_chain"
+            }
+        ],
+        "functions": [
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.ack_kill(p_kill_id bigint, p_result jsonb)",
+                "definition_sha256": "9f260ccdaa20429b938a4a6b491686a4baac50e06d31890bcbe373f30eb13c6e"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.assert_live_lease(p_campaign_id bigint, p_token bigint, p_role text)",
+                "definition_sha256": "fa160129cd2f28577b184d4bccf0fce371609a4c8119c8b3cc4ff22c08d3ab17"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_attempts_nodel()",
+                "definition_sha256": "02f0f5d108e5e04f1a510f64211787b5c3dd4deb0303a5b7a787a1113d7febe6"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_attempts_noupd()",
+                "definition_sha256": "894527279dd0af3bf323ca36de92b747b5d769339cc81add69f6777fe9f912c8"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_authority_preflight_guard()",
+                "definition_sha256": "54f19ac28c3b2e3a656f5704b351f4da271353567493df2089ef6b550d6adfd6"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_disabled_claim_guard()",
+                "definition_sha256": "c900d4969ab5f65fd36d66154aa887cdf7e352f64b4f968955ca795a6f7a722a"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_disabled_insert_guard()",
+                "definition_sha256": "c5da5755b4e18c678e38b9232123b2b0e5eab9b62835fd5d7cd473f621934042"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_events_nodel()",
+                "definition_sha256": "ffdca63d99cc89342c916abe378682376a30f75b1bee2b356df9d05b718897e1"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_events_noupd()",
+                "definition_sha256": "ef0ab758aadd614dbb066ec9d3881cf2188305ba40297495459624b8624e3366"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_events_seal()",
+                "definition_sha256": "8cfe26320574e0ce32c51724afc720e3c5ceae8d6b646f2419ee8d2ae398518b"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.campaign_status(p_campaign_id bigint)",
+                "definition_sha256": "75e08d576f8693ad2b6d07ba58a50e7f5e9275ecc9951efd7480c6b375bbed7d"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaign_transition_event_guard()",
+                "definition_sha256": "1c8de8dc55b668cd2e786f8187e1861c7b878c1f8b95d4973a2c0361def06592"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.campaigns_guard()",
+                "definition_sha256": "8f0d77919c5554d06b287cbb49caf1b6fa02408d410c76360ad3e39c519d5ac3"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.claim_campaign(p_worker text, p_lease_seconds integer)",
+                "definition_sha256": "d84dad4b9f94d7c3564f4a99cb3e49513ecc0fa623ff4c954c14016f3f2d73a3"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.defer_campaign(p_campaign_id bigint, p_lease_token bigint, p_seconds integer, p_reason text)",
+                "definition_sha256": "a81ca66dda95c8a7a14272fb360eccd2254b48a881cc6a7ad3e0c93a1e75c4ce"
+            },
+            {
+                "acl": "{=X/eval_authority,eval_authority=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.digest_with_attempt_scope(p_desired_state_ids text[])",
+                "definition_sha256": "a97d721eeb3aaab70ca6c1d253dd7dff6ea59d59d374e3cb2ee6944b9dc293ad"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.disable_desired_state(p_desired_state_id text, p_reason text)",
+                "definition_sha256": "be2fbdeec1be430125e9c85fab6f5c2dc3277852218553a61dfccd5359823ca6"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.effective_attempts(p_campaign_id bigint)",
+                "definition_sha256": "ff576f6f3b07e11ad4da59165e3643f967dd5b61d2ab3ada01a5c48d68fe0150"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.enable_desired_state(p_desired_state_id text, p_reason text)",
+                "definition_sha256": "a94b05159a02911e973a305dbcd2a2b8901d5feaea3f4c98dc7a7eadd250ae6d"
+            },
+            {
+                "acl": "",
+                "identity": "loop.forbid_mutation()",
+                "definition_sha256": "fd75412996a3168851c8b314c990b3a3022e6afbad407fcb5ff5ce6754a97c97"
+            },
+            {
+                "acl": "",
+                "identity": "loop.freeze_mission()",
+                "definition_sha256": "5cbff4b81a1de88e02cc93590a2d55dd8f7c2df93f37f140e59d036cbe4d266f"
+            },
+            {
+                "acl": "",
+                "identity": "loop.guard_fable_optimizer_activation()",
+                "definition_sha256": "697aa8045063189f3a94042d8cf39e66bb142439f414265d0e04c30ef09e5b58"
+            },
+            {
+                "acl": "",
+                "identity": "loop.guard_governance()",
+                "definition_sha256": "3b0e97f606821c39a1688a8d0fad015d5a09452137483aab0e6d8250004570f1"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.heartbeat_lease(p_campaign_id bigint, p_lease_token bigint, p_extend_seconds integer)",
+                "definition_sha256": "d03cd31458b22c861f6b50675329a2252d20a88f6f94ba47928f5ac4df9b8cb6"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.kill_requests_guard()",
+                "definition_sha256": "87cb63002215c1999d1dd481c4b6d373d0f8f8fd9968dc7ae2678270e1fdfc83"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.merge_failed(p_campaign_id bigint, p_lease_token bigint, p_reason text)",
+                "definition_sha256": "af84c2b0ba65198af99c2f463243666f6fa74f9b13d302b1d6fa4c2c71aca135"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.merge_intended(p_campaign_id bigint, p_lease_token bigint, p_commit_sha text, p_expected_target_sha text)",
+                "definition_sha256": "62bab31fd2e90c73b39d2c6a27db69493c2b9c9af90f882309ee20b6d4ee636f"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.merge_succeeded(p_campaign_id bigint, p_lease_token bigint, p_new_target_sha text)",
+                "definition_sha256": "b02699a8e3aaaa2168e5184d6e5c545c0bb15c63f71ebfb038b7e525878cc545"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.merged_checkout_targets()",
+                "definition_sha256": "df267854c162d864de1b48a6abccd9d29eec4ed92aec44281f1273c29a491c4d"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.observations_nodel()",
+                "definition_sha256": "1e62a70d15956811d753fc5ef8c23355fd66be5dd43738bff646bf0b9851270c"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.observations_noupd()",
+                "definition_sha256": "015b9feaa26214f2f55a72f398434b38911733f2a2ca094f8c49b4bfe34f7d26"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.pending_kills()",
+                "definition_sha256": "963ce6a7f055b98f5fc816115576b0bb41bf816f46072b8e0bc26b3900de8cf9"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.pending_merge_intents()",
+                "definition_sha256": "8e905c1af357492bf26b9e54aeba6c3587081b14afaa5828ed47973d8587a8d7"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.reanchor_event_chain(p_reason text)",
+                "definition_sha256": "805d1dcae4781bca11592699d172fcf5ce34a7f01d80501682493d93c0c9fbaa"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.reap_leases()",
+                "definition_sha256": "098b0ce792d582ba2cb71ca5992c7da3038f382b8a76552f9f6ef4d683014439"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.reconcile_merge_failed(p_campaign_id bigint, p_token bigint, p_reason text)",
+                "definition_sha256": "0bad8b4394a17bd678d35cf98f90c65fbf8e077a837e1450269b175a4147a2ed"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.reconcile_merge_succeeded(p_campaign_id bigint, p_token bigint, p_target text)",
+                "definition_sha256": "7da20413640a961ca59307b5b3d5bf5d0f807e6d93bb60a28a4bd7b3ab75d530"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.record_attempt(p_campaign_id bigint, p_lease_token bigint, p_n integer, p_seat ident, p_model text, p_hypothesis text, p_exit_class text, p_commit_sha text, p_cost_usd numeric, p_notes jsonb, p_started_at timestamp with time zone, p_ended_at timestamp with time zone)",
+                "definition_sha256": "a330475b666f1d8175192c83eb933ac87dfafcf55bcd6bbb917ebb262760055e"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.record_deadman(p_component text, p_expected_by timestamp with time zone, p_last_seen timestamp with time zone, p_fired boolean)",
+                "definition_sha256": "17fc085da3eddcc261e39d255e672008f832d45b7b425485f70f2efd3a2c21c3"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.record_deadman(p_component text, p_expected_by timestamp with time zone, p_last_seen timestamp with time zone, p_fired boolean, p_result jsonb)",
+                "definition_sha256": "c671fe1d27c59aa6af20778cebb49dafb173c971062a721cde45a8723e4c26dc"
+            },
+            {
+                "acl": "{=X/eval_authority,eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.record_evidence_archived(p_campaign_id bigint, p_archive_sha256 sha256, p_archive_path text, p_file_count integer, p_byte_count bigint)",
+                "definition_sha256": "cc915049cfe4f2c77b68bb5e4ad52b8a8561fb5b60fcbac5721dae1033191704"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.record_merge_orphaned(p_campaign_id bigint, p_lease_token bigint, p_new_target_sha text)",
+                "definition_sha256": "b8c4946f8cb2fe65ee8f3e0ac3d81b1cac7ee83ab8d881262e05d38d5c111043"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_sensor=X/eval_authority}",
+                "identity": "loop.record_observation(p_desired_state_id ident, p_observed_state text, p_evidence jsonb, p_evidence_sha256 sha256, p_run_id text)",
+                "definition_sha256": "3156368ff320e84785016cea41661ea33709deb48155a445660e8de460fd1352"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_sensor=X/eval_authority}",
+                "identity": "loop.record_observation(p_desired_state_id ident, p_observed_state text, p_evidence jsonb, p_evidence_sha256 sha256, p_run_id text, p_commit_sha text, p_ancestors text[])",
+                "definition_sha256": "4956fcf9d6feb3aad1aa87ba2f7ba9f945347b8f5453f13cce4ab99b496c83ff"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.record_skip(p_campaign_id bigint, p_lease_token bigint, p_reason text, p_payload jsonb)",
+                "definition_sha256": "a663f3cec5c195d150f29550af7c11be24c8275d30c3e8d7041cd0ebb63b35a3"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority}",
+                "identity": "loop.record_skip(p_campaign_id bigint, p_reason text, p_payload jsonb)",
+                "definition_sha256": "1f228360531f4d22e44ef0716ff3f1b4fe733cc72103a907d4bf0f005eb2a3c1"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_sensor=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.record_skip(p_campaign_id bigint, p_token bigint, p_reason text, p_payload jsonb, p_actor_role text)",
+                "definition_sha256": "60e3150cdd586b038932bbf84c4639ee1da7be20bcc080ef55415d5b3094dd1f"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_sensor=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.record_skip_unscoped(p_campaign_ref bigint, p_reason text, p_payload jsonb, p_actor_role text)",
+                "definition_sha256": "8e33b3555be45ed04960d611353b4066a6f300cae5c41b5c2dce244e3472f225"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.record_verification(p_campaign_id bigint, p_lease_token bigint, p_bundle_ref sha256, p_passed boolean, p_report jsonb)",
+                "definition_sha256": "ea9b9d51c816f4943566e91412c7d51b7fb3ec44c1068d79737381d42ff3328e"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_verifier=X/eval_authority}",
+                "identity": "loop.record_verifier_refusal(p_campaign_id bigint, p_lease_token bigint, p_reason text)",
+                "definition_sha256": "bf5f441712588a46d11a8c68143d79cadaec818a4b96305b3618db19a56c7e73"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.recover_merge_intent(p_campaign_id bigint, p_token bigint, p_journal jsonb)",
+                "definition_sha256": "a7beb51904c66c8721550dfdd0f04c29a20299876d88d8141e328d0477cc13e8"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.recover_seat_fault(p_campaign_id bigint, p_lease_token bigint, p_reason text)",
+                "definition_sha256": "74f28459fd09ca9d5fd8fe2a2b9f8a6ca7b37051fcd8a0ce44a779949d1bce46"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority,looper_sensor=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.require_runtime_preflight()",
+                "definition_sha256": "52399bf164f2c927197dbf1d434e3e3131c11398b11659c9a2c48ca8426518d1"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.retire_disabled_campaigns()",
+                "definition_sha256": "40ebccac658b4d8f44bc5a7bfc75ce765661f0a192ce0fbb79d9981c72c92266"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority,looper_sensor=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.runtime_expected_generation()",
+                "definition_sha256": "24c9b0753481c82f2d5645f6e3d402ebca19aed8ba24010c917020fd4bb6398d"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority,looper_sensor=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.runtime_preflight(p_expected integer)",
+                "definition_sha256": "1a4a870b66b4faf2fe1da9475981bb6f4b23840ff57d5b9ca0678ebc5f3d409f"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority,looper_verifier=X/eval_authority,looper_sensor=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.schema_generation()",
+                "definition_sha256": "c0334aa173556a0aa3e47f81dbadaa01905154937feb023870390f8e9af737f2"
+            },
+            {
+                "acl": "",
+                "identity": "loop.seal_lifecycle()",
+                "definition_sha256": "71e00a3b58af92dc1ef1e48308cbc70572310b2126c46facee2c04aca4365244"
+            },
+            {
+                "acl": "",
+                "identity": "loop.seal_violation()",
+                "definition_sha256": "285e6e386443d8547df675d51004a87d07cd6806c7af99c68e694799577781b1"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.start_attempt(p_campaign_id bigint, p_lease_token bigint, p_seat ident, p_model text, p_workspace_ref text)",
+                "definition_sha256": "e2b83fbdb90c95546bd6c8a981b24b40f100b24fa9d1aa31f9c3a1754e3e85f3"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.start_attempt(p_campaign_id bigint, p_lease_token bigint, p_seat ident, p_model text, p_workspace_ref text, p_probe boolean)",
+                "definition_sha256": "172427e98fc4e60b2a570608215462142d027fb0932a54bdd02639004c00d9e9"
+            },
+            {
+                "acl": "{=X/eval_authority,eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.terminal_campaigns_for_evidence()",
+                "definition_sha256": "2b562dcc97d7a4fe73237af5c03cf25e4c495a8d1da653d7e888328f7b69b807"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_kernel=X/eval_authority}",
+                "identity": "loop.upsert_desired_state(p jsonb)",
+                "definition_sha256": "1735e5a5cb9d4e8fd3c3845b87031a332f20fe3017b3f176bae218d5867a425d"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.verify_campaign_chain()",
+                "definition_sha256": "3d3c163db05367a12f1e0213ced3795db38a9ecf85f360c5f421003d2ea4dede"
+            },
+            {
+                "acl": "{eval_authority=X/eval_authority,looper_reader=X/eval_authority}",
+                "identity": "loop.verify_campaign_chain_current()",
+                "definition_sha256": "278b71940ae19769107085b6a1b8b20e40c5cc28e1c3ff3c7772e26976e65fc6"
+            },
+            {
+                "acl": "",
+                "identity": "loop.verify_lifecycle_chain()",
+                "definition_sha256": "8a40c7abdbcc5efd149145d2a06ff64077c3d5131c8a71482f32c0911843ec63"
+            },
+            {
+                "acl": "",
+                "identity": "loop.verify_violation_chain()",
+                "definition_sha256": "6f5d804e1961b013eeef3d8ee4844346b78a0950727d4d14dbd8a4d19f364a32"
+            },
+            {
+                "acl": "{looper_test=X/looper_test,eval_authority=X/looper_test,looper_kernel=X/looper_test,looper_verifier=X/looper_test,looper_sensor=X/looper_test}",
+                "identity": "soak.audit_loop_write()",
+                "definition_sha256": "3fe9d0466bffc62b8a688056223cc193f6f0e478e55fda67791b195c000610fb"
+            },
+            {
+                "acl": "{pi=X/pi,looper_reader=X/pi}",
+                "identity": "soak.controller_catalog_pins()",
+                "definition_sha256": "273ced688338f60ab940ff4d80edac5c7673af7f13fcfc89568b548110db6bca"
+            },
+            {
+                "acl": "{=X/looper_test,looper_test=X/looper_test,looper_reader=X/looper_test}",
+                "identity": "soak.hmac_input(p_window_id bigint, p_kind text, p_payload jsonb, p_at timestamp with time zone)",
+                "definition_sha256": "09d9e85f88bc73d90897d22a9eb8b627c675c8c2be9c3a100b421fb537ebccbe"
+            },
+            {
+                "acl": "",
+                "identity": "soak.ledger_append_only()",
+                "definition_sha256": "566b0420822ce57b8084ec003cd5b42f578d4cd6bf5ee500b373f3794216d4a0"
+            },
+            {
+                "acl": "",
+                "identity": "soak.ledger_chain()",
+                "definition_sha256": "8ce1bb29c8626ae5234683676952c96062e2b8223ae18e93af9f01238840cc45"
+            },
+            {
+                "acl": "{=X/looper_test,looper_test=X/looper_test,looper_reader=X/looper_test}",
+                "identity": "soak.ledger_verify()",
+                "definition_sha256": "d5ed2130063908113d332cfd5f10c708d03f95726a31d7f547d8ffc034dee001"
+            }
+        ],
+        "migrations": [
+            {
+                "sha256": "0e4593c2c099e658bcf83345af5e42349a002a700149421c42e15daa4258ab14",
+                "filename": "20260812_000_bootstrap_metrics_store.sql"
+            },
+            {
+                "sha256": "d7b4c98ceeccb34bbc7c8291b319087b74ef32aa7fc1def919bc274317e4f388",
+                "filename": "20260812_001_gov_schema.sql"
+            },
+            {
+                "sha256": "2d23596d19f70b476e27bb303b4a4083a16db64952fa5ea952fc37fe0650935a",
+                "filename": "20260812_002_dispatch_attempts.sql"
+            },
+            {
+                "sha256": "1058072262fa574a9f9afec6ab806d1a7ac4d291edc89478e72380f2f56a84a3",
+                "filename": "20260812_003_review_hardening.sql"
+            },
+            {
+                "sha256": "7565d85635c552e6330b5c58d98892ea0848652b844159d8171befa159f9aa14",
+                "filename": "20260812_004_pipeline_provenance.sql"
+            },
+            {
+                "sha256": "fadcd282d8aaf507be217e33dff509fcaaec8c8e1d8f918de28b0df3f7e201ce",
+                "filename": "20260812_005_metrics_insert_policy.sql"
+            },
+            {
+                "sha256": "cb6c8acd24fb5f0abcf62e422ede737abe638eb64683ca7cfe9cec9333ac0100",
+                "filename": "20260814_006_rag_head_delegation.sql"
+            },
+            {
+                "sha256": "82f71534f3630821e5030dca61deae6b053b8dd9f153ae57a0cef8c69f84f336",
+                "filename": "20260814_007_rag_head_refusal_scope.sql"
+            },
+            {
+                "sha256": "e5b4c4f60136697c4ef706baab8d79c4dc8b45a78336963a78317e38ff7c57bf",
+                "filename": "20260814_008_fable_daily_learning.sql"
+            },
+            {
+                "sha256": "9db357a50e0fc19ae18bdd254ddfc09b9c24044f01065da608d76346a114a17d",
+                "filename": "20260814_009_fable_sequence_grants.sql"
+            },
+            {
+                "sha256": "8e2d2342e3320d135345f0258778e93f5c56efa0c32c8a56e6bb52d14ecb70e2",
+                "filename": "20260814_010_fable_projector_conflict_select.sql"
+            },
+            {
+                "sha256": "587d70078fd17706f18a04f2ee4d395037c001903e2544a4dd242f0f4283a371",
+                "filename": "20260815_011_fable_learning_review_fixes.sql"
+            },
+            {
+                "sha256": "052e5198fa0a1b3936539fbc6ae3bf8dda39fbce5cbc65be2f54729aa44e66e4",
+                "filename": "20260816_012_campaigns_v1.sql"
+            },
+            {
+                "sha256": "8ef32fd43d73766d9d23e2d61bee0a891b336c280ce1012682374d1308b794ab",
+                "filename": "20260816_013_campaigns_v1_fixes.sql"
+            },
+            {
+                "sha256": "30d4fd1b1721cc89abd632109c07dda3bb0bfa057c5d995744f2891e03b8003c",
+                "filename": "20260816_014_campaigns_v1_retire.sql"
+            },
+            {
+                "sha256": "4380d655bd76679e3f6177a837983202b3b0b581237d1c6a49b88e316f633735",
+                "filename": "20260816_015_campaigns_v1_fences.sql"
+            },
+            {
+                "sha256": "04afbbfbdb8ebe00a45e5067c7fc62da5a1f71ef210f81f1215dadd363045605",
+                "filename": "20260816_016_campaigns_v1_seat_faults.sql"
+            },
+            {
+                "sha256": "3e83c46df89b67c8bec7ecdade9d56cd3e3dc9d15662c81893a830ecdb590274",
+                "filename": "20260816_017_campaigns_v1_retire_quiet.sql"
+            },
+            {
+                "sha256": "4cff490f6e7d29b2fe3c1d343ac66d4702190c30359b340d7b04ba0e0bbae10f",
+                "filename": "20260816_018_soak_controller.sql"
+            },
+            {
+                "sha256": "a444b379a2e66e4e19657ae5cecf2abce819fb533bf916b4532abd52b98eacef",
+                "filename": "20260816_019_campaigns_v1_round_g1.sql"
+            },
+            {
+                "sha256": "e62cf0dfb4ee81eab6bf3685684df34ca5e397a323c7cccba8071f7b96d93141",
+                "filename": "20260816_020_campaigns_v1_round_g2.sql"
+            },
+            {
+                "sha256": "6dfe7830124e7b3859448f9ececb436c87aa9c5d62dd8e8025a0d7d1c221c617",
+                "filename": "20260816_021_campaigns_v1_round_g3.sql"
+            },
+            {
+                "sha256": "ad45da3520c15ce8d25137d8de2d5c4ac9623f38bb43f82c7dd9cab380962c97",
+                "filename": "20260816_022_soak_controller_g3.sql"
+            },
+            {
+                "sha256": "9af6a307511b160a63eacad3168cc83541fbf116e8cd52cf97a7547ec472d0a6",
+                "filename": "20260816_023_campaigns_v1_round_g4.sql"
+            },
+            {
+                "sha256": "adf3611a4b2974e282f42089836ff9cb65ace34d145abaaae75887cc8afe9a33",
+                "filename": "20260816_024_soak_controller_g4.sql"
+            },
+            {
+                "sha256": "cb16f13f13be53e2bea54d1379e3c8f5e7b2bafeab5e8846033bec02d0975328",
+                "filename": "20260816_025_soak_controller_g5.sql"
+            },
+            {
+                "sha256": "06371a75b9c1b2fe7dd439716f9b9fceba0740242f4236fecdcfc8aab40ca4e9",
+                "filename": "20260817_026_campaigns_v1_round_g5.sql"
+            },
+            {
+                "sha256": "4870d0036748884244cc3c1620d4e050283dbafc5201c8562d7ebdc9cd548f1f",
+                "filename": "20260817_027_campaigns_v1_round_g5b.sql"
+            },
+            {
+                "sha256": "ef18598c551c47b8db5e3ef4dba368dcd0c0fcc97f34c45027754eb84b036c34",
+                "filename": "20260817_028_campaigns_v1_lineage.sql"
+            },
+            {
+                "sha256": "33674034f37977ec22d517a30c5c5e2e5d00709a72d2e606cb14888ee417fee8",
+                "filename": "20260817_029_reader_loop_grants.sql"
+            },
+            {
+                "sha256": "b222d58ee7ff8ce9df171dd41a75483509f489db5e0a3143bf84a057ef4ba103",
+                "filename": "20260820_030_campaigns_chain_serialization.sql"
+            }
+        ],
+        "transitions": [
+            {
+                "kind": "dead",
+                "to_state": "dead",
+                "from_state": "acting"
+            },
+            {
+                "kind": "desired_state_disabled",
+                "to_state": "dead",
+                "from_state": "acting"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "dead",
+                "from_state": "acting"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "retry_wait",
+                "from_state": "acting"
+            },
+            {
+                "kind": "retry_scheduled",
+                "to_state": "retry_wait",
+                "from_state": "acting"
+            },
+            {
+                "kind": "seat_fault",
+                "to_state": "retry_wait",
+                "from_state": "acting"
+            },
+            {
+                "kind": "verifying",
+                "to_state": "verifying",
+                "from_state": "acting"
+            },
+            {
+                "kind": "attempt_started",
+                "to_state": "acting",
+                "from_state": "claimed"
+            },
+            {
+                "kind": "desired_state_disabled",
+                "to_state": "dead",
+                "from_state": "claimed"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "dead",
+                "from_state": "claimed"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "retry_wait",
+                "from_state": "claimed"
+            },
+            {
+                "kind": "seat_fault",
+                "to_state": "retry_wait",
+                "from_state": "claimed"
+            },
+            {
+                "kind": "merge_lineage_lost",
+                "to_state": "dead",
+                "from_state": "merged"
+            },
+            {
+                "kind": "red_after_merge",
+                "to_state": "dead",
+                "from_state": "merged"
+            },
+            {
+                "kind": "retired_unconfirmed",
+                "to_state": "dead",
+                "from_state": "merged"
+            },
+            {
+                "kind": "confirmed",
+                "to_state": "resolved_confirmed",
+                "from_state": "merged"
+            },
+            {
+                "kind": "claimed",
+                "to_state": "claimed",
+                "from_state": "open"
+            },
+            {
+                "kind": "dead",
+                "to_state": "dead",
+                "from_state": "open"
+            },
+            {
+                "kind": "desired_state_disabled",
+                "to_state": "dead",
+                "from_state": "open"
+            },
+            {
+                "kind": "confirmed_external",
+                "to_state": "resolved_confirmed",
+                "from_state": "open"
+            },
+            {
+                "kind": "claimed",
+                "to_state": "claimed",
+                "from_state": "retry_wait"
+            },
+            {
+                "kind": "dead",
+                "to_state": "dead",
+                "from_state": "retry_wait"
+            },
+            {
+                "kind": "desired_state_disabled",
+                "to_state": "dead",
+                "from_state": "retry_wait"
+            },
+            {
+                "kind": "merge_succeeded",
+                "to_state": "merged",
+                "from_state": "retry_wait"
+            },
+            {
+                "kind": "confirmed_external",
+                "to_state": "resolved_confirmed",
+                "from_state": "retry_wait"
+            },
+            {
+                "kind": "desired_state_disabled",
+                "to_state": "dead",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "merge_failed",
+                "to_state": "dead",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "dead",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "verified_fail",
+                "to_state": "dead",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "merge_succeeded",
+                "to_state": "merged",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "merge_failed",
+                "to_state": "retry_wait",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "reaped",
+                "to_state": "retry_wait",
+                "from_state": "verifying"
+            },
+            {
+                "kind": "verified_fail",
+                "to_state": "retry_wait",
+                "from_state": "verifying"
+            }
+        ],
+        "rls_policies": [
+            {
+                "check_expr": null,
+                "table_name": "authorization_vs_verification",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "campaign_attempts",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "campaign_events",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "campaign_transitions",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "campaigns",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_challenger_experiments",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_grades",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_learning_policies",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_mistakes",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_policy_activations",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "daily_reflections",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "desired_states",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "dispatch_attempts",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "dispatch_runs",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "eval_runs",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "gate_results",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "kill_requests",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "lifecycle_events",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "lifecycles",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "metrics",
+                "using_expr": "true",
+                "policy_name": "governor_all",
+                "schema_name": "loop",
+                "relrowsecurity": true,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "metrics",
+                "using_expr": "(actor_loop_id = current_setting('looper.loop_id'::text, true))",
+                "policy_name": "loop_own_rows",
+                "schema_name": "loop",
+                "relrowsecurity": true,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": "(actor_loop_id = current_setting('looper.loop_id'::text, true))",
+                "table_name": "metrics",
+                "using_expr": null,
+                "policy_name": "loop_self_insert",
+                "schema_name": "loop",
+                "relrowsecurity": true,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "observations",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "pipeline_dissents",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "pipeline_stage_records",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "routing_decisions",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_attempts",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_campaign_events",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_campaigns",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_challenge_busy_campaigns",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_desired_states",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_digest",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_events_recent",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_observations",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_open_campaigns",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_skips_today",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_transitions_illegal",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "violations",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "weekly_recall",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "loop",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "challenges",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "contaminations",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "db_writes",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "detector_runs",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "installs",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "ledger",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "metrics_daily",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "rebaselines",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "v_window_status",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            },
+            {
+                "check_expr": null,
+                "table_name": "windows",
+                "using_expr": null,
+                "policy_name": null,
+                "schema_name": "soak",
+                "relrowsecurity": false,
+                "relforcerowsecurity": false
+            }
+        ],
+        "soak_relation_acls": [
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.challenges"
+            },
+            {
+                "acl": "",
+                "object": "soak.challenges_challenge_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.contaminations"
+            },
+            {
+                "acl": "",
+                "object": "soak.contaminations_contamination_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.db_writes"
+            },
+            {
+                "acl": "",
+                "object": "soak.db_writes_write_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.detector_runs"
+            },
+            {
+                "acl": "",
+                "object": "soak.detector_runs_run_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.installs"
+            },
+            {
+                "acl": "",
+                "object": "soak.installs_install_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.ledger"
+            },
+            {
+                "acl": "",
+                "object": "soak.ledger_seq_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.metrics_daily"
+            },
+            {
+                "acl": "{looper_reader=r/looper_test,looper_test=arwdDxtm/looper_test}",
+                "object": "soak.rebaselines"
+            },
+            {
+                "acl": "",
+                "object": "soak.rebaselines_rebaseline_id_seq"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.v_window_status"
+            },
+            {
+                "acl": "{looper_test=arwdDxtm/looper_test,looper_reader=r/looper_test}",
+                "object": "soak.windows"
+            },
+            {
+                "acl": "",
+                "object": "soak.windows_window_id_seq"
+            }
+        ]
+    },
+    "sealed_schedule_hmac": "e7405e06de77cf5214c801ccc5e6918cb59a74b97273cfa1ffc4f91a64060ac8",
+    "controller_tree_sha256": "1fb4fff985f58585ee7b95676a5be3cedcd9de56c1cdaa06bea550039610e840",
+    "fixture_main_sha_at_open": "be3ad93c7d29bdec9d478d6c7703eb4baceae448",
+    "loop_function_fingerprints": {
+        "5011312:loop.reap_leases()": "098b0ce792d582ba2cb71ca5992c7da3038f382b8a76552f9f6ef4d683014439",
+        "5162024:loop.pending_kills()": "963ce6a7f055b98f5fc816115576b0bb41bf816f46072b8e0bc26b3900de8cf9",
+        "4919086:loop.freeze_mission()": "5cbff4b81a1de88e02cc93590a2d55dd8f7c2df93f37f140e59d036cbe4d266f",
+        "4919118:loop.seal_violation()": "285e6e386443d8547df675d51004a87d07cd6806c7af99c68e694799577781b1",
+        "4919121:loop.seal_lifecycle()": "71e00a3b58af92dc1ef1e48308cbc70572310b2126c46facee2c04aca4365244",
+        "4919112:loop.forbid_mutation()": "fd75412996a3168851c8b314c990b3a3022e6afbad407fcb5ff5ce6754a97c97",
+        "5011286:loop.campaigns_guard()": "8f0d77919c5554d06b287cbb49caf1b6fa02408d410c76360ad3e39c519d5ac3",
+        "4919123:loop.guard_governance()": "3b0e97f606821c39a1688a8d0fad015d5a09452137483aab0e6d8250004570f1",
+        "5410153:loop.schema_generation()": "c0334aa173556a0aa3e47f81dbadaa01905154937feb023870390f8e9af737f2",
+        "5011290:loop.observations_noupd()": "015b9feaa26214f2f55a72f398434b38911733f2a2ca094f8c49b4bfe34f7d26",
+        "5011291:loop.observations_nodel()": "1e62a70d15956811d753fc5ef8c23355fd66be5dd43738bff646bf0b9851270c",
+        "5162013:loop.kill_requests_guard()": "87cb63002215c1999d1dd481c4b6d373d0f8f8fd9968dc7ae2678270e1fdfc83",
+        "5011288:loop.campaign_events_seal()": "8cfe26320574e0ce32c51724afc720e3c5ceae8d6b646f2419ee8d2ae398518b",
+        "5011294:loop.campaign_events_noupd()": "ef0ab758aadd614dbb066ec9d3881cf2188305ba40297495459624b8624e3366",
+        "5011295:loop.campaign_events_nodel()": "ffdca63d99cc89342c916abe378682376a30f75b1bee2b356df9d05b718897e1",
+        "5011315:loop.verify_campaign_chain()": "3d3c163db05367a12f1e0213ced3795db38a9ecf85f360c5f421003d2ea4dede",
+        "5162028:loop.pending_merge_intents()": "8e905c1af357492bf26b9e54aeba6c3587081b14afaa5828ed47973d8587a8d7",
+        "4919120:loop.verify_violation_chain()": "6f5d804e1961b013eeef3d8ee4844346b78a0950727d4d14dbd8a4d19f364a32",
+        "4923240:loop.verify_lifecycle_chain()": "8a40c7abdbcc5efd149145d2a06ff64077c3d5131c8a71482f32c0911843ec63",
+        "5011292:loop.campaign_attempts_noupd()": "894527279dd0af3bf323ca36de92b747b5d769339cc81add69f6777fe9f912c8",
+        "5011293:loop.campaign_attempts_nodel()": "02f0f5d108e5e04f1a510f64211787b5c3dd4deb0303a5b7a787a1113d7febe6",
+        "5162031:loop.merged_checkout_targets()": "df267854c162d864de1b48a6abccd9d29eec4ed92aec44281f1273c29a491c4d",
+        "5110844:loop.retire_disabled_campaigns()": "40ebccac658b4d8f44bc5a7bfc75ce765661f0a192ce0fbb79d9981c72c92266",
+        "5600025:loop.require_runtime_preflight()": "52399bf164f2c927197dbf1d434e3e3131c11398b11659c9a2c48ca8426518d1",
+        "5011302:loop.upsert_desired_state(p jsonb)": "1735e5a5cb9d4e8fd3c3845b87031a332f20fe3017b3f176bae218d5867a425d",
+        "5600024:loop.runtime_expected_generation()": "24c9b0753481c82f2d5645f6e3d402ebca19aed8ba24010c917020fd4bb6398d",
+        "5162017:loop.campaign_disabled_claim_guard()": "c900d4969ab5f65fd36d66154aa887cdf7e352f64b4f968955ca795a6f7a722a",
+        "5945169:loop.verify_campaign_chain_current()": "278b71940ae19769107085b6a1b8b20e40c5cc28e1c3ff3c7772e26976e65fc6",
+        "5162015:loop.campaign_disabled_insert_guard()": "c5da5755b4e18c678e38b9232123b2b0e5eab9b62835fd5d7cd473f621934042",
+        "5162019:loop.campaign_transition_event_guard()": "1c8de8dc55b668cd2e786f8187e1861c7b878c1f8b95d4973a2c0361def06592",
+        "5807646:loop.terminal_campaigns_for_evidence()": "2b562dcc97d7a4fe73237af5c03cf25e4c495a8d1da653d7e888328f7b69b807",
+        "4934039:loop.guard_fable_optimizer_activation()": "697aa8045063189f3a94042d8cf39e66bb142439f414265d0e04c30ef09e5b58",
+        "5945168:loop.reanchor_event_chain(p_reason text)": "805d1dcae4781bca11592699d172fcf5ce34a7f01d80501682493d93c0c9fbaa",
+        "5600026:loop.campaign_authority_preflight_guard()": "54f19ac28c3b2e3a656f5704b351f4da271353567493df2089ef6b550d6adfd6",
+        "5162025:loop.campaign_status(p_campaign_id bigint)": "75e08d576f8693ad2b6d07ba58a50e7f5e9275ecc9951efd7480c6b375bbed7d",
+        "5410154:loop.runtime_preflight(p_expected integer)": "1a4a870b66b4faf2fe1da9475981bb6f4b23840ff57d5b9ca0678ebc5f3d409f",
+        "5472255:loop.effective_attempts(p_campaign_id bigint)": "ff576f6f3b07e11ad4da59165e3643f967dd5b61d2ab3ada01a5c48d68fe0150",
+        "5162023:loop.ack_kill(p_kill_id bigint, p_result jsonb)": "9f260ccdaa20429b938a4a6b491686a4baac50e06d31890bcbe373f30eb13c6e",
+        "5807647:loop.digest_with_attempt_scope(p_desired_state_ids text[])": "a97d721eeb3aaab70ca6c1d253dd7dff6ea59d59d374e3cb2ee6944b9dc293ad",
+        "5011304:loop.claim_campaign(p_worker text, p_lease_seconds integer)": "d84dad4b9f94d7c3564f4a99cb3e49513ecc0fa623ff4c954c14016f3f2d73a3",
+        "5382696:loop.enable_desired_state(p_desired_state_id text, p_reason text)": "a94b05159a02911e973a305dbcd2a2b8901d5feaea3f4c98dc7a7eadd250ae6d",
+        "5110843:loop.disable_desired_state(p_desired_state_id text, p_reason text)": "be2fbdeec1be430125e9c85fab6f5c2dc3277852218553a61dfccd5359823ca6",
+        "5011313:loop.record_skip(p_campaign_id bigint, p_reason text, p_payload jsonb)": "1f228360531f4d22e44ef0716ff3f1b4fe733cc72103a907d4bf0f005eb2a3c1",
+        "5162022:loop.assert_live_lease(p_campaign_id bigint, p_token bigint, p_role text)": "ed09837a8b794c590c23bb1e54afb0e8bee4abf1a05e6211106580fd490da888",
+        "5011311:loop.merge_failed(p_campaign_id bigint, p_lease_token bigint, p_reason text)": "af84c2b0ba65198af99c2f463243666f6fa74f9b13d302b1d6fa4c2c71aca135",
+        "5162030:loop.reconcile_merge_failed(p_campaign_id bigint, p_token bigint, p_reason text)": "0bad8b4394a17bd678d35cf98f90c65fbf8e077a837e1450269b175a4147a2ed",
+        "5382701:loop.recover_merge_intent(p_campaign_id bigint, p_token bigint, p_journal jsonb)": "a7beb51904c66c8721550dfdd0f04c29a20299876d88d8141e328d0477cc13e8",
+        "5410156:loop.recover_seat_fault(p_campaign_id bigint, p_lease_token bigint, p_reason text)": "74f28459fd09ca9d5fd8fe2a2b9f8a6ca7b37051fcd8a0ce44a779949d1bce46",
+        "5162029:loop.reconcile_merge_succeeded(p_campaign_id bigint, p_token bigint, p_target text)": "7da20413640a961ca59307b5b3d5bf5d0f807e6d93bb60a28a4bd7b3ab75d530",
+        "5011310:loop.merge_succeeded(p_campaign_id bigint, p_lease_token bigint, p_new_target_sha text)": "b02699a8e3aaaa2168e5184d6e5c545c0bb15c63f71ebfb038b7e525878cc545",
+        "5410155:loop.record_verifier_refusal(p_campaign_id bigint, p_lease_token bigint, p_reason text)": "bf5f441712588a46d11a8c68143d79cadaec818a4b96305b3618db19a56c7e73",
+        "5011306:loop.heartbeat_lease(p_campaign_id bigint, p_lease_token bigint, p_extend_seconds integer)": "d03cd31458b22c861f6b50675329a2252d20a88f6f94ba47928f5ac4df9b8cb6",
+        "5162026:loop.record_skip(p_campaign_id bigint, p_lease_token bigint, p_reason text, p_payload jsonb)": "a663f3cec5c195d150f29550af7c11be24c8275d30c3e8d7041cd0ebb63b35a3",
+        "5472256:loop.record_merge_orphaned(p_campaign_id bigint, p_lease_token bigint, p_new_target_sha text)": "b8c4946f8cb2fe65ee8f3e0ac3d81b1cac7ee83ab8d881262e05d38d5c111043",
+        "5185251:loop.defer_campaign(p_campaign_id bigint, p_lease_token bigint, p_seconds integer, p_reason text)": "a81ca66dda95c8a7a14272fb360eccd2254b48a881cc6a7ad3e0c93a1e75c4ce",
+        "5382698:loop.record_skip_unscoped(p_campaign_ref bigint, p_reason text, p_payload jsonb, p_actor_role text)": "8e33b3555be45ed04960d611353b4066a6f300cae5c41b5c2dce244e3472f225",
+        "5382697:loop.record_skip(p_campaign_id bigint, p_token bigint, p_reason text, p_payload jsonb, p_actor_role text)": "60e3150cdd586b038932bbf84c4639ee1da7be20bcc080ef55415d5b3094dd1f",
+        "5011309:loop.merge_intended(p_campaign_id bigint, p_lease_token bigint, p_commit_sha text, p_expected_target_sha text)": "62bab31fd2e90c73b39d2c6a27db69493c2b9c9af90f882309ee20b6d4ee636f",
+        "5011305:loop.start_attempt(p_campaign_id bigint, p_lease_token bigint, p_seat loop.ident, p_model text, p_workspace_ref text)": "c7f27be7483f4f541ebf8e04a7774ce153ccfb071967a05a2c4fa75db1a90673",
+        "5011308:loop.record_verification(p_campaign_id bigint, p_lease_token bigint, p_bundle_ref loop.sha256, p_passed boolean, p_report jsonb)": "6dd9b3c79ece371094b7cc1b76263bf452a87372ff8f9e103858b7eb63c8761a",
+        "5011314:loop.record_deadman(p_component text, p_expected_by timestamp with time zone, p_last_seen timestamp with time zone, p_fired boolean)": "17fc085da3eddcc261e39d255e672008f832d45b7b425485f70f2efd3a2c21c3",
+        "5185250:loop.start_attempt(p_campaign_id bigint, p_lease_token bigint, p_seat loop.ident, p_model text, p_workspace_ref text, p_probe boolean)": "0da7771c55cb6be9deabeab93fab96291ecc76b19240712d50f50f771352cb00",
+        "5011303:loop.record_observation(p_desired_state_id loop.ident, p_observed_state text, p_evidence jsonb, p_evidence_sha256 loop.sha256, p_run_id text)": "b93415b9127e1bc30c23baf3b63515ea2af0b18db754100c76f7684eb999ab70",
+        "5807648:loop.record_evidence_archived(p_campaign_id bigint, p_archive_sha256 loop.sha256, p_archive_path text, p_file_count integer, p_byte_count bigint)": "462d262882aa5c967e92164da3bfb0787b3f7cd8433ee3132b15ac3e03073d99",
+        "5162032:loop.record_deadman(p_component text, p_expected_by timestamp with time zone, p_last_seen timestamp with time zone, p_fired boolean, p_result jsonb)": "c671fe1d27c59aa6af20778cebb49dafb173c971062a721cde45a8723e4c26dc",
+        "5382699:loop.record_observation(p_desired_state_id loop.ident, p_observed_state text, p_evidence jsonb, p_evidence_sha256 loop.sha256, p_run_id text, p_commit_sha text, p_ancestors text[])": "9241ee88deac4071c912e2ec286d03c82c48d6a7a99e26878c801ff8f5314121",
+        "5011307:loop.record_attempt(p_campaign_id bigint, p_lease_token bigint, p_n integer, p_seat loop.ident, p_model text, p_hypothesis text, p_exit_class text, p_commit_sha text, p_cost_usd numeric, p_notes jsonb, p_started_at timestamp with time zone, p_ended_at timestamp with time zone)": "f392c54fd9f849bf34e03f836257b09882b2bb999d8cf4076264e8c2bafce3db"
+    }
+}

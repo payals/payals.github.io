@@ -1,0 +1,169 @@
+{
+    "passed": false,
+    "reconciliation": {
+        "ok": true,
+        "tables": {
+            "windows": {
+                "signed": 1,
+                "mismatches": [
+                ],
+                "projection": 1
+            },
+            "challenges": {
+                "signed": 3,
+                "mismatches": [
+                ],
+                "projection": 3
+            },
+            "detector_runs": {
+                "signed": 17413,
+                "mismatches": [
+                ],
+                "projection": 17413
+            },
+            "metrics_daily": {
+                "signed": 9,
+                "mismatches": [
+                ],
+                "projection": 9
+            },
+            "contaminations": {
+                "signed": 0,
+                "mismatches": [
+                ],
+                "projection": 0
+            }
+        },
+        "first_mismatch": null
+    },
+    "closure_reasons": [
+        "scheduled_close"
+    ],
+    "failing_metrics": [
+        "tick_bucket_coverage",
+        "detector_bucket_coverage:perimeter_ownership",
+        "detector_bucket_coverage:fleet_freeze",
+        "detector_bucket_coverage:fixture_ref_provenance",
+        "detector_bucket_coverage:sudo_log",
+        "detector_bucket_coverage:launchd_manifests",
+        "detector_bucket_coverage:db_writes",
+        "detector_bucket_coverage:audit_integrity",
+        "detector_bucket_coverage:schema_generation",
+        "detector_bucket_coverage:interactive_sessions",
+        "detector_bucket_coverage:liveness",
+        "detector_bucket_coverage:anchor_witness"
+    ],
+    "liveness_replay": {
+        "rule": "db-cadence-v3",
+        "fails": false,
+        "buckets": 2016,
+        "bucket_s": 300,
+        "blackout_s": 15900,
+        "fail_persist_s": 1800,
+        "flagged_buckets": 6,
+        "blackout_buckets": 53,
+        "first_flagged_at": "2026-08-24T00:46:34Z",
+        "longest_flagged_s": 1500,
+        "blackout_intervals": [
+            {
+                "to": "2026-08-24T00:41:34Z",
+                "from": "2026-08-23T22:56:34Z",
+                "buckets": 22
+            },
+            {
+                "to": "2026-08-24T02:06:34Z",
+                "from": "2026-08-24T00:56:34Z",
+                "buckets": 15
+            },
+            {
+                "to": "2026-08-26T19:11:34Z",
+                "from": "2026-08-26T17:56:34Z",
+                "buckets": 16
+            }
+        ],
+        "longest_flagged_streak": 5,
+        "fixture_enabled_sampled_at_replay": true
+    },
+    "revealed_schedule": [
+        {
+            "day": 2,
+            "minute": 1141
+        },
+        {
+            "day": 3,
+            "minute": 270
+        },
+        {
+            "day": 6,
+            "minute": 135
+        }
+    ],
+    "controller_amendments": [
+        {
+            "at": "2026-08-21T17:45:28.806513-04:00",
+            "notes": {
+                "commit": "21206dda0611d492cb8bf16c54c51e3b5078f8e2",
+                "reason": "liveness instrument defect: reaper heartbeat unreadable by looper-test + verifier cadence unsatisfiable in a quiet fleet flagged 198/198 ticks and doomed the window-2 verdict; db-cadence-v3 rule + close-time replay (CONTRACT §3.2.8/§3.7), commit 21206dd",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "1fb4fff985f58585ee7b95676a5be3cedcd9de56c1cdaa06bea550039610e840"
+            },
+            "install_id": 13,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "60375ed6062927d21e8e14c5379dd0e0bf3e360b161fbda33e260152c6fe5ab0"
+        },
+        {
+            "at": "2026-08-23T18:04:03.18579-04:00",
+            "notes": {
+                "commit": "9c39b9bfae05e200829ae0a93df0806c1039efd7",
+                "reason": "challenge injector instrument defect: its private config-mode check rejected the pinned root-owned 0644 config.json, exit 1 before inject() on every due tick since 08-22 19:03 — days 2-3 challenges never injected; config policy single-sourced in lib/configpolicy (CONTRACT §3.7), commit 9c39b9b",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "60375ed6062927d21e8e14c5379dd0e0bf3e360b161fbda33e260152c6fe5ab0"
+            },
+            "install_id": 15,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "c3be286cfc4f3d4edfe47febd550293b6c8a89affa7e4dbb3f39d7cf00d3d563"
+        },
+        {
+            "at": "2026-08-23T18:26:34.559869-04:00",
+            "notes": {
+                "commit": "33aac30043d2fa4741d00f8d9b243cea5ad2f747",
+                "reason": "challenge-gate instrument defect: wedged injecting slots never retried + past-day due re-gated on the blinded minute; day-3 slot was frozen after the config-policy failure; schedule.due + non-terminal-state gate, commit 33aac30",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "c3be286cfc4f3d4edfe47febd550293b6c8a89affa7e4dbb3f39d7cf00d3d563"
+            },
+            "install_id": 17,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "75e239d0a69dd3545e3ab8fe21925807a3d6ee199c2b033ee655eefbdcba4591"
+        },
+        {
+            "at": "2026-08-24T17:21:30.893275-04:00",
+            "notes": {
+                "commit": "a8ec589e4012bb99f6e360a954ebe60792bd1826",
+                "reason": "challenge wait-states burned the 6-attempt fuse (busy view omits reaped-open campaigns; fault-already-present counted as failure) — day-3 slot failed; deferral semantics + verifier-lane service skips + red-during-open-campaign metric fix + owner-gated revive-challenge verb, commit a8ec589",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "75e239d0a69dd3545e3ab8fe21925807a3d6ee199c2b033ee655eefbdcba4591"
+            },
+            "install_id": 19,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "545909834512c59592858edba002495733b79ec180824a2741f93f3396510a6b"
+        },
+        {
+            "at": "2026-08-24T17:31:49.506944-04:00",
+            "notes": {
+                "commit": "4fd17a0964f762e3e780c01e51b7c82db13875be",
+                "reason": "owner rulings: host blackout disclosed not failed (3.5h laptop sleep 08-23); verify-lane silence lease-governed while a campaign verifies (campaign-201 stalls were designed reap-recovery); replay of window 2 now fails=false with 37 blackout buckets disclosed, commit 4fd17a0",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "545909834512c59592858edba002495733b79ec180824a2741f93f3396510a6b"
+            },
+            "install_id": 21,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "caef6e8f51a72849a744b141cb17bb33990cba32b4db51ec14d0fff0ee01ec33"
+        }
+    ],
+    "ledger_projection_first_mismatch": null
+}
