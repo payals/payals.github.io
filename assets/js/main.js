@@ -1,137 +1,62 @@
 /**
- * main.js — entrypoint. Wires boot, portrait, terminal, chips, panels, router.
+ * main.js: entry point for the landing console. The panes are rendered by
+ * Jekyll at build time; this file only wires the terminal, the boot
+ * sequence, and pane navigation.
  */
 
-import { Terminal }   from './terminal.js';
-import { runBoot }    from './boot.js';
-import { drawPortrait } from './portrait.js';
-import { commands }   from './commands.js';
-import { openPanel, closePanel, isSuppressingHash } from './panels.js';
+import { Terminal } from './terminal.js';
+import { runBoot } from './boot.js';
+import { buildCommands } from './commands.js';
+import { setupPanes } from './panes.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── DOM refs ──────────────────────────────────────────────────────────────
-  const outputEl    = document.querySelector('[data-terminal-output]');
-  const inputEl     = document.querySelector('[data-terminal-input]');
-  const inputRow    = document.querySelector('[data-terminal-input-row]');
-  const portraitEl  = document.querySelector('[data-portrait]');
-  const chipMenu    = document.querySelector('[data-chip-menu]');
+  const consoleEl = document.querySelector('.console');
+  const scrollback = document.querySelector('[data-scrollback]');
+  const input = document.querySelector('[data-input]');
+  const prompt = document.querySelector('[data-prompt]');
+  const mirror = document.querySelector('[data-mirror]');
+  const cursor = document.querySelector('[data-cursor]');
+  const tagline = document.querySelector('.topbar__tagline');
 
-  if (!outputEl || !inputEl) {
-    console.error('terminal: required DOM elements not found');
+  if (!consoleEl || !scrollback || !input || !prompt || !mirror || !cursor) {
+    console.error('console: required elements not found');
     return;
   }
 
-  // ── Terminal ──────────────────────────────────────────────────────────────
-  const term = new Terminal(outputEl, inputEl, commands);
+  const registry = buildCommands({ tagline: tagline ? tagline.textContent.replace(/\s+/g, ' ').trim() : 'Payal Singh' });
+  const term = new Terminal({
+    scrollback,
+    input,
+    prompt,
+    mirror,
+    cursor,
+    registry,
+    ps1: prompt.querySelector('.prompt__ps1').textContent.trim(),
+  });
+  term.enableMirror();
 
-  // Expose for debugging on localhost only
+  const panes = setupPanes({ term, reducedMotion });
+
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     window.terminal = term;
   }
 
-  // Hide input row during boot; shown after
-  if (inputRow) inputRow.hidden = true;
-
-  // ── Skip controller ───────────────────────────────────────────────────────
-  // Any keydown or click before boot completes resolves the boot immediately.
-  const skipController = new AbortController();
-
-  function triggerSkip() {
-    skipController.abort();
-  }
-
+  // Any key or click before boot finishes skips the remaining delays.
+  const skip = new AbortController();
+  const triggerSkip = () => skip.abort();
   document.addEventListener('keydown', triggerSkip, { once: true });
-  document.addEventListener('click',   triggerSkip, { once: true });
+  document.addEventListener('click', triggerSkip, { once: true });
 
-  // ── Boot + portrait ───────────────────────────────────────────────────────
-  async function init() {
-    if (reducedMotion) {
-      // Instant reveal: skip boot animation, render portrait static
-      if (portraitEl) {
-        drawPortrait({ containerEl: portraitEl }).catch(() => {});
-      }
-      afterBoot();
-      return;
-    }
-
-    // Run boot sequence and portrait draw in parallel
-    const bootPromise = runBoot({ outputEl, skipSignal: skipController.signal });
-    const portraitPromise = portraitEl
-      ? drawPortrait({ containerEl: portraitEl })
-      : Promise.resolve();
-
-    await bootPromise;
-    // Portrait may still be drawing (it's ~825ms, boot is ~800ms) — don't await
-    portraitPromise.catch(() => {}); // swallow; portrait is decorative
-
-    afterBoot();
-  }
-
-  function afterBoot() {
-    // Remove one-time skip listeners (may already be gone but harmless)
+  runBoot({ term, console: consoleEl, skipSignal: skip.signal, reducedMotion }).then(() => {
     document.removeEventListener('keydown', triggerSkip);
-    document.removeEventListener('click',   triggerSkip);
+    document.removeEventListener('click', triggerSkip);
+    term.showCursor();
 
-    // Show input row, activate cursor blink, focus terminal
-    if (inputRow) inputRow.hidden = false;
-    document.querySelector('[data-cursor]')?.classList.add('cursor--active');
-    term.focus();
-
-    // Wire chips
-    setupChips(term);
-
-    // Hash router
-    setupHashRouter();
-
-    // If page loaded with a hash, open that panel
-    const initial = location.hash.slice(1);
-    if (initial) openPanelByHash(initial);
-  }
-
-  init();
+    // The prompt is not focused after boot. The ready line offers keys 0 to
+    // 4, which only work while the prompt is unfocused; a visitor who wants
+    // to type clicks the prompt or tabs to it, and Escape leaves it again.
+    if (location.hash) panes.applyHash();
+  });
 });
-
-// ── Chip wiring ───────────────────────────────────────────────────────────
-
-function setupChips(term) {
-  const buttons = document.querySelectorAll('[data-chip-menu] [data-command]');
-  buttons.forEach((btn) => {
-    // Skip <a> chips that are pure navigation links (chip--link) — they work without JS
-    if (btn.tagName === 'A') return;
-
-    btn.addEventListener('click', () => {
-      const cmd = btn.dataset.command;
-      if (!cmd) return;
-      // Simulate typing + Enter: echo prompt, run command
-      term.printPrompt(cmd);
-      term.runCommand(cmd, cmd);
-      term.focus();
-    });
-  });
-}
-
-// ── Hash router ───────────────────────────────────────────────────────────
-
-function setupHashRouter() {
-  window.addEventListener('hashchange', () => {
-    // Ignore hash changes we set ourselves (panels.js sets them)
-    if (isSuppressingHash()) return;
-
-    const id = location.hash.slice(1);
-    if (id) {
-      openPanelByHash(id);
-    } else {
-      closePanel();
-    }
-  });
-}
-
-const PANEL_IDS = new Set(['about', 'now', 'talks', 'cv']);
-
-function openPanelByHash(id) {
-  if (PANEL_IDS.has(id)) {
-    openPanel(id);
-  }
-}

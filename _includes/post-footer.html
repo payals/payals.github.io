@@ -1,14 +1,12 @@
 {% if page.tags and page.tags != empty %}
-<div class="post-tags post-tags--footer">
-{% for tag in page.tags %}<a class="tag-chip" href="{{ '/blog/topics/' | relative_url }}#{{ tag | slugify }}">#{{ tag }}</a>{% endfor %}
-</div>
+<p class="post-tags post-tags--footer meta"><span class="post-tags__label">tags</span> {% for tag in page.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}</p>
 {% endif %}
 {% if page.series %}
 {% assign series_posts = site.posts | where: "series", page.series | sort: "part" %}
 <nav class="series-box" aria-label="Series navigation">
 <p class="series-box__label">Part {{ page.part }} of the <strong>{{ page.series }}</strong> series</p>
 <ol class="series-box__list">
-{% for p in series_posts %}<li{% if p.url == page.url %} class="is-current" aria-current="true"{% endif %}>{% if p.url == page.url %}Part {{ p.part }}: {{ p.title | split: ": " | last }}{% else %}<a href="{{ p.url | relative_url }}">Part {{ p.part }}: {{ p.title | split: ": " | last }}</a>{% endif %}</li>{% endfor %}
+{% for p in series_posts %}<li{% if p.url == page.url %} class="is-current" aria-current="page"{% endif %}>{% if p.url == page.url %}Part {{ p.part }}: {{ p.title | split: ": " | last }}{% else %}<a href="{{ p.url }}">Part {{ p.part }}: {{ p.title | split: ": " | last }}</a>{% endif %}</li>{% endfor %}
 </ol>
 </nav>
 {% endif %}

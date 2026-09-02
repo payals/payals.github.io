@@ -1,0 +1,115 @@
+/* =============================================================
+   tokens.css: payalsingh.me design tokens
+   Consumed by index.html (landing) and _layouts/default.html (blog).
+   Source of truth: DESIGN.md at the repo root. Motion: .omc/design/motion.md.
+   Dark only. System font stacks only. No web fonts.
+   Contrast for every text token is asserted by scripts/check-contrast.py.
+   ============================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Palette -------------------------------------------------
+     Surfaces (backgrounds). Text tokens are checked against each. */
+  --bg:           #0b0d10;   /* page ground */
+  --surface:      #12151a;   /* pane, code block, topbar, statusbar */
+  --surface-2:    #171b21;   /* hovered row, kbd, inline code on a pane */
+
+  /* Text. Ratios against --bg / --surface / --surface-2 in DESIGN.md. */
+  --ink:          #e6e8eb;   /* primary text */
+  --ink-2:        #9aa3ad;   /* secondary text, metadata, prose muted */
+  --ink-3:        #7a8590;   /* tertiary text, placeholders, footer, hints */
+
+  /* Accent: focus ring, active/hover state, cursor. Never decoration. */
+  --accent:       #d9a441;
+
+  /* Status */
+  --ok:           #8fbf8f;
+  --err:          #d76c6c;
+
+  /* Lines and fills (decorative; excluded from the text contrast check) */
+  --line:         #232830;   /* pane borders, rules */
+  --line-strong:  #343b46;   /* rules that must read on --surface-2, table heads */
+  --selection:    #2b3644;   /* ::selection background; --ink on it is checked */
+  --focus:        var(--accent);
+  --focus-width:  2px;
+  --focus-offset: 2px;
+
+  /* ---- Typography ---------------------------------------------- */
+  --font-mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas,
+               "Liberation Mono", monospace;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, sans-serif;
+
+  /* Type scale (rem). Console surfaces sit at --text-sm; prose at --text-md. */
+  --text-2xs:  0.6875rem;  /* 11px  statusbar hints */
+  --text-xs:   0.75rem;    /* 12px  metadata, kbd */
+  --text-sm:   0.875rem;   /* 14px  console body, nav, pane titles */
+  --text-md:   1rem;       /* 16px  prose body on small screens */
+  --text-lg:   1.0625rem;  /* 17px  prose body at >=768px */
+  --text-xl:   1.25rem;    /* 20px  h2 */
+  --text-2xl:  1.5rem;     /* 24px  h1 on posts */
+  --text-3xl:  1.875rem;   /* 30px  landing name, page h1 at >=768px */
+
+  --leading-tight:   1.25;
+  --leading-console: 1.5;
+  --leading-prose:   1.65;
+
+  /* Prose column. Spec B4 asks for 65 to 75ch; read as characters per line,
+     not the CSS ch unit (the width of "0"), which in a proportional face is
+     about 1.35 average glyphs. Measured on a post at 17px system-ui: average
+     glyph 7.52px, so 33rem (528px) is about 70 characters per line, and the
+     old 66ch (707px) was 94. See DESIGN.md, Typography. */
+  --measure: 33rem;
+
+  /* ---- Spacing (rem) ------------------------------------------- */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-8: 3rem;      /* 48px */
+
+  /* Chrome heights. The landing height budget in DESIGN.md depends on these. */
+  --topbar-h:    3rem;      /* 48px */
+  --statusbar-h: 2.25rem;   /* 36px */
+  --console-gap: var(--space-3);
+  --pane-pad:    var(--space-3);
+
+  /* ---- Radius. A console, not a card UI. ----------------------- */
+  --radius-sm: 2px;
+  --radius:    3px;
+  --radius-md: 4px;
+
+  /* ---- Motion (durations from .omc/design/motion.md) ----------- */
+  --dur-press:  60ms;
+  --dur-hover:  120ms;
+  --dur-panel:  220ms;
+  --dur-blink:  1100ms;
+  --ease:       ease;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- Z-index ------------------------------------------------- */
+  --z-base:      0;
+  --z-topbar:    10;
+  --z-statusbar: 20;
+  --z-skip:      100;
+}
+
+/* Reduced motion: no durations, one iteration. JS also skips the boot loop. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-press: 0ms;
+    --dur-hover: 0ms;
+    --dur-panel: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

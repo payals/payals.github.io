@@ -35,7 +35,9 @@ immediately.
 
 ## Boot Sequence Lines
 
-Total boot duration: **800ms** across ~5 lines.
+Total boot budget: **800ms** across ~5 lines. Scheduled at **780ms**; the
+remaining 20ms absorbs setTimeout lateness so the measured handoff stays
+inside the budget.
 
 | Line # | Content example              | Delay from prev | Reasoning                                  |
 |--------|------------------------------|-----------------|-------------------------------------------|
@@ -44,9 +46,13 @@ Total boot duration: **800ms** across ~5 lines.
 | 2      | `loading talks..........ok`  | 140ms           | Slight acceleration — tension builds      |
 | 3      | `fetching now.json......ok`  | 130ms           | Consistent with line 2                    |
 | 4      | `system ready`               | 200ms           | Longer pause before "ready" = payoff beat |
-| Prompt | Cursor appears + blink starts| 210ms           | Brief silence after "ready" before handoff|
+| Prompt | Cursor appears + blink starts| 190ms           | Brief silence after "ready" before handoff|
 
-Total: 120 + 140 + 130 + 200 + 210 = **800ms**
+Total: 120 + 140 + 130 + 200 + 190 = **780ms** (budget 800ms)
+
+Each delay is an absolute deadline measured from one start timestamp, not a
+relative wait chained from the previous line, so timer jitter does not
+accumulate across the sequence.
 
 Each line is appended to the DOM (not typed character-by-character) — this
 keeps the total duration predictable and avoids the "O(n_chars)" problem
@@ -177,7 +183,7 @@ rings are unambiguous against any surface color.
 
 | Element                | Duration  | Easing          |
 |------------------------|-----------|-----------------|
-| Boot line append       | 120–210ms | step (instant)  |
+| Boot line append       | 120–200ms | step (instant)  |
 | ASCII portrait per line| 55ms delay + 80ms fade | ease-out |
 | Panel open             | 220ms     | cubic spring    |
 | Chip hover             | 120ms     | ease            |

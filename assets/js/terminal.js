@@ -1,80 +1,164 @@
 /**
- * terminal.js — command-line input, output, history, tab-complete.
- * No DOM queries — caller passes refs in constructor.
+ * terminal.js: the terminal pane. Input, scrollback, history, tab completion,
+ * the mirrored text span that carries the block cursor, and command dispatch
+ * with "command not found" plus a did-you-mean suggestion.
+ *
+ * Output lines are objects: { text } or { segments: [{ text, href, className }] }
+ * with an optional className. Lines print through a queue so the 30ms per-line
+ * stagger from .omc/design/motion.md never interleaves two commands.
  */
+
+const STAGGER_MS = 30;
+const STAGGER_MAX_LINES = 12;
+const TYPING_HOLD_MS = 500;
+const PANE_NAMES = ['about', 'cv', 'links', 'now', 'talks', 'writing'];
 
 export class Terminal {
   /**
-   * @param {HTMLElement} outputEl  — [data-terminal-output]
-   * @param {HTMLInputElement} inputEl — [data-terminal-input]
-   * @param {Object} registry — map of name → {description, handler}
+   * @param {object} refs
+   * @param {HTMLElement} refs.scrollback   role="log" container
+   * @param {HTMLInputElement} refs.input   the real input
+   * @param {HTMLElement} refs.prompt       .prompt wrapper
+   * @param {HTMLElement} refs.mirror       .prompt__mirror
+   * @param {HTMLElement} refs.cursor       .cursor
+   * @param {object} refs.registry          name -> { description, handler, hidden }
+   * @param {string} refs.ps1               prompt string echoed before commands
    */
-  constructor(outputEl, inputEl, registry) {
-    this._out = outputEl;
-    this._input = inputEl;
+  constructor({ scrollback, input, prompt, mirror, cursor, registry, ps1 }) {
+    this._out = scrollback;
+    this._input = input;
+    this._prompt = prompt;
+    this._mirror = mirror;
+    this._cursor = cursor;
     this._registry = registry;
+    this._ps1 = ps1;
 
     this._history = [];
-    this._histIdx = -1;  // -1 = not navigating
-    this._draft = '';    // saved draft while navigating history
+    this._histIdx = -1;
+    this._draft = '';
+
+    this._pending = [];
+    this._draining = false;
+    this._typingTimer = null;
+    this._reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     this._bindInput();
   }
 
-  // ── Public API ────────────────────────────────────────────────────────────
+  // Public API
 
-  /** Append a line of output. className is optional extra CSS class. */
-  print(line, { className = '' } = {}) {
-    const el = document.createElement('div');
-    el.className = ['terminal-line', className].filter(Boolean).join(' ');
-    // textContent — never innerHTML — keeps output safe
-    el.textContent = line;
-    this._out.appendChild(el);
-    this._scrollToBottom();
+  /** Print one line. Accepts a string or a line object. */
+  print(line, opts = {}) {
+    this.printLines([normalise(line, opts)]);
   }
 
-  /** Print "$ <cmd>" echo line before command output. */
-  printPrompt(cmd) {
-    this.print(`$ ${cmd}`, { className: 'terminal-line--prompt' });
+  /** Print several lines with the per-line stagger for short batches. */
+  printLines(lines) {
+    this._pending.push(lines.map((l) => normalise(l)));
+    this._drain();
   }
 
-  /** Look up cmd in registry and call its handler. */
-  runCommand(name, rawInput) {
-    const key = name.trim().toLowerCase();
-    const args = rawInput.trim().split(/\s+/).slice(1);
+  /** Echo the prompt and the command the visitor ran. */
+  printPrompt(raw) {
+    this.print(`${this._ps1} ${raw}`, { className: 'scrollback__line--echo' });
+  }
 
-    // sudo <anything>
-    if (key === 'sudo') {
-      this.print('nice try.', { className: 'terminal-line--muted' });
-      return;
-    }
+  /** Run a raw command string as if typed. */
+  run(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    this.printPrompt(trimmed);
+    this.runCommand(trimmed);
+  }
 
-    const entry = this._registry[key];
+  /** Dispatch a trimmed command string to the registry. */
+  runCommand(raw) {
+    const tokens = raw.split(/\s+/);
+    const name = tokens[0].toLowerCase();
+    const args = tokens.slice(1);
+    const entry = this._registry[name];
+
     if (!entry) {
-      this.print(`${key}: command not found`, { className: 'terminal-line--err' });
+      this.print(`bash: ${name}: command not found`, { className: 'scrollback__line--err' });
+      const guess = this.suggest(name);
+      if (guess) this.print(`did you mean: ${guess}`, { className: 'scrollback__line--dim' });
       return;
     }
-    entry.handler(args, this);
+
+    try {
+      const result = entry.handler(args, this);
+      if (result && typeof result.catch === 'function') {
+        result.catch((err) => this.print(`${name}: ${err.message}`, { className: 'scrollback__line--err' }));
+      }
+    } catch (err) {
+      this.print(`${name}: ${err.message}`, { className: 'scrollback__line--err' });
+    }
   }
 
-  /** Focus the input element. */
+  /** Closest known command within Levenshtein distance 2, or null. */
+  suggest(name) {
+    let best = null;
+    let bestDist = Infinity;
+    for (const candidate of Object.keys(this._registry)) {
+      if (this._registry[candidate].hidden) continue;
+      const d = levenshtein(name, candidate);
+      // The distance must also be smaller than the candidate itself, so a
+      // stray digit does not "mean" a two-letter command.
+      if (d <= 2 && d < candidate.length && d < bestDist) {
+        best = candidate;
+        bestDist = d;
+      }
+    }
+    return best;
+  }
+
   focus() {
-    this._input.focus();
+    this._input.focus({ preventScroll: true });
   }
 
-  /** Clear all output lines. */
+  /** Move focus off the prompt so the pane keys work again. */
+  leave() {
+    const pane = this._input.closest('.pane');
+    if (pane) pane.focus({ preventScroll: true });
+    else this._input.blur();
+  }
+
   clear() {
-    this._out.innerHTML = '';
+    this._pending.length = 0;
+    this._out.replaceChildren();
   }
 
-  /** Replace the command registry (used during setup to add commands). */
-  setRegistry(registry) {
-    this._registry = registry;
+  /** Replace the input value and keep the mirror in sync. */
+  setValue(value) {
+    this._input.value = value;
+    const len = value.length;
+    this._input.setSelectionRange(len, len);
+    this._syncMirror();
   }
 
-  // ── Input handling ────────────────────────────────────────────────────────
+  /** Switch the prompt to the mirrored block-cursor mode. */
+  enableMirror() {
+    this._prompt.classList.add('prompt--mirrored');
+    this._syncMirror();
+  }
+
+  showCursor() {
+    this._cursor.classList.add('cursor--active');
+  }
+
+  get names() {
+    return Object.keys(this._registry).filter((n) => !this._registry[n].hidden).sort();
+  }
+
+  get registry() {
+    return this._registry;
+  }
+
+  // Input handling
 
   _bindInput() {
+    this._input.addEventListener('input', () => this._syncMirror());
+
     this._input.addEventListener('keydown', (e) => {
       switch (e.key) {
         case 'Enter':
@@ -92,92 +176,180 @@ export class Terminal {
           e.preventDefault();
           this._tabComplete();
           break;
+        case 'Escape':
+          e.preventDefault();
+          this.leave();
+          break;
         case 'l':
           if (e.ctrlKey) {
             e.preventDefault();
             this.clear();
           }
           break;
+        case 'c':
+          if (e.ctrlKey) {
+            e.preventDefault();
+            this.printPrompt(`${this._input.value}^C`);
+            this.setValue('');
+            this._histIdx = -1;
+          }
+          break;
+        default:
+          break;
       }
     });
   }
 
+  _syncMirror() {
+    this._mirror.textContent = this._input.value;
+    this._prompt.classList.add('prompt--typing');
+    clearTimeout(this._typingTimer);
+    this._typingTimer = setTimeout(() => this._prompt.classList.remove('prompt--typing'), TYPING_HOLD_MS);
+  }
+
   _handleEnter() {
     const raw = this._input.value.trim();
-    if (!raw) return;
-
-    // Push to history; reset navigation state
+    this.setValue('');
+    if (!raw) {
+      this.printPrompt('');
+      return;
+    }
     this._history.push(raw);
     this._histIdx = -1;
     this._draft = '';
-
-    this._input.value = '';
-
-    // First token is command name
-    const tokens = raw.split(/\s+/);
-    const name = tokens[0].toLowerCase();
     this.printPrompt(raw);
-    this.runCommand(name, raw);
-    this._scrollToBottom();
+    this.runCommand(raw);
   }
 
   _historyUp() {
     if (this._history.length === 0) return;
     if (this._histIdx === -1) {
-      // Save whatever the user was typing
       this._draft = this._input.value;
       this._histIdx = this._history.length - 1;
     } else if (this._histIdx > 0) {
       this._histIdx--;
     }
-    this._input.value = this._history[this._histIdx];
-    this._moveCursorToEnd();
+    this.setValue(this._history[this._histIdx]);
   }
 
   _historyDown() {
     if (this._histIdx === -1) return;
     if (this._histIdx < this._history.length - 1) {
       this._histIdx++;
-      this._input.value = this._history[this._histIdx];
+      this.setValue(this._history[this._histIdx]);
     } else {
-      // Back to draft
       this._histIdx = -1;
-      this._input.value = this._draft;
+      this.setValue(this._draft);
     }
-    this._moveCursorToEnd();
   }
 
   _tabComplete() {
-    const val = this._input.value;
-    const names = Object.keys(this._registry);
+    const value = this._input.value;
+    const catMatch = value.match(/^(cat\s+)(\S*)$/);
 
-    // "cat " prefix — complete panel names
-    if (val.startsWith('cat ')) {
-      const partial = val.slice(4);
-      const panels = ['about', 'now', 'talks', 'cv'];
-      const matches = panels.filter(p => p.startsWith(partial));
-      if (matches.length === 1) {
-        this._input.value = `cat ${matches[0]}`;
-      } else if (matches.length > 1) {
-        this.print(matches.join('  '), { className: 'terminal-line--muted' });
-      }
+    let prefix = '';
+    let partial = value.toLowerCase();
+    let pool = this.names;
+
+    if (catMatch) {
+      prefix = catMatch[1];
+      partial = catMatch[2].toLowerCase();
+      pool = PANE_NAMES;
+    }
+
+    const matches = pool.filter((n) => n.startsWith(partial));
+    if (matches.length === 0) return;
+
+    if (matches.length === 1) {
+      this.setValue(`${prefix}${matches[0]} `);
       return;
     }
 
-    const matches = names.filter(n => n.startsWith(val.toLowerCase()));
-    if (matches.length === 1) {
-      this._input.value = matches[0];
-    } else if (matches.length > 1) {
-      this.print(matches.join('  '), { className: 'terminal-line--muted' });
+    const common = commonPrefix(matches);
+    if (common.length > partial.length) {
+      this.setValue(`${prefix}${common}`);
+    } else {
+      this.print(matches.join('  '), { className: 'scrollback__line--dim' });
     }
   }
 
-  _moveCursorToEnd() {
-    const len = this._input.value.length;
-    this._input.setSelectionRange(len, len);
+  // Output queue
+
+  async _drain() {
+    if (this._draining) return;
+    this._draining = true;
+    while (this._pending.length) {
+      const batch = this._pending.shift();
+      const stagger = !this._reduced && batch.length > 1 && batch.length <= STAGGER_MAX_LINES;
+      for (let i = 0; i < batch.length; i++) {
+        if (stagger && i > 0) await sleep(STAGGER_MS);
+        this._append(batch[i]);
+      }
+    }
+    this._draining = false;
   }
 
-  _scrollToBottom() {
+  _append(line) {
+    const el = document.createElement('p');
+    el.className = ['scrollback__line', line.className].filter(Boolean).join(' ');
+    for (const seg of line.segments) {
+      if (seg.href) {
+        const a = document.createElement('a');
+        a.href = seg.href;
+        a.textContent = seg.text;
+        if (/^https?:/.test(seg.href)) {
+          a.target = '_blank';
+          a.rel = 'noopener';
+        }
+        el.appendChild(a);
+      } else if (seg.className) {
+        const span = document.createElement('span');
+        span.className = seg.className;
+        span.textContent = seg.text;
+        el.appendChild(span);
+      } else {
+        el.appendChild(document.createTextNode(seg.text));
+      }
+    }
+    // An empty line still needs height.
+    if (line.segments.length === 0) el.textContent = ' ';
+    this._out.appendChild(el);
     this._out.scrollTop = this._out.scrollHeight;
   }
+}
+
+/** Levenshtein edit distance. */
+export function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function normalise(line, opts = {}) {
+  if (typeof line === 'string') {
+    return { className: opts.className || '', segments: line === '' ? [] : [{ text: line, href: opts.href }] };
+  }
+  if (line.segments) return { className: line.className || '', segments: line.segments };
+  return { className: line.className || '', segments: line.text === '' ? [] : [{ text: line.text, href: line.href }] };
+}
+
+function commonPrefix(words) {
+  let prefix = words[0];
+  for (const w of words.slice(1)) {
+    while (!w.startsWith(prefix)) prefix = prefix.slice(0, -1);
+  }
+  return prefix;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

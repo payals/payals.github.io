@@ -1,29 +1,25 @@
 ---
-layout: page
-title: Blog
-description: "All posts."
+layout: blog
+title: Writing
+description: "Notes on Postgres, AI, and systems engineering."
 permalink: /blog/
-background: /assets/img/blog-header.jpg
 ---
 
-<p class="blog-toolbar"><a href="{{ '/blog/topics/' | relative_url }}">Browse by topic</a> &nbsp;&middot;&nbsp; <a href="{{ '/feed.xml' | relative_url }}">RSS</a></p>
+<p class="meta blog-toolbar">{{ site.posts.size }} posts &middot; <a href="/blog/topics/">Browse by topic</a> &middot; <a href="/feed.xml">RSS</a></p>
 
 {% if site.posts.size > 0 %}
+<ol class="postlist">
 {% for post in site.posts %}
-<article class="post-preview">
-<a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
-<h2 class="post-title">{{ post.title }}</h2>
-{% if post.subtitle %}
-<h3 class="post-subtitle">{{ post.subtitle }}</h3>
-{% else %}
-<h3 class="post-subtitle">{{ post.excerpt | strip_html | truncatewords: 15 }}</h3>
-{% endif %}
-</a>
-<p class="post-meta">Posted by {{ post.author | default: site.author }} on {{ post.date | date: "%B %-d, %Y" }} &middot; {{ post.content | number_of_words | divided_by: 200.0 | ceil }} min read</p>
-{% if post.tags and post.tags != empty %}<p class="post-tags">{% for tag in post.tags %}<a class="tag-chip" href="{{ '/blog/topics/' | relative_url }}#{{ tag | slugify }}">#{{ tag }}</a>{% endfor %}</p>{% endif %}
-</article>
-<hr>
+  <li class="postlist__item">
+    <time class="postlist__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+    <div class="postlist__main">
+      <a class="postlist__title" href="{{ post.url }}">{{ post.title | escape }}</a>
+      {% if post.subtitle %}<p class="postlist__sub">{{ post.subtitle | escape }}</p>{% else %}<p class="postlist__sub">{{ post.excerpt | strip_html | normalize_whitespace | truncatewords: 24 }}</p>{% endif %}
+      {% if post.tags and post.tags != empty %}<p class="postlist__tags">{% for tag in post.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}</p>{% endif %}
+    </div>
+  </li>
 {% endfor %}
+</ol>
 {% else %}
-No posts yet.
+<p class="muted">No posts yet.</p>
 {% endif %}

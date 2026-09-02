@@ -1,84 +1,81 @@
 /**
- * boot.js — boot sequence (~800ms, skippable, reduced-motion aware).
- * Timing from .omc/design/motion.md.
+ * boot.js: the boot sequence in the terminal pane. At most 800ms, skippable
+ * with any key or click, skipped entirely under prefers-reduced-motion.
+ * Timing from .omc/design/motion.md: 0, 120, 140, 130, 200, then 190 before
+ * the cursor appears (780ms scheduled, 20ms of headroom for timer lateness).
+ * Every line is scheduled against an absolute deadline measured from one
+ * start timestamp, so setTimeout jitter does not accumulate across lines.
+ * The lines report what the page actually rendered.
  */
 
-const BOOT_LINES = [
-  { text: 'PayalOS v1.0 booting...', delay: 0 },
-  { text: '[  OK  ] mounting /links', delay: 120 },
-  { text: '[  OK  ] loading bio', delay: 140 },
-  { text: '[  OK  ] indexing talks', delay: 130 },
-  { text: '[  OK  ] fetching now.json', delay: 200 },
-  { text: 'Welcome, visitor. Type `help` to begin.', delay: 210 },
-];
+const READY_DELAY_MS = 190;
 
 /**
  * @param {object} opts
- * @param {HTMLElement} opts.outputEl  — terminal output container
- * @param {AbortSignal} [opts.skipSignal] — abort = skip remaining delays
- * @returns {Promise<void>} resolves when boot is complete
+ * @param {import('./terminal.js').Terminal} opts.term
+ * @param {HTMLElement} opts.console   the main.console element with data-* counts
+ * @param {AbortSignal} opts.skipSignal
+ * @param {boolean} opts.reducedMotion
+ * @returns {Promise<void>}
  */
-export function runBoot({ outputEl, skipSignal }) {
-  return new Promise((resolve) => {
-    let skipped = false;
-    let lineIdx = 0;
-    let timeoutId = null;
+export function runBoot({ term, console: consoleEl, skipSignal, reducedMotion }) {
+  const d = consoleEl.dataset;
+  const ok = { text: '[ ok ]', className: 'ok' };
+  const lines = [
+    { delay: 0, line: 'payalsingh.me console' },
+    { delay: 120, line: { segments: [ok, { text: ` now.json     updated ${d.nowUpdated || 'unknown'}` }] } },
+    { delay: 140, line: { segments: [ok, { text: ` talks.json   ${d.talksSourced || 0} sourced, ${d.talksLeads || 0} archive leads` }] } },
+    { delay: 130, line: { segments: [ok, { text: ` writing      ${d.posts || 0} posts` }] } },
+    { delay: 200, line: 'ready. type help, or press 0 to 4 to jump to a pane.' },
+  ];
 
-    function skip() {
-      if (skipped) return;
-      skipped = true;
-      if (timeoutId !== null) clearTimeout(timeoutId);
-      // Flush remaining lines immediately
-      for (let i = lineIdx; i < BOOT_LINES.length; i++) {
-        appendLine(BOOT_LINES[i].text);
-      }
+  if (reducedMotion) {
+    for (const { line } of lines) term.print(line);
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    // Absolute deadlines (ms after start) for each line and for the handoff.
+    let cumulative = 0;
+    const deadlines = lines.map(({ delay }) => (cumulative += delay));
+    const readyAt = cumulative + READY_DELAY_MS;
+    const start = performance.now();
+    const elapsed = () => performance.now() - start;
+
+    let idx = 0;
+    let timer = null;
+    let done = false;
+
+    function finish() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      for (; idx < lines.length; idx++) term.print(lines[idx].line);
       resolve();
     }
 
-    // Wire skip signal if provided
-    if (skipSignal) {
-      if (skipSignal.aborted) {
-        // Already signalled — flush everything at once and return
-        for (const { text } of BOOT_LINES) appendLine(text);
-        resolve();
-        return;
+    // Print every line whose deadline has passed, then sleep until the next
+    // deadline. A timer that fires late only delays its own line; the lines
+    // after it are still measured from the same start.
+    function step() {
+      if (done) return;
+      while (idx < lines.length) {
+        const wait = deadlines[idx] - elapsed();
+        if (wait > 0) {
+          timer = setTimeout(step, wait);
+          return;
+        }
+        term.print(lines[idx].line);
+        idx++;
       }
-      skipSignal.addEventListener('abort', skip, { once: true });
+      timer = setTimeout(finish, Math.max(0, readyAt - elapsed()));
     }
 
-    function appendLine(text) {
-      const el = document.createElement('div');
-      el.className = 'terminal-line terminal-line--boot';
-      // Mark [OK] lines with accent class for green colour
-      if (text.startsWith('[  OK  ]')) {
-        el.classList.add('terminal-line--ok');
-      }
-      el.textContent = text;
-      outputEl.appendChild(el);
-      outputEl.scrollTop = outputEl.scrollHeight;
+    if (skipSignal.aborted) {
+      finish();
+      return;
     }
-
-    function printNext() {
-      if (skipped) return;
-      if (lineIdx >= BOOT_LINES.length) {
-        resolve();
-        return;
-      }
-      const { text, delay } = BOOT_LINES[lineIdx];
-      lineIdx++;
-
-      if (delay === 0) {
-        appendLine(text);
-        printNext();
-      } else {
-        timeoutId = setTimeout(() => {
-          if (skipped) return;
-          appendLine(text);
-          printNext();
-        }, delay);
-      }
-    }
-
-    printNext();
+    skipSignal.addEventListener('abort', finish, { once: true });
+    step();
   });
 }

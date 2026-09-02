@@ -1,49 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="Page not found — Payal Singh">
-  <title>404 — Payal Singh</title>
-  <link rel="stylesheet" href="assets/css/terminal.css">
-</head>
-<body>
-
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-
-  <div class="page-shell">
-
-    <main id="main-content" class="site-main page-404" role="main">
-
-      <section class="terminal-block" aria-label="Error terminal">
-        <div class="terminal-output" role="log" aria-label="Terminal output">
-          <span class="terminal-line terminal-line--echo">$ cd /that-page</span>
-          <span class="terminal-line terminal-line--error">bash: cd: /that-page: No such file or directory</span>
-          <span class="terminal-line terminal-line--echo">$ cd ~</span>
-          <span class="terminal-line terminal-line--muted">_</span>
-        </div>
-        <div class="terminal-input-row" aria-hidden="true">
-          <span class="prompt-symbol">&gt;</span>
-          <span class="cursor cursor--active"></span>
-        </div>
-      </section>
-
-      <nav class="page-404-chips" aria-label="Navigation">
-        <a class="chip chip--link" href="/" rel="noopener">home</a>
-      </nav>
-
-    </main>
-
-    <footer class="site-footer" role="contentinfo">
-      <p class="footer-text">
-        &copy; Payal Singh &nbsp;&middot;&nbsp;
-        <a href="https://github.com/payals/payals.github.io" target="_blank" rel="noopener noreferrer">source</a>
-        &nbsp;&middot;&nbsp; CC-BY
-      </p>
-    </footer>
-
-  </div><!-- .page-shell -->
-
-</body>
-</html>
+---
+layout: blog
+title: "404"
+description: That path does not exist on this site.
+permalink: /404.html
+sitemap: false
+---
+<section class="pane pane--terminal" aria-label="Terminal output">
+  <div class="pane__body">
+    <div class="scrollback" role="log" aria-label="Terminal output">
+      <p class="scrollback__line scrollback__line--echo">payal@payalsingh.me:~$ cd /that-page</p>
+      <p class="scrollback__line scrollback__line--err">bash: cd: /that-page: No such file or directory</p>
+      <p class="scrollback__line scrollback__line--echo">payal@payalsingh.me:~$ cd ~</p>
+    </div>
+    <div class="prompt" aria-hidden="true">
+      <span class="prompt__ps1">payal@payalsingh.me:~$</span>
+      <span class="prompt__field"><span class="cursor cursor--active cursor--blink"></span></span>
+    </div>
+  </div>
+</section>
+<p class="actions"><a class="btn" href="/">home</a> <a href="/blog/">writing</a> <a href="/#talks">talks</a> <a href="/#cv">cv</a></p>

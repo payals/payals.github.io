@@ -1,12 +1,19 @@
 title: Payal Singh
 description: Notes on Postgres, AI, and systems engineering.
+# Topbar positioning line on every page; rendered after the name, so it starts lowercase.
+tagline: "staff platform engineer. Postgres, data systems, DevOps, and AI-native systems."
 url: "https://payalsingh.me"
 baseurl: ""
 lang: en
 author: Payal Singh
 email: psinghpayal@outlook.com
+source_url: https://github.com/payals/payals.github.io
 
-remote_theme: StartBootstrap/startbootstrap-clean-blog-jekyll
+# github-pages would otherwise inject jekyll-theme-primer (assets/css/style.css).
+theme: null
+
+# Read data/*.json directly so site.data and the public /data/*.json URLs share one file.
+data_dir: data
 
 permalink: /blog/:year/:month/:day/:title/
 
@@ -19,7 +26,6 @@ kramdown:
 plugins:
   - jekyll-feed
   - jekyll-sitemap
-  - jekyll-remote-theme
 
 feed:
   categories:
@@ -37,10 +43,16 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - README.md
+  - DESIGN.md
+  - scripts/
   - vendor/
   - .bundle/
   - .venv/
   - .omc/
+  - .playwright-mcp/
   - .env
   - .env.example
   - napkin.md
+  - drafts/
+  - CLAUDE.md
+  - AGENTS.md

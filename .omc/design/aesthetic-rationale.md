@@ -1,3 +1,5 @@
+> Superseded by `DESIGN.md` at the repo root as of 2026-09-01. Kept for history; do not use these values. `motion.md` stays authoritative.
+
 # Aesthetic Rationale — payals.github.io terminal landing
 
 ## The question: what makes this memorable vs. the competition?

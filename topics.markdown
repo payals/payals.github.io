@@ -1,19 +1,22 @@
 ---
-layout: page
+layout: blog
 title: Topics
-description: "Browse posts by topic."
+description: "Every post, grouped by tag."
 permalink: /blog/topics/
 ---
 
 {% assign sorted_tags = site.tags | sort %}
-<p class="blog-toolbar"><a href="{{ '/blog/' | relative_url }}">&larr; all posts</a></p>
+<p class="meta blog-toolbar">{{ sorted_tags.size }} topics &middot; <a href="/blog/">All posts</a> &middot; <a href="/feed.xml">RSS</a></p>
+
 {% if sorted_tags.size > 0 %}
 {% for tag in sorted_tags %}
-<h2 id="{{ tag[0] | slugify }}" class="topic-heading">{{ tag[0] }} <span class="topic-count">{{ tag[1] | size }}</span></h2>
-<ul class="topic-list">
-{% for post in tag[1] %}<li><a href="{{ post.url | relative_url }}">{{ post.title }}</a> <span class="topic-date">{{ post.date | date: "%b %-d, %Y" }}</span></li>
-{% endfor %}</ul>
+<section class="topic" id="{{ tag[0] | slugify }}" tabindex="-1">
+  <h2 class="topic__title">{{ tag[0] }} <span class="topic__count">{{ tag[1] | size }}</span></h2>
+  <ul class="rows">
+  {% for post in tag[1] %}<li class="row"><span class="row__date">{{ post.date | date: "%Y-%m-%d" }}</span><a class="row__title" href="{{ post.url }}">{{ post.title | escape }}</a></li>
+  {% endfor %}</ul>
+</section>
 {% endfor %}
 {% else %}
-No tagged posts yet.
+<p class="muted">No tagged posts yet.</p>
 {% endif %}

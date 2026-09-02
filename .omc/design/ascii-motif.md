@@ -1,3 +1,5 @@
+> Superseded by `DESIGN.md` at the repo root as of 2026-09-01. Kept for history; do not use these values. `motion.md` stays authoritative.
+
 # ASCII Motif Candidates — payals.github.io portrait slot
 
 ## Constraints

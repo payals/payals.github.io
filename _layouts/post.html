@@ -1,0 +1,24 @@
+---
+layout: default
+---
+{% assign words = content | strip_html | number_of_words %}
+{% assign minutes = words | divided_by: 200.0 | ceil %}
+{% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
+<header class="page__header">
+  <h1 class="page__title">{{ page.title | escape }}</h1>
+  {% if page.subtitle %}<p class="page__subtitle">{{ page.subtitle | escape }}</p>{% endif %}
+  <p class="meta page__meta">
+    <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y-%m-%d' }}</time>
+    &middot; {{ minutes }} min read
+    {% if page.tags and page.tags != empty %}&middot; {% for tag in page.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}{% endif %}
+  </p>
+</header>
+<article class="prose">
+{{ content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' }}
+</article>
+{% if page.previous or page.next %}
+<nav class="pager" aria-label="Adjacent posts">
+  {% if page.next %}<p class="pager__item pager__item--newer"><span class="pager__label">newer</span> <a href="{{ page.next.url }}">{{ page.next.title | escape }}</a></p>{% endif %}
+  {% if page.previous %}<p class="pager__item pager__item--older"><span class="pager__label">older</span> <a href="{{ page.previous.url }}">{{ page.previous.title | escape }}</a></p>{% endif %}
+</nav>
+{% endif %}

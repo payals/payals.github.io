@@ -1,0 +1,10 @@
+---
+layout: default
+---
+<header class="page__header">
+  <h1 class="page__title">{{ page.title | escape }}</h1>
+  {% if page.description %}<p class="page__subtitle">{{ page.description | escape }}</p>{% endif %}
+</header>
+<article class="prose">
+{{ content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' }}
+</article>

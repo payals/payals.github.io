@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'en' }}">
+{% include head.html %}
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    {% include navbar.html %}
+    <main id="main" class="page" tabindex="-1">
+{{ content }}
+    </main>
+    <footer class="footer">
+      <p class="footer__line">&copy; {{ site.author | escape }} &middot; <a href="{{ site.source_url }}">source</a> &middot; <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY 4.0</a> &middot; <a href="/feed.xml">rss</a> &middot; email <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>
+    </footer>
+  </div>
+</body>
+</html>

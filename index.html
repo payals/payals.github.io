@@ -1,122 +1,233 @@
+---
+description: Payal Singh, staff platform engineer. Postgres, data systems, DevOps, and AI-native systems. Talks, writing, and CV.
+---
+{%- assign now = site.data.now -%}
+{%- assign talks = site.data.talks -%}
+{%- assign sourced = talks | where: "record_type", "sourced" -%}
+{%- assign leads = talks | where: "record_type", "archive_lead" -%}
+{%- assign upcoming = sourced | where: "status", "upcoming" -%}
+{%- assign past = sourced | where: "status", "past" -%}
+{%- assign ordered = upcoming | concat: past -%}
+{%- assign visible_talks = 6 -%}
+{%- assign more_talks = ordered.size | minus: visible_talks -%}
+{%- assign latest = site.posts.first -%}
+{%- capture cv_markdown -%}{% include_relative data/cv.md %}{%- endcapture -%}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="Payal Singh — personal site.">
-  <title>Payal Singh</title>
-  <link rel="stylesheet" href="assets/css/terminal.css">
-</head>
+{% include head.html %}
 <body>
 
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+<a class="skip-link" href="#main">Skip to content</a>
 
-  <div class="page-shell">
+<div class="shell shell--landing">
 
-    <header class="site-header" role="banner">
-      <div class="header-inner">
-        <div class="portrait-wrap" aria-hidden="true">
-          <pre class="portrait" data-portrait>        ___________
-       /           \
-      /  .---.      \
-     /  /     \      \
-    /  | () () |      \
-   /    \  ^  /        \
-  /  ~~~~`---'~~~~      \
- /________________________\
-|  ______________________  |
-| |  > payal@terminal   | |
-| |  $ cat about        | |
-| |  loading...         | |
-| |_____________________| |
- \________________________/
-        |___|___|</pre>
+  {% include navbar.html %}
+
+  <main id="main" class="console" tabindex="-1"
+        data-now-updated="{{ now.updated }}"
+        data-talks-sourced="{{ sourced.size }}"
+        data-talks-leads="{{ leads.size }}"
+        data-posts="{{ site.posts.size }}">
+
+    <section class="pane" id="now" tabindex="-1" aria-labelledby="now-title">
+      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta">updated {{ now.updated }}</span>{% endif %}</h2>
+      <div class="pane__body">
+        <dl class="facts" data-facts>
+          <dt>role</dt>
+          <dd>Staff Data Engineer at Lore, since June 2026</dd>
+          {%- for talk in upcoming limit:1 %}
+          <dt>speaking</dt>
+          <dd><a href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>, {{ talk.venue | escape }}, {{ talk.date }}</dd>
+          {%- endfor %}
+          {%- if latest %}
+          <dt>latest post</dt>
+          <dd><a href="{{ latest.url }}">{{ latest.title | escape }}</a>, {{ latest.date | date: "%Y-%m-%d" }}</dd>
+          {%- endif %}
+          {%- if now.shipping %}
+          <dt>shipping</dt>
+          <dd>{{ now.shipping | escape }}</dd>
+          {%- endif %}
+          {%- if now.reading %}
+          <dt>reading</dt>
+          <dd>{{ now.reading | escape }}</dd>
+          {%- endif %}
+          {%- if now.state %}
+          <dt>location</dt>
+          <dd>{{ now.state | escape }}</dd>
+          {%- endif %}
+        </dl>
+      </div>
+    </section>
+
+    <section class="pane" id="talks" tabindex="-1" aria-labelledby="talks-title">
+      <h2 class="pane__title" id="talks-title"><span class="pane__key">1</span>talks<span class="pane__meta">{{ sourced.size }} sourced, {{ leads.size }} leads</span></h2>
+      <div class="pane__body">
+        {%- if ordered.size == 0 %}
+        <p class="meta">No sourced talks on record yet.</p>
+        {%- else %}
+        <ul class="rows" data-talks>
+          {%- for talk in ordered limit:visible_talks %}
+          <li class="row{% if talk.status == 'upcoming' %} row--current{% endif %}">
+            {%- if talk.date %}
+            <time class="row__date" datetime="{{ talk.date }}">{{ talk.date }}</time>
+            {%- else %}
+            <span class="row__date">{{ talk.date_label | escape }}</span>
+            {%- endif %}
+            <a class="row__title" href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>
+            <span class="row__aside">{{ talk.venue | escape }}
+              {%- if talk.status == 'upcoming' %} <span class="badge badge--ok">upcoming</span>{% endif %}
+              {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
+              &middot; <a href="{{ talk.event_url }}" target="_blank" rel="noopener">{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}</a>
+              {%- if talk.archive_url %} &middot; <a href="{{ talk.archive_url }}" target="_blank" rel="noopener">{{ talk.archive_label | default: "archive" | escape }}</a>{% endif %}
+              {%- if talk.slides_url %} &middot; <a href="{{ talk.slides_url }}" target="_blank" rel="noopener">slides</a>{% endif %}
+            </span>
+            {%- if talk.evidence_level == 'official_program_listing' and talk.note %}
+            <p class="row__note">{{ talk.note | escape }}</p>
+            {%- endif %}
+          </li>
+          {%- endfor %}
+        </ul>
+        {%- if more_talks > 0 or leads.size > 0 %}
+        <details class="more" data-more>
+          <summary class="btn more__summary" data-open-label="show fewer" data-closed-label="show {{ more_talks }} more">show {{ more_talks }} more</summary>
+          <div class="more__body">
+            {%- if more_talks > 0 %}
+            <ul class="rows" data-talks>
+              {%- for talk in ordered offset:visible_talks %}
+              <li class="row" tabindex="-1">
+                {%- if talk.date %}
+                <time class="row__date" datetime="{{ talk.date }}">{{ talk.date }}</time>
+                {%- else %}
+                <span class="row__date">{{ talk.date_label | escape }}</span>
+                {%- endif %}
+                <a class="row__title" href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>
+                <span class="row__aside">{{ talk.venue | escape }}
+                  {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
+                  &middot; <a href="{{ talk.event_url }}" target="_blank" rel="noopener">{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}</a>
+                  {%- if talk.archive_url %} &middot; <a href="{{ talk.archive_url }}" target="_blank" rel="noopener">{{ talk.archive_label | default: "archive" | escape }}</a>{% endif %}
+                  {%- if talk.slides_url %} &middot; <a href="{{ talk.slides_url }}" target="_blank" rel="noopener">slides</a>{% endif %}
+                </span>
+                {%- if talk.evidence_level == 'official_program_listing' and talk.note %}
+                <p class="row__note">{{ talk.note | escape }}</p>
+                {%- endif %}
+              </li>
+              {%- endfor %}
+            </ul>
+            {%- endif %}
+            {%- if leads.size > 0 %}
+            <h3 class="pane__section" id="talks-leads-title">archive leads</h3>
+            <p class="meta">Remembered appearances still being reconstructed. No title or date is claimed without a recovered record.</p>
+            <ul class="rows" data-leads aria-labelledby="talks-leads-title">
+              {%- for lead in leads %}
+              <li class="row">
+                <span class="row__date">{{ lead.era | escape }}</span>
+                <span class="row__title">{{ lead.label | escape }}</span>
+                <p class="row__note">{{ lead.detail | escape }}</p>
+              </li>
+              {%- endfor %}
+            </ul>
+            {%- endif %}
+            <p class="meta" data-talks-caveat>Schedule records establish scheduling, not delivery. Source: <a href="/data/talks.json">talks.json</a>.</p>
+          </div>
+        </details>
+        {%- endif %}
+        {%- endif %}
+      </div>
+    </section>
+
+    <section class="pane" id="writing" tabindex="-1" aria-labelledby="writing-title">
+      <h2 class="pane__title" id="writing-title"><span class="pane__key">2</span>writing<span class="pane__meta">{{ site.posts.size }} posts</span></h2>
+      <div class="pane__body">
+        <ul class="rows" data-posts>
+          {%- for post in site.posts limit:5 %}
+          {%- assign words = post.content | strip_html | number_of_words %}
+          {%- assign minutes = words | plus: 199 | divided_by: 200 %}
+          <li class="row">
+            <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+            <a class="row__title" href="{{ post.url }}">{{ post.title | escape }}</a>
+            <span class="row__aside">{{ minutes }} min</span>
+          </li>
+          {%- endfor %}
+        </ul>
+        <p class="actions"><a class="btn" href="/blog/">all posts</a> <a href="/feed.xml">rss</a></p>
+      </div>
+    </section>
+
+    <section class="pane" id="cv" tabindex="-1" aria-labelledby="cv-title">
+      <h2 class="pane__title" id="cv-title"><span class="pane__key">3</span>cv</h2>
+      <div class="pane__body">
+        <p data-cv-headline>Staff platform engineer working across data systems, DevOps, and AI-native systems.</p>
+        <ul class="rows" data-cv-roles>
+          <li class="row row--current">
+            <span class="row__date">2026-06 to now</span>
+            <span class="row__title">Staff Data Engineer, Lore</span>
+            <p class="row__note">Managed PostgreSQL platforms, data access governance, and operational automation on GCP and GKE.</p>
+          </li>
+          <li class="row">
+            <span class="row__date">2013 to 2026-06</span>
+            <span class="row__title">Senior Database Reliability Engineer, OmniTI to Credativ to Instaclustr (NetApp)</span>
+            <p class="row__note">PostgreSQL reliability, data integrity, capacity, performance, audit, access control, and migration.</p>
+          </li>
+        </ul>
+        <p class="meta">M.S. Computer Science, UMBC. B.E. Computer Science, Panjab University.</p>
+        <p class="actions"><a class="btn" href="/data/cv.pdf" download="payal-singh-cv.pdf">download pdf</a></p>
+        <details class="more" data-more>
+          <summary class="btn more__summary" data-open-label="hide full cv" data-closed-label="full cv">full cv</summary>
+          <div class="more__body prose prose--mono" tabindex="-1">
+            {%- comment -%} cv.md opens with an h1 and uses h2/h3 below it. Inside the cv pane
+            the h2 pane title already heads this block, so the h1 is dropped and the rest
+            moves down one level. data/cv.md itself is unchanged. {%- endcomment %}
+            {{ cv_markdown | markdownify | split: '</h1>' | last | replace: '<h3', '<h4' | replace: '</h3>', '</h4>' | replace: '<h2', '<h3' | replace: '</h2>', '</h3>' }}
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="pane pane--links" id="links" tabindex="-1" aria-labelledby="links-title">
+      <h2 class="pane__title" id="links-title"><span class="pane__key">4</span>links</h2>
+      <div class="pane__body">
+        <ul class="links" data-links>
+          <li><a href="https://github.com/payals" target="_blank" rel="noopener" data-link="github">github<span class="links__host">/payals</span></a></li>
+          <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener" data-link="codeberg">codeberg<span class="links__host">/sillygoose</span></a></li>
+          <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener" data-link="linkedin">linkedin<span class="links__host">/in/payalsingh</span></a></li>
+          <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener" data-link="medium">medium<span class="links__host">/@reliable-by-design</span></a></li>
+          <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener" data-link="older">older<span class="links__host">/penningpence</span></a></li>
+          <li><a href="mailto:psinghpayal@outlook.com" data-link="email">email</a></li>
+          <li><a href="/feed.xml" data-link="rss">rss</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="pane pane--terminal pane--span" id="terminal" tabindex="-1" aria-labelledby="terminal-title">
+      <h2 class="pane__title" id="terminal-title">terminal<span class="pane__meta">type help</span></h2>
+      <div class="pane__body">
+        <div class="scrollback" role="log" aria-live="polite" aria-label="Terminal output" data-scrollback>
+          <noscript><p class="scrollback__line scrollback__line--dim">The terminal needs JavaScript. Everything else on this page works without it.</p></noscript>
         </div>
-        <div class="identity-block">
-          <p class="identity-host"><span class="prompt-symbol">payal</span><span class="identity-at">@</span><span class="identity-domain">payals.github.io</span></p>
-          <p class="identity-name">Payal Singh</p>
-          <p class="identity-status" aria-label="Status bar">data · AI · engineering · research</p>
+        <div class="prompt" data-prompt>
+          <label class="prompt__ps1" for="terminal-input">payal@payalsingh.me:~$</label>
+          <span class="prompt__field">
+            <span class="prompt__mirror" data-mirror data-placeholder="type help" aria-hidden="true"></span><span class="cursor" data-cursor aria-hidden="true"></span>
+            <input class="prompt__input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="type help" aria-label="Enter a command" data-input>
+          </span>
         </div>
       </div>
-    </header>
+    </section>
 
-    <main id="main-content" class="site-main" role="main">
+  </main>
 
-      <!-- Terminal block -->
-      <section class="terminal-block" aria-label="Terminal">
-        <div class="terminal-output" data-terminal-output role="log" aria-live="polite" aria-label="Terminal output"></div>
-        <div class="terminal-input-row" data-terminal-input-row>
-          <span class="prompt-symbol" aria-hidden="true">&gt;</span>
-          <label for="terminal-input" class="sr-only">Terminal input</label>
-          <input
-            id="terminal-input"
-            class="terminal-input"
-            type="text"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="off"
-            spellcheck="false"
-            aria-label="Enter a command"
-            data-terminal-input
-            placeholder="type a command or click a chip below"
-          >
-          <span class="cursor" data-cursor aria-hidden="true"></span>
-        </div>
-      </section>
+  <nav class="statusbar" aria-label="Panes" data-statusbar>
+    <a class="statusbar__item" href="#now" data-pane="now"><kbd class="statusbar__key">0</kbd>now</a>
+    <a class="statusbar__item" href="#talks" data-pane="talks"><kbd class="statusbar__key">1</kbd>talks</a>
+    <a class="statusbar__item" href="#writing" data-pane="writing"><kbd class="statusbar__key">2</kbd>writing</a>
+    <a class="statusbar__item" href="#cv" data-pane="cv"><kbd class="statusbar__key">3</kbd>cv</a>
+    <a class="statusbar__item" href="#links" data-pane="links"><kbd class="statusbar__key">4</kbd>links</a>
+    <a class="statusbar__item" href="#terminal" data-pane="terminal" data-help><kbd class="statusbar__key">?</kbd>help</a>
+    <span class="statusbar__hint">keys work while the prompt is not focused</span>
+  </nav>
 
-      <!-- Chip menu -->
-      <nav class="chip-menu" data-chip-menu aria-label="Quick commands">
-        <!-- JS-on: chips trigger terminal commands -->
-        <!-- JS-off: direct links to external destinations, visible by default -->
-        <ul class="chip-list" role="list">
-          <li><button class="chip" data-command="help" type="button">help</button></li>
-          <li><button class="chip" data-command="about" type="button">about</button></li>
-          <li><button class="chip" data-command="now" type="button">now</button></li>
-          <li><button class="chip" data-command="talks" type="button">talks</button></li>
-          <li><button class="chip" data-command="cv" type="button">cv</button></li>
-          <li><a class="chip chip--link" href="https://github.com/payals" target="_blank" rel="noopener noreferrer" data-command="github">github</a></li>
-          <li><a class="chip chip--link" href="https://codeberg.org/sillygoose" target="_blank" rel="noopener noreferrer" data-command="codeberg">codeberg</a></li>
-          <li><a class="chip chip--link" href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener noreferrer" data-command="linkedin">linkedin</a></li>
-          <li><a class="chip chip--link" href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener noreferrer" data-command="medium">medium</a></li>
-          <li><a class="chip chip--link" href="/blog/" data-command="blog">blog</a></li>
-          <li><a class="chip chip--link" href="https://penningpence.blogspot.com" target="_blank" rel="noopener noreferrer" data-command="older">older</a></li>
-          <li><a class="chip chip--link" href="mailto:psinghpayal@outlook.com" data-command="email">email</a></li>
-          <li><button class="chip" data-command="clear" type="button">clear</button></li>
-        </ul>
-      </nav>
+</div>
 
-      <!-- Panel area — panels are injected here by JS -->
-      <section class="panel-area" data-panel-area aria-label="Content panels" aria-live="polite"></section>
-
-    </main>
-
-    <footer class="site-footer" role="contentinfo">
-      <p class="footer-text">
-        &copy; Payal Singh &nbsp;&middot;&nbsp;
-        <a href="https://github.com/payals/payals.github.io" target="_blank" rel="noopener noreferrer">source</a>
-        &nbsp;&middot;&nbsp; CC-BY
-      </p>
-    </footer>
-
-  </div><!-- .page-shell -->
-
-  <!-- No-JS fallback: shown only when JS is disabled -->
-  <noscript>
-    <div class="nojs-fallback">
-      <p class="nojs-note">JavaScript is disabled. Direct links:</p>
-      <ul class="nojs-links">
-        <li><a href="https://github.com/payals" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-        <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener noreferrer">Codeberg</a></li>
-        <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-        <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener noreferrer">Medium</a></li>
-        <li><a href="/blog/">Blog</a></li>
-        <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener noreferrer">Older blog</a></li>
-        <li><a href="mailto:psinghpayal@outlook.com">Email</a></li>
-      </ul>
-    </div>
-  </noscript>
-
-  <script type="module" src="assets/js/main.js"></script>
+<script type="module" src="/assets/js/main.js"></script>
 </body>
 </html>
