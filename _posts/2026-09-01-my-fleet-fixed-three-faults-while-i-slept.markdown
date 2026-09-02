@@ -60,6 +60,8 @@ Window 3 closes September 4. If it comes back clean, Soak 1 is done and the flee
 
 Scorecard for the week: the fleet and the ledger did better than I expected, the instrument needed five signed fixes before I trusted it, and the thesis from the last post survived first contact. Keeping work alive after any one agent disappears turned out to be the easy half. Being able to show the evidence, and having the evidence survive its own bugs, was the job.
 
+If you want the two-line version of this check for your own setup, `npx skills add payals/ghost-manual` gives your agent a `/stress-test` that names what grades the work and who can edit the grader; run on this bundle, line 2 named me.
+
 *I write more on data reliability and AI systems at [reliable-by-design](https://medium.com/@reliable-by-design) on Medium.*
 
 {% include post-footer.html %}
