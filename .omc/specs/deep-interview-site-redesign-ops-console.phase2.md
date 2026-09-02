@@ -64,6 +64,21 @@ Payal shared https://miaai-lab.github.io/Fable-5.1-100-HTML-Files/004-neon-cyber
 
 Rule of thumb from the frontend-design skill still applies: spend boldness in one place (the boot log into the constellation is the one theatric); everything else stays quiet and precise.
 
+## Arbitration between the judge synthesis and the user decisions (2026-09-02)
+
+The concept judges (`scratchpad/concepts/SYNTHESIS.md`) ranked the fuzzy palette first and advised against several things Payal chose. Her decisions stand; each is reshaped to remove the specific fault the judges found.
+
+| Judges' objection | Resolution |
+|---|---|
+| Narrative boot showed a stale role mid-boot, took 1.6s, and a `#2015` deep link opened a downgraded CV | Panes are server-rendered and complete at first paint; the boot never re-renders them. The ready state (prompt usable, `cursor--active`) still lands at or under 800ms (base L6 holds). The career log continues printing into the terminal scrollback after ready, finishing under 2s total, and never blocks interaction. The scrubber only changes panes on user input; a year deep link (`#2018`) is allowed but shows a persistent topbar banner "as of 2018 · back to now" so nothing reads as stale by accident. |
+| Per-second tickers compete with reading | Countdown to the next talk shows days and hours, refreshed once per minute. Uptime shows years and days, computed once. No clock. Nothing ticks under reduced motion. |
+| The visitor `top` pane pushes credibility facts down | It is not a grid pane. On desktop it is a one-row strip at the bottom of the terminal pane; on mobile it is a collapsed disclosure below the terminal. Event-driven updates; elapsed time refreshes every 10s at most. |
+| `Ctrl+B` chords collide with Firefox and screen-reader chords | Primary chords are the synthesis's: `z` or `Enter` on a focused pane, a pane number pressed twice within 600ms, `Esc` or `q` to restore. `Ctrl+B z` is kept as an alias with `preventDefault`, documented in the `?` tray. No other `Ctrl+B` bindings. No localStorage layout persistence. |
+| Six saturated hues is the loudest palette | Adopt the synthesis color system verbatim: kind key (now, talk, post, cv, link, command) on chips, badges, and prefixes only; year temperature on date columns only; amber stays the single state color; no hue on headings, borders at rest, or backgrounds. Warm base means the surfaces may shift slightly warm (own hex values) but body text stays neutral off-white and every text token stays at or above 4.5:1. |
+| Five-second key choreography is a timer competing with first paint | Dropped. Keys are taught by the `?` tray on demand and by the statusbar hints. |
+
+Also adopted from the synthesis, in its order: fix 1 (prompt not auto-focused; `/` works; single-letter keys only when no field is focused), the palette semantics (dialog, combobox, listbox, live count, focus return), row tint behind the palette with disclosures opened, static pane-state readouts, `j`/`k` pane navigation, the `?` which-key tray, the terminal additions and plain-phrase resolver, and the less-style pager as the reader. The constellation canvas from the inspiration table remains the one theatric and lives in the terminal pane's idle area so it costs no pane space.
+
 ## Acceptance additions
 - [ ] Z1-Z6, C1-C2, P1-P3, B1-B2, V1, R1-R2, K1-K4 each demonstrated with a screenshot or console evidence at 1440x900 and 390x844.
 - [ ] Base-spec criteria still pass after phase 2 (re-run the L, B, D, Q verifiers).
