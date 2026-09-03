@@ -25,6 +25,7 @@ Reference prototype: `scratchpad/concepts/data-portrait/` (index.html, CONCEPT.m
 ### N. Now pane
 - N1. First row: `career uptime 13y 7m since 2013, all of it around Postgres` computed from the cv start year at load (no ticker).
 - N2. Each fact row carries an LED in its topic color with a shape glyph; the speaking row's LED is the upcoming talk's topic.
+- N3. The reading row ends with a link `past reads` to `/reading/` (a page added 2026-09-03 that lists finished books from `data/books.json` with a rating out of five). The palette indexes the reading page as a link; `cat now/reading` prints the current book and the link.
 
 ### TL. Talks timeline
 - TL1. A strip above the list, axis 2014 to 2027, one mark per sourced talk, shape and color by topic, lanes when dates collide, archive leads as hollow marks on a dashed span under the axis.
