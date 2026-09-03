@@ -73,6 +73,15 @@ Assessment: the first screen at 390x844 is right (name, positioning, role, upcom
 - MB4. Status-bar keys jump to the pane and expand its disclosure; `#talks`, `#writing`, `#cv` deep links open that pane expanded; zoom on phones remains the focus-and-scroll fallback from phase 2.
 - MB5. The landing at 390x844 is at most 2,400px tall after boot with all disclosures closed, and nothing above the fold moves after first paint (CLS at or under 0.05).
 - MB6. Charts (TL, W, CV) collapse to a compact height on phones (at most 96px each) and remain touch operable; the topic legend wraps to at most two lines.
+- MB7. Every keyboard-only action has a thumb path: a visible zoom control in each pane title (`aria-pressed`), status-bar keys for panes, search, help; all touch targets at least 44px tall and 44px wide with 8px between adjacent links in dense rows.
+- MB8. The palette opens from the status bar as a bottom sheet: results above the keyboard, input font size 16px (no iOS zoom), a close button, swipe-down or the button closes it, focus returns to the opener.
+- MB9. Phone chrome respected: the status bar is padded by `env(safe-area-inset-bottom)`; any full-height sizing uses `dvh`; no horizontal overflow at 320px.
+- MB10. Type for a narrow column: body 15 to 16px, metadata never below 13px, the now pane's label and value stack vertically, talk titles clamp to two lines with the venue on its own line.
+- MB11. The links row wraps into a two-column grid on phones, each link a full-width tap target.
+- MB12. The prompt is never auto-focused on phones; the boot and career log print inside the capped scroller (MB3) without scrolling the page; the terminal pane opens expanded only on tap or when a command is run from a tap (C2 toast still shown).
+- MB13. Charts and marks: first tap selects and shows the tooltip, second tap opens the row; no hover-only affordance anywhere; tooltips never overflow the viewport.
+- MB14. Reserved heights for topbar telemetry, legend, and charts so nothing above the fold moves after first paint on a throttled connection (CLS at or under 0.05 at 390x844 with 4x CPU and Slow 4G).
+- MB15. Pane titles are sticky at the top of the viewport while their pane scrolls under them, so the visitor always knows which pane they are in; the sticky title does not overlap the status bar.
 
 ## Delegation
 
