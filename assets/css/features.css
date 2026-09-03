@@ -1,0 +1,1231 @@
+/**
+ * features.css: the phase-2 feature styles, landing only, in cascade order.
+ *
+ * Concatenated from the eight per-feature sheets the parallel workers owned
+ * (zoom, reader, palette, clicks, bootlog, scrubber, topstats, constellation)
+ * so the landing head links three stylesheets: tokens, console, features.
+ * The order below is the order the sheets were linked in and is load bearing:
+ * topstats reserves the topbar row that scrubber places into, and
+ * constellation sizes the terminal body that every other sheet leaves alone.
+ *
+ * Tokens only. No sheet here redefines a console.css class except where the
+ * comment above the rule says why.
+ */
+
+/* =================================================================== zoom */
+
+/* =============================================================
+   features/zoom.css: pane zoom (Z1 to Z6) for assets/js/zoom.js.
+   Requires tokens.css and console.css. Tokens only. The zoomed pane's
+   amber border and glow come from console.css (.pane.is-zoom); nothing
+   here glows. Worker A.
+
+   State: .console.is-zoomed and .pane.is-zoom. Below 768px the panes
+   already stack, so the state only expands the pane's content and the
+   grid is untouched. From 768px every other pane collapses into the
+   tab strip [data-zoomtabs]; from 1280px the terminal keeps its column.
+   ============================================================= */
+
+/* -------------------------------------------------------------
+   Tab strip: [n] name per collapsed pane, an esc chip, a hint.
+   ------------------------------------------------------------- */
+.zoomtabs {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.zoomtabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--dur-hover) var(--ease),
+              border-color var(--dur-hover) var(--ease);
+}
+
+.zoomtabs__tab:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+/* The key chip takes the pane's kind hue through --kind, which
+   console.css resolves from data-pane (or data-kind on the esc chip). */
+.zoomtabs__key {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  font-family: var(--font-mono);
+  font-size: inherit;
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  text-align: center;
+  color: var(--kind, var(--ink-2));
+  border: 1px solid var(--kind, var(--line-strong));
+  border-radius: var(--radius-sm);
+}
+
+.zoomtabs__hint {
+  display: none;
+  margin-left: auto;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------
+   Grid while zoomed (768px and up)
+   ------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .console.is-zoomed,
+  .shell--landing .console.is-zoomed {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .console.is-zoomed > .pane:not(.is-zoom) { display: none; }
+
+  .console.is-zoomed > .zoomtabs {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .console.is-zoomed > .pane.is-zoom {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .zoomtabs__hint { display: inline; }
+
+  /* The zoomed body reads at a measure: side padding grows so the content
+     column stays at or under 96ch while the scrollbar keeps the pane edge. */
+  .pane.is-zoom .pane__body {
+    padding-left: max(var(--pane-pad), calc((100% - 96ch) / 2));
+    padding-right: max(var(--pane-pad), calc((100% - 96ch) / 2));
+  }
+}
+
+/* From 1280px the terminal is always visible, so it keeps its column and
+   drops out of the tab strip. */
+@media (min-width: 1280px) {
+  .shell--landing .console.is-zoomed > .pane--terminal {
+    display: flex;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .console.is-zoomed > .zoomtabs,
+  .console.is-zoomed > .pane.is-zoom {
+    grid-column: 1 / 3;
+  }
+
+  .zoomtabs__tab[data-pane="terminal"] { display: none; }
+}
+
+/* Z6: the pane settles in under 200ms. tokens.css zeroes this under
+   prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .pane.is-zoom {
+    animation: zoom-settle 160ms var(--ease-out);
+  }
+}
+
+@keyframes zoom-settle {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* -------------------------------------------------------------
+   Zoomed talks: one list grouped by year, upcoming first
+   ------------------------------------------------------------- */
+.zoomtalks__group + .zoomtalks__group { margin-top: var(--space-4); }
+
+.zoomtalks .pane__section { margin-top: 0; }
+
+.zoomtalks > .meta { margin-top: var(--space-4); }
+
+/* -------------------------------------------------------------
+   Print only the cv (Z2). zoom.js sets body.is-printing-cv around
+   window.print() and copies the site author's name onto the cv block
+   so the heading that index.html drops from cv.md comes back on paper.
+   ------------------------------------------------------------- */
+@media print {
+  body.is-printing-cv {
+    background: #fff;
+    color: #000;
+  }
+
+  body.is-printing-cv .shell > :not(.console),
+  body.is-printing-cv .console > :not(#cv),
+  body.is-printing-cv #cv > :not(.pane__body),
+  body.is-printing-cv #cv .pane__body > :not([data-more]),
+  body.is-printing-cv #cv [data-more] > summary,
+  body.is-printing-cv .palette,
+  body.is-printing-cv .keytray,
+  body.is-printing-cv .skip-link {
+    display: none !important;
+  }
+
+  body.is-printing-cv .shell,
+  body.is-printing-cv .console,
+  body.is-printing-cv #cv,
+  body.is-printing-cv #cv .pane__body,
+  body.is-printing-cv #cv [data-more] {
+    display: block;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    border: 0;
+    box-shadow: none;
+    /* The zoom focused the pane, so its focus ring would print as an amber
+       frame around the whole sheet. */
+    outline: 0;
+    overflow: visible;
+  }
+
+  body.is-printing-cv [data-cv-full] {
+    max-width: none;
+    color: #000;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  body.is-printing-cv [data-cv-full]::before {
+    content: attr(data-print-name);
+    display: block;
+    margin: 0 0 6pt;
+    font-size: 18pt;
+    font-weight: 600;
+  }
+
+  body.is-printing-cv [data-cv-full] *,
+  body.is-printing-cv [data-cv-full] a {
+    color: #000;
+    background: none;
+  }
+
+  body.is-printing-cv [data-cv-full] a { text-decoration: none; }
+
+  body.is-printing-cv [data-cv-full] a[href^="http"]::after {
+    content: " " attr(href);
+    font-size: 0.9em;
+  }
+
+  body.is-printing-cv [data-cv-full] h3,
+  body.is-printing-cv [data-cv-full] h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  body.is-printing-cv [data-cv-full] hr {
+    border-top-color: #000;
+  }
+}
+
+/* =================================================================== reader */
+
+/* =============================================================
+   features/reader.css: the less-style post reader (R1, R2) for
+   assets/js/reader.js. Requires tokens.css and console.css. Tokens
+   only; nothing here glows. Worker A.
+
+   Markup (built by reader.js inside #writing [data-reader]):
+     .reader__bar     post badge, writing/<slug>, open on blog, back
+     .reader__scroll  head (title, subtitle, meta) + .prose + .reader__end
+     .reader__status  "<slug> line x of y NN%" and the key hint
+   From 1024px .reader__scroll scrolls inside the pane and the status
+   line sits under it; below that the page scrolls and the status line
+   sticks just above the statusbar.
+   ============================================================= */
+
+.reader {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.reader:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* Bar: kind badge, file name, persistent blog link, back button. */
+.reader__bar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+/* The post badge takes the post kind hue through --kind (the writing pane
+   carries data-kind="post"); a badge is one of the places a hue may sit. */
+.reader__badge {
+  color: var(--kind, var(--ink-2));
+  border-color: var(--kind, var(--line-strong));
+}
+
+.reader__file {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader__blog {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.reader__back {
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--text-xs);
+}
+
+.reader__note {
+  margin: var(--space-3) 0;
+}
+
+/* Scroll area: page scroll below 1024px, an inner scroller from 1024px. */
+.reader__scroll {
+  min-width: 0;
+  padding: var(--space-3) 0;
+}
+
+.reader__head,
+.reader__prose,
+.reader__end {
+  max-width: var(--measure);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reader__head { margin-bottom: var(--space-4); }
+
+.reader__title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.reader__sub {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-prose);
+  color: var(--ink-2);
+}
+
+.reader__meta { margin: 0; }
+
+.reader__meta time { font-variant-numeric: tabular-nums; }
+
+.reader__end {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.reader__end .btn {
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--text-xs);
+}
+
+/* Status line, less style. */
+.reader__status {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.reader__slug {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader__pos {
+  flex: 0 0 auto;
+  color: var(--ink);
+}
+
+.reader__keys {
+  margin-left: auto;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The key hint has no room beside the position on a phone. */
+@media (max-width: 479px) {
+  .reader__keys { display: none; }
+}
+
+@media (max-width: 1023px) {
+  .reader__status {
+    position: sticky;
+    bottom: var(--statusbar-h);
+    padding-bottom: var(--space-1);
+    background: var(--surface);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* While a post is open the pane body stops scrolling and the reader's
+     own scroller takes the height, so the bar and status line stay put. */
+  #writing.is-reading .pane__body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #writing.is-reading .reader {
+    flex: 1 1 auto;
+  }
+
+  .reader__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-right: var(--space-2);
+  }
+}
+
+/* =================================================================== palette */
+
+/* features/palette.css: the fuzzy palette (assets/js/palette.js), its
+   which-key tray and the search openers. Tokens only. The selected result
+   is the one place a kind hue becomes a ground (solid hue, --bg text, every
+   pair checked by scripts/check-contrast.py); badges and matched characters
+   take the hue as text; the group label and the dates use the year token
+   through the [data-year] rule in console.css. No glow, no shadow. */
+
+/* ---- overlay and box ---------------------------------------------- */
+.palette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-palette);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh var(--space-3) var(--space-3);
+  background: rgba(16, 14, 12, 0.6);
+}
+
+.palette__box {
+  display: flex;
+  flex-direction: column;
+  width: min(46rem, 100%);
+  max-height: 80vh;
+  max-height: 80dvh;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transform-origin: top center;
+  animation: palette-in var(--dur-panel) var(--ease-out) 1;
+}
+
+@keyframes palette-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- head: / glyph, combobox, live count --------------------------- */
+.palette__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.palette__glyph {
+  color: var(--kind-cmd);
+  font-weight: 600;
+}
+
+.palette__input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS zooming the page when the field gains focus */
+  caret-color: var(--accent);
+  outline: none;
+}
+
+.palette__input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+
+.palette__count {
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- results: kind groups and option rows -------------------------- */
+.palette__results {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.palette__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.palette__group + .palette__r { margin-top: 0; }
+
+.palette__groupname { text-transform: lowercase; }
+
+.palette__badge {
+  display: inline-block;
+  min-width: 3.2em;
+  padding: 0 0.3em;
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--kind, var(--ink-2));
+  border: 1px solid var(--kind, var(--line-strong));
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.palette__r {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.palette__r .palette__badge { align-self: center; }
+
+.palette__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette__title mark {
+  background: none;
+  color: var(--kind, var(--ink));
+  font-weight: 600;
+}
+
+.palette__meta {
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.palette__sub {
+  grid-column: 2 / -1;
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette__r:hover { background: var(--surface-2); }
+
+/* The current match: the whole row takes its kind hue as ground. */
+.palette__r[aria-selected="true"] {
+  background: var(--kind, var(--accent));
+  color: var(--bg);
+}
+
+.palette__r[aria-selected="true"] .palette__badge {
+  color: var(--bg);
+  border-color: var(--bg);
+}
+
+.palette__r[aria-selected="true"] .palette__title mark {
+  color: var(--bg);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
+}
+
+.palette__r[aria-selected="true"] .palette__meta,
+.palette__r[aria-selected="true"] .palette__sub {
+  color: var(--bg);
+}
+
+.palette__empty {
+  padding: var(--space-4) var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.palette__empty code { color: var(--ink); }
+
+/* ---- foot ---------------------------------------------------------- */
+.palette__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+
+/* Full-cv lines lit by a palette result (the .row and .facts dd rules live
+   in console.css; the prose lines inside the disclosure need their own). */
+[data-cv-full] .is-hit {
+  background: var(--kind-dim, var(--accent-dim));
+  border-radius: var(--radius-sm);
+}
+
+/* ---- openers ------------------------------------------------------- */
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-hover) var(--ease), border-color var(--dur-hover) var(--ease);
+}
+
+.search-btn:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.search-btn .kbd { color: var(--kind-cmd); }
+
+@media (max-width: 1439.98px) {
+  /* The statusbar's / search item carries search at every width; the topbar
+     button only appears where it fits beside the tagline without wrapping the
+     nav or the tagline after first paint (measured: it shifts at 768, 1024
+     and 1280). */
+  .search-btn { display: none; }
+}
+
+.statusbar__search {
+  font: inherit;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 479px) {
+  /* Seven items in 390px: the search item keeps its / key (a little
+     narrower) and its aria-label; the word goes. */
+  .statusbar__search-label { display: none; }
+  .statusbar__search .statusbar__key { padding: 0 0.2em; }
+}
+
+/* ---- which-key tray -------------------------------------------------
+   Sits on the statusbar's top edge, above the panes, so opening it moves
+   nothing. Closed by the next key or click. */
+.keytray {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--statusbar-h);
+  z-index: var(--z-keytray);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.keytray__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keytray__list li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.keytray .kbd { color: var(--kind-cmd); }
+
+/* ---- small screens ------------------------------------------------- */
+@media (max-width: 767px) {
+  .palette { padding: var(--space-2); }
+  .palette__box { max-height: 88vh; max-height: 88dvh; }
+  .palette__r { grid-template-columns: max-content minmax(0, 1fr); }
+  .palette__meta { display: none; }
+  .palette__sub { grid-column: 2; }
+}
+
+/* =================================================================== clicks */
+
+/* features/clicks.css: click writes the command (assets/js/clicks.js).
+   A fact that carries data-cmd is clickable; hover uses the hovered-row
+   surface step, never a hue. The toast is a one-row overlay on the
+   statusbar that says what ran when the terminal is off screen. */
+
+.row[data-cmd],
+.facts dd[data-cmd],
+[data-cv-headline][data-cmd],
+.meta[data-cmd] {
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease);
+}
+
+.row[data-cmd]:hover,
+.facts dd[data-cmd]:hover,
+[data-cv-headline][data-cmd]:hover,
+.meta[data-cmd]:hover {
+  background: var(--surface-2);
+}
+
+/* Toast: fixed to the viewport bottom, which is where the statusbar sits in
+   both layouts (sticky below 1024px, the last shell row above). */
+.statusbar__toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--z-statusbar) + 1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--statusbar-h);
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.statusbar__toast-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusbar__toast-link {
+  flex: 0 0 auto;
+  color: var(--ink-2);
+}
+
+/* =================================================================== bootlog */
+
+/* features/bootlog.css: the career boot log (assets/js/bootlog.js).
+   The log reuses the scrollback line and segment rules from console.css
+   (.seg--year with data-year for the date column, .seg--ok/--info/--warn
+   for the level word, .seg--talk/--post/--cv/--now for the kind prefix,
+   .seg--bar for the progress bar, .seg--dim for the detail). Tokens only;
+   nothing here paints a hue or a glow. */
+
+/* The progress bar is ten block glyphs that must stay on one line; its
+   cells are aria-hidden and the plain "done" beside it is what a screen
+   reader hears. */
+.bootlog__bar {
+  white-space: nowrap;
+  font-variant-ligatures: none;
+}
+
+/* =================================================================== scrubber */
+
+/* features/scrubber.css: the year scrubber and the "as of" banner
+   (assets/js/scrubber.js). Tokens only. The thumb is amber because a
+   control's position is state; the track is a decorative line; the year
+   readout takes the year token through .scrubber__out[data-year] in
+   console.css. No transitions, so reduced motion needs nothing here. */
+
+/* Topbar placement. Below 768px the scrubber sits on the id row (the
+   telemetry is hidden there); from 768px it closes the telemetry row, which
+   is the second topbar row (topstats.css gives that row its basis). The
+   banner is its own full-width row under both. */
+.scrubber {
+  order: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .scrubber {
+    order: 5;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+.scrubber__label {
+  color: var(--ink-2);
+}
+
+.scrubber__input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 5rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .scrubber__input { width: 7rem; }
+}
+
+.scrubber__input::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.scrubber__input::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.scrubber__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+}
+
+.scrubber__input::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+}
+
+.scrubber__input:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: 0;
+  border-radius: var(--radius-sm);
+}
+
+.scrubber__out {
+  min-width: 4ch;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* "as of <year>" banner: a full-width topbar row while a past year is
+   selected. Amber text because it is a state the visitor put the page in. */
+.topbar__asof {
+  order: 6;
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--warn);
+}
+
+.btn--small {
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+/* Rows later than the selected year. A class, not the hidden attribute, so
+   the writing pane's data-rest rows and the zoom module keep their own. */
+.row.scrubber-hidden { display: none !important; }
+
+/* The one-line "then" fact in the now pane. scrubber.js already trims a
+   talk's detail to its venue or first sentence so this fits one line on
+   any sourced record; the truncation below is a safety net at 390px for
+   whatever content still runs long. */
+.then {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-console);
+}
+
+@media (max-width: 390px) {
+  .then {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+.then__label {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  margin-right: var(--space-1);
+}
+
+.then__date[data-year] {
+  color: var(--year, var(--ink-3));
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =================================================================== topstats */
+
+/* features/topstats.css: topbar telemetry and the visitor top strip
+   (assets/js/topstats.js). Tokens only. The role LED colour is set in
+   console.css (--kind-now); everything else here is --ink-2 labels and
+   --ink values with no hue and no glow. */
+
+/* ---- Topbar telemetry row -------------------------------------------
+   From 768px the three facts form the second topbar row together with the
+   scrubber (scrubber.css puts the scrubber at the row's right end): the
+   flex basis leaves room for the scrubber (161px below 1024px, 193px from
+   1024px, plus the column gap) and nothing more, so the row can never be
+   pulled up beside the tagline. From 768px to 1023px the uptime fact is
+   not shown so the two facts that matter fit the 528px beside the
+   scrubber on any platform's mono face; the cv pane carries the same
+   dates. Below 768px the row is not shown; the now pane carries the facts.
+
+   The landing topbar reserves this row's height (18px line plus the 4px
+   row gap) from 768px, and the second tagline line that 1024 to 1279px
+   already wraps to, so revealing the row after first paint moves nothing
+   (Q1). Without JS the band under the tagline stays empty. Lines pack
+   from the top so the id row does not move when the second row lands. */
+.topbar__stats {
+  display: none;
+  order: 4;
+  flex: 1 1 calc(100% - 13rem);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  .topbar__stats { display: flex; }
+  .shell--landing .topbar {
+    min-height: calc(var(--topbar-h) + 1.375rem);
+    align-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .topbar__stat[data-stat="uptime"] { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .topbar__stats { flex-basis: calc(100% - 15rem); }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .shell--landing .topbar {
+    min-height: calc(var(--topbar-h) + 1.375rem + 1.3125rem);
+  }
+}
+
+.topbar__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  white-space: nowrap;
+}
+
+.topbar__stat + .topbar__stat::before {
+  content: "\00b7";
+  margin-right: var(--space-1);
+  color: var(--ink-3);
+}
+
+/* The LED: a dot the size of a lowercase letter. Colour from console.css. */
+.topbar__led {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+}
+
+/* ---- Visitor top strip -----------------------------------------------
+   Last child of the terminal body. At 1024px and up it is open by default
+   and reads as one line, "top  1440x900 · up 12s · 2 panes · 0 cmds · 3
+   keys", with the note under it, at the statusbar's 11px so it fits the
+   411px terminal column at 1280px. Below 1024px the title is a disclosure
+   button and the fields sit under it at 12px. The dt labels are visually
+   hidden at every size because each value names itself; screen readers
+   still get them. */
+.top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink-2);
+}
+
+.top__title {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+  line-height: inherit;
+}
+
+.top__toggle {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.top__toggle::before {
+  content: "\25b8";
+  display: inline-block;
+  width: 1.2em;
+  color: var(--ink-3);
+}
+
+.top__toggle[aria-expanded="true"]::before {
+  content: "\25be";
+}
+
+.top__toggle:hover {
+  color: var(--ink);
+}
+
+.top__body {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  min-width: 0;
+}
+
+.top__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.top__fields dt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.top__fields dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.top__fields dd:not(:first-of-type)::before {
+  content: "\00b7";
+  margin-right: var(--space-2);
+  color: var(--ink-3);
+}
+
+.top__note {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--ink-3);
+}
+
+@media (min-width: 1024px) {
+  .top {
+    font-size: var(--text-2xs);
+  }
+  .top__body {
+    flex: 1 1 auto;
+    display: contents;
+  }
+  .top__fields {
+    flex: 1 1 auto;
+  }
+  /* 11px is under the --ink-3 floor, so the note steps up to --ink-2. */
+  .top__note {
+    color: var(--ink-2);
+  }
+}
+
+/* =================================================================== constellation */
+
+/* features/constellation.css: the signature canvas (assets/js/constellation.js).
+   Tokens only. The canvas paints two kind hues (talk circles, post squares)
+   and neutral rings; no glow, no gradient, no background hue. */
+
+/* Terminal body: while the constellation is shown, the scrollback keeps its
+   content height and the wrapper takes the idle space; when the wrapper is
+   hidden (no JS, under 120px, below 768px) the scrollback fills the pane
+   as in phase 1 and the prompt stays at the bottom in both cases. Browsers
+   without :has() split the space between the two, which still works. */
+.pane--terminal .pane__body:has(> .constellation:not([hidden])) > .scrollback {
+  flex: 0 1 auto;
+}
+
+.constellation {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .constellation { display: block; }
+}
+
+/* From 768px to 1023px the terminal pane grows with its content, so the
+   wrapper is a fixed block above the prompt instead of a flex filler. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .constellation {
+    flex: 0 0 auto;
+    height: 10rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* Desktop reserves the canvas as a fixed block so it is on screen at first
+     paint and never resizes: the career log scrolls inside the scrollback
+     above it instead of squeezing it line by line, which is what produced the
+     only measurable layout shift on the landing (Q1). */
+  .constellation {
+    flex: 0 0 auto;
+    height: 14rem;
+  }
+
+  .pane--terminal .pane__body:has(> .constellation:not([hidden])) > .scrollback {
+    flex: 1 1 0;
+  }
+}
+
+.constellation__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.constellation__canvas.is-hot { cursor: pointer; }
+
+/* Hovered title: --ink on --surface beside the node. The kind prefix and
+   the year inside it use the shared .seg--* rules from console.css. */
+.constellation__tip {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  max-width: calc(100% - var(--space-2));
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+

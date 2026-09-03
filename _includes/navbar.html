@@ -3,6 +3,24 @@
 <header class="topbar"{% if on_home %} id="about" tabindex="-1"{% endif %}>
   <a class="topbar__id" href="/"><span class="topbar__user">payal</span><span class="topbar__at">@</span><span class="topbar__host">payalsingh.me</span></a>
   {% if on_home %}<h1 class="topbar__tagline">{% else %}<p class="topbar__tagline">{% endif %}<span class="topbar__name">{{ site.author | escape }}</span>, {{ site.tagline | escape }}{% if on_home %}</h1>{% else %}</p>{% endif %}
+  {% if on_home -%}
+  {%- comment -%} Landing-only tools. Every element is hidden until the module that owns it
+  runs, so the topbar renders as in phase 1 without JS. {%- endcomment %}
+  <p class="topbar__stats" data-topstats hidden>
+    <span class="topbar__stat" data-stat="role"><span class="topbar__led" aria-hidden="true"></span><span data-stat-role></span></span>
+    <span class="topbar__stat" data-stat="next-talk" data-stat-next-talk></span>
+    <span class="topbar__stat" data-stat="uptime" data-stat-uptime></span>
+  </p>
+  <div class="scrubber" data-scrubber hidden>
+    <label class="scrubber__label" for="year-scrubber">as of</label>
+    <input class="scrubber__input" id="year-scrubber" type="range" min="2013" max="2026" step="1" value="2026" list="year-ticks" data-scrubber-input aria-describedby="year-scrubber-help">
+    <datalist id="year-ticks"><option value="2013"></option><option value="2018"></option><option value="2022"></option><option value="2026"></option></datalist>
+    <output class="scrubber__out" for="year-scrubber" data-scrubber-out>2026</output>
+    <span class="sr-only" id="year-scrubber-help">Panes show the record as of the chosen year. 2026 is now.</span>
+  </div>
+  <p class="topbar__asof" data-asof role="status" aria-live="polite" hidden><span data-asof-text></span> <button class="btn btn--small" type="button" data-asof-reset>back to now</button></p>
+  <button class="search-btn" type="button" data-open-palette aria-keyshortcuts="/ Meta+K Control+K" hidden><kbd class="kbd">/</kbd><span class="search-btn__label">search everything</span></button>
+  {%- endif %}
   <nav class="topbar__nav" aria-label="Site">
     <a href="/"{% if on_home %} aria-current="page"{% endif %}>home</a>
     <a href="/blog/"{% if on_blog %} aria-current="page"{% endif %}>writing</a>

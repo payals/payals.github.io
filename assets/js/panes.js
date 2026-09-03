@@ -7,10 +7,15 @@
 const KEY_TO_PANE = { 0: 'now', 1: 'talks', 2: 'writing', 3: 'cv', 4: 'links' };
 const PANE_IDS = new Set(['about', 'now', 'talks', 'writing', 'cv', 'links', 'terminal']);
 
-export function setupPanes({ term, reducedMotion }) {
+export function setupPanes({ term, reducedMotion, onHelp }) {
   const statusbar = document.querySelector('[data-statusbar]');
+  const help = typeof onHelp === 'function' ? onHelp : () => { focusTerminal(); term.run('help'); };
 
+  /** The statusbar key and the pane's .is-active class follow the focused pane. */
   function setCurrent(id) {
+    for (const pane of document.querySelectorAll('.pane')) {
+      pane.classList.toggle('is-active', pane.id === id);
+    }
     if (!statusbar) return;
     for (const item of statusbar.querySelectorAll('[data-pane]')) {
       if (item.dataset.pane === id) item.setAttribute('aria-current', 'true');
@@ -44,8 +49,7 @@ export function setupPanes({ term, reducedMotion }) {
       focusPane(KEY_TO_PANE[e.key]);
     } else if (e.key === '?') {
       e.preventDefault();
-      focusTerminal();
-      term.run('help');
+      help();
     }
   });
 
@@ -60,17 +64,18 @@ export function setupPanes({ term, reducedMotion }) {
   if (helpItem) {
     helpItem.addEventListener('click', (e) => {
       e.preventDefault();
-      focusTerminal();
-      term.run('help');
+      help();
     });
   }
 
   // Fragment navigation: the browser scrolls; this focuses so the ring shows.
+  // main.js owns the hashchange listener and calls this last in its chain
+  // (zoom, scrubber, then panes). Returns true when the id was a pane.
   function applyHash() {
     const id = decodeURIComponent(location.hash.slice(1));
-    if (PANE_IDS.has(id)) focusPane(id);
+    if (!PANE_IDS.has(id)) return false;
+    return focusPane(id);
   }
-  window.addEventListener('hashchange', applyHash);
 
   // Disclosures: swap the label and move focus to the first revealed row.
   for (const details of document.querySelectorAll('[data-more]')) {

@@ -9,6 +9,7 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
 {%- assign past = sourced | where: "status", "past" -%}
 {%- assign ordered = upcoming | concat: past -%}
 {%- assign visible_talks = 6 -%}
+{%- assign visible_posts = 5 -%}
 {%- assign more_talks = ordered.size | minus: visible_talks -%}
 {%- assign latest = site.posts.first -%}
 {%- capture cv_markdown -%}{% include_relative data/cv.md %}{%- endcapture -%}
@@ -29,49 +30,57 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
         data-talks-leads="{{ leads.size }}"
         data-posts="{{ site.posts.size }}">
 
-    <section class="pane" id="now" tabindex="-1" aria-labelledby="now-title">
-      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta">updated {{ now.updated }}</span>{% endif %}</h2>
-      <div class="pane__body">
+    {%- comment -%} Zoom tab strip (Z1): zoom.js fills it with one tab per collapsed pane
+    while a pane is zoomed; hidden at rest. Worker A. {%- endcomment %}
+    <nav class="zoomtabs" data-zoomtabs aria-label="Collapsed panes" hidden></nav>
+
+    <section class="pane" id="now" tabindex="-1" aria-labelledby="now-title" data-kind="now">
+      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta" data-pane-meta>updated {{ now.updated }}</span>{% endif %}</h2>
+      <div class="pane__body" data-pane-body>
         <dl class="facts" data-facts>
           <dt>role</dt>
-          <dd>Staff Data Engineer at Lore, since June 2026</dd>
+          <dd data-fact="role" data-cmd="cat now/role">Staff Data Engineer at Lore, since June 2026</dd>
           {%- for talk in upcoming limit:1 %}
           <dt>speaking</dt>
-          <dd><a href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>, {{ talk.venue | escape }}, {{ talk.date }}</dd>
+          <dd data-fact="speaking" data-cmd="cat talks/{{ talk.id }}"><a href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>, {{ talk.venue | escape }}, <span data-year="{{ talk.date | slice: 0, 4 }}">{{ talk.date }}</span></dd>
           {%- endfor %}
           {%- if latest %}
           <dt>latest post</dt>
-          <dd><a href="{{ latest.url }}">{{ latest.title | escape }}</a>, {{ latest.date | date: "%Y-%m-%d" }}</dd>
+          <dd data-fact="latest-post" data-cmd="cat writing/{{ latest.url | split: '/' | last }}"><a href="{{ latest.url }}">{{ latest.title | escape }}</a>, <span data-year="{{ latest.date | date: '%Y' }}">{{ latest.date | date: "%Y-%m-%d" }}</span></dd>
           {%- endif %}
           {%- if now.shipping %}
           <dt>shipping</dt>
-          <dd>{{ now.shipping | escape }}</dd>
+          <dd data-fact="shipping" data-cmd="cat now/shipping">{{ now.shipping | escape }}</dd>
           {%- endif %}
           {%- if now.reading %}
           <dt>reading</dt>
-          <dd>{{ now.reading | escape }}</dd>
+          <dd data-fact="reading" data-cmd="cat now/reading">{{ now.reading | escape }}</dd>
           {%- endif %}
           {%- if now.state %}
           <dt>location</dt>
-          <dd>{{ now.state | escape }}</dd>
+          <dd data-fact="location" data-cmd="cat now/location">{{ now.state | escape }}</dd>
           {%- endif %}
         </dl>
+        {%- comment -%} Scrubber (B2) writes the one-line "then" fact here when a past year
+        is selected; hidden at rest. Worker C. {%- endcomment %}
+        <p class="then" data-then hidden></p>
       </div>
     </section>
 
-    <section class="pane" id="talks" tabindex="-1" aria-labelledby="talks-title">
-      <h2 class="pane__title" id="talks-title"><span class="pane__key">1</span>talks<span class="pane__meta">{{ sourced.size }} sourced, {{ leads.size }} leads</span></h2>
-      <div class="pane__body">
+    <section class="pane" id="talks" tabindex="-1" aria-labelledby="talks-title" data-kind="talk">
+      <h2 class="pane__title" id="talks-title"><span class="pane__key">1</span>talks<span class="pane__meta" data-pane-meta>{{ sourced.size }} sourced, {{ leads.size }} leads</span></h2>
+      <div class="pane__body" data-pane-body>
         {%- if ordered.size == 0 %}
         <p class="meta">No sourced talks on record yet.</p>
         {%- else %}
         <ul class="rows" data-talks>
           {%- for talk in ordered limit:visible_talks %}
-          <li class="row{% if talk.status == 'upcoming' %} row--current{% endif %}">
+          {%- if talk.date %}{% assign talk_year = talk.date | slice: 0, 4 %}{% else %}{% assign talk_year = talk.date_label | slice: -4, 4 %}{% endif %}
+          <li class="row{% if talk.status == 'upcoming' %} row--current{% endif %}" data-kind="talk" data-id="{{ talk.id }}" data-year="{{ talk_year }}" data-status="{{ talk.status }}" data-cmd="cat talks/{{ talk.id }}">
             {%- if talk.date %}
-            <time class="row__date" datetime="{{ talk.date }}">{{ talk.date }}</time>
+            <time class="row__date" datetime="{{ talk.date }}" data-year="{{ talk_year }}">{{ talk.date }}</time>
             {%- else %}
-            <span class="row__date">{{ talk.date_label | escape }}</span>
+            <span class="row__date" data-year="{{ talk_year }}">{{ talk.date_label | escape }}</span>
             {%- endif %}
             <a class="row__title" href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>
             <span class="row__aside">{{ talk.venue | escape }}
@@ -94,11 +103,12 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
             {%- if more_talks > 0 %}
             <ul class="rows" data-talks>
               {%- for talk in ordered offset:visible_talks %}
-              <li class="row" tabindex="-1">
+              {%- if talk.date %}{% assign talk_year = talk.date | slice: 0, 4 %}{% else %}{% assign talk_year = talk.date_label | slice: -4, 4 %}{% endif %}
+              <li class="row" tabindex="-1" data-kind="talk" data-id="{{ talk.id }}" data-year="{{ talk_year }}" data-status="{{ talk.status }}" data-cmd="cat talks/{{ talk.id }}">
                 {%- if talk.date %}
-                <time class="row__date" datetime="{{ talk.date }}">{{ talk.date }}</time>
+                <time class="row__date" datetime="{{ talk.date }}" data-year="{{ talk_year }}">{{ talk.date }}</time>
                 {%- else %}
-                <span class="row__date">{{ talk.date_label | escape }}</span>
+                <span class="row__date" data-year="{{ talk_year }}">{{ talk.date_label | escape }}</span>
                 {%- endif %}
                 <a class="row__title" href="{{ talk.event_url }}" target="_blank" rel="noopener">{{ talk.title | escape }}</a>
                 <span class="row__aside">{{ talk.venue | escape }}
@@ -119,8 +129,9 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
             <p class="meta">Remembered appearances still being reconstructed. No title or date is claimed without a recovered record.</p>
             <ul class="rows" data-leads aria-labelledby="talks-leads-title">
               {%- for lead in leads %}
-              <li class="row">
-                <span class="row__date">{{ lead.era | escape }}</span>
+              {%- assign era_year = lead.era | slice: -4, 4 %}
+              <li class="row" data-kind="talk" data-id="{{ lead.id }}" data-status="lead"{% if era_year contains "20" %} data-year="{{ era_year }}"{% endif %} data-cmd="cat talks/{{ lead.id }}">
+                <span class="row__date"{% if era_year contains "20" %} data-year="{{ era_year }}"{% endif %}>{{ lead.era | escape }}</span>
                 <span class="row__title">{{ lead.label | escape }}</span>
                 <p class="row__note">{{ lead.detail | escape }}</p>
               </li>
@@ -135,45 +146,54 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
       </div>
     </section>
 
-    <section class="pane" id="writing" tabindex="-1" aria-labelledby="writing-title">
-      <h2 class="pane__title" id="writing-title"><span class="pane__key">2</span>writing<span class="pane__meta">{{ site.posts.size }} posts</span></h2>
-      <div class="pane__body">
+    <section class="pane" id="writing" tabindex="-1" aria-labelledby="writing-title" data-kind="post">
+      <h2 class="pane__title" id="writing-title"><span class="pane__key">2</span>writing<span class="pane__meta" data-pane-meta>{{ site.posts.size }} posts</span></h2>
+      <div class="pane__body" data-pane-body>
+        {%- comment -%} All posts are in the DOM. Rows past the first five carry data-rest and
+        are hidden at rest; zoom.js (Z4) reveals them while the writing pane is zoomed. {%- endcomment %}
         <ul class="rows" data-posts>
-          {%- for post in site.posts limit:5 %}
+          {%- for post in site.posts %}
           {%- assign words = post.content | strip_html | number_of_words %}
           {%- assign minutes = words | plus: 199 | divided_by: 200 %}
-          <li class="row">
-            <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
-            <a class="row__title" href="{{ post.url }}">{{ post.title | escape }}</a>
+          {%- assign slug = post.url | split: '/' | last %}
+          <li class="row" data-kind="post" data-slug="{{ slug }}" data-year="{{ post.date | date: '%Y' }}" data-cmd="cat writing/{{ slug }}"{% if forloop.index > visible_posts %} data-rest hidden{% endif %}>
+            <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}" data-year="{{ post.date | date: '%Y' }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+            <a class="row__title" href="{{ post.url }}" data-post="{{ slug }}">{{ post.title | escape }}</a>
             <span class="row__aside">{{ minutes }} min</span>
           </li>
           {%- endfor %}
         </ul>
         <p class="actions"><a class="btn" href="/blog/">all posts</a> <a href="/feed.xml">rss</a></p>
+        {%- comment -%} Reader (R1): reader.js renders a post here inside the zoomed writing
+        pane. Hidden at rest. Worker A. {%- endcomment %}
+        <div class="reader" data-reader role="region" aria-label="Post reader" tabindex="-1" hidden></div>
       </div>
     </section>
 
-    <section class="pane" id="cv" tabindex="-1" aria-labelledby="cv-title">
+    <section class="pane" id="cv" tabindex="-1" aria-labelledby="cv-title" data-kind="cv">
       <h2 class="pane__title" id="cv-title"><span class="pane__key">3</span>cv</h2>
-      <div class="pane__body">
-        <p data-cv-headline>Staff platform engineer working across data systems, DevOps, and AI-native systems.</p>
+      <div class="pane__body" data-pane-body>
+        <p data-cv-headline data-cmd="cat cv/headline">Staff platform engineer working across data systems, DevOps, and AI-native systems.</p>
         <ul class="rows" data-cv-roles>
-          <li class="row row--current">
-            <span class="row__date">2026-06 to now</span>
+          <li class="row row--current" data-kind="cv" data-id="role-lore" data-year="2026" data-from="2026-06" data-cmd="cat cv/role-lore">
+            <span class="row__date" data-year="2026">2026-06 to now</span>
             <span class="row__title">Staff Data Engineer, Lore</span>
             <p class="row__note">Managed PostgreSQL platforms, data access governance, and operational automation on GCP and GKE.</p>
           </li>
-          <li class="row">
-            <span class="row__date">2013 to 2026-06</span>
+          <li class="row" data-kind="cv" data-id="role-dbre" data-year="2013" data-from="2013" data-to="2026-06" data-cmd="cat cv/role-dbre">
+            <span class="row__date" data-year="2013">2013 to 2026-06</span>
             <span class="row__title">Senior Database Reliability Engineer, OmniTI to Credativ to Instaclustr (NetApp)</span>
             <p class="row__note">PostgreSQL reliability, data integrity, capacity, performance, audit, access control, and migration.</p>
           </li>
         </ul>
-        <p class="meta">M.S. Computer Science, UMBC. B.E. Computer Science, Panjab University.</p>
+        <p class="meta" data-cmd="cat cv/education">M.S. Computer Science, UMBC. B.E. Computer Science, Panjab University.</p>
         <p class="actions"><a class="btn" href="/data/cv.pdf" download="payal-singh-cv.pdf">download pdf</a></p>
+        {%- comment -%} Zoomed cv controls (Z2): print only the cv, copy as text. Hidden at
+        rest; zoom.js reveals and wires them. Worker A. {%- endcomment %}
+        <p class="actions" data-cv-zoom-actions hidden><button class="btn" type="button" data-cv-print>print cv</button> <button class="btn" type="button" data-cv-copy>copy as text</button></p>
         <details class="more" data-more>
           <summary class="btn more__summary" data-open-label="hide full cv" data-closed-label="full cv">full cv</summary>
-          <div class="more__body prose prose--mono" tabindex="-1">
+          <div class="more__body prose prose--mono" tabindex="-1" data-cv-full>
             {%- comment -%} cv.md opens with an h1 and uses h2/h3 below it. Inside the cv pane
             the h2 pane title already heads this block, so the h1 is dropped and the rest
             moves down one level. data/cv.md itself is unchanged. {%- endcomment %}
@@ -183,26 +203,33 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
       </div>
     </section>
 
-    <section class="pane pane--links" id="links" tabindex="-1" aria-labelledby="links-title">
+    <section class="pane pane--links" id="links" tabindex="-1" aria-labelledby="links-title" data-kind="link">
       <h2 class="pane__title" id="links-title"><span class="pane__key">4</span>links</h2>
-      <div class="pane__body">
+      <div class="pane__body" data-pane-body>
         <ul class="links" data-links>
-          <li><a href="https://github.com/payals" target="_blank" rel="noopener" data-link="github">github<span class="links__host">/payals</span></a></li>
-          <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener" data-link="codeberg">codeberg<span class="links__host">/sillygoose</span></a></li>
-          <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener" data-link="linkedin">linkedin<span class="links__host">/in/payalsingh</span></a></li>
-          <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener" data-link="medium">medium<span class="links__host">/@reliable-by-design</span></a></li>
-          <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener" data-link="older">older<span class="links__host">/penningpence</span></a></li>
-          <li><a href="mailto:psinghpayal@outlook.com" data-link="email">email</a></li>
-          <li><a href="/feed.xml" data-link="rss">rss</a></li>
+          <li><a href="https://github.com/payals" target="_blank" rel="noopener" data-link="github" data-kind="link">github<span class="links__host">/payals</span></a></li>
+          <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener" data-link="codeberg" data-kind="link">codeberg<span class="links__host">/sillygoose</span></a></li>
+          <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener" data-link="linkedin" data-kind="link">linkedin<span class="links__host">/in/payalsingh</span></a></li>
+          <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener" data-link="medium" data-kind="link">medium<span class="links__host">/@reliable-by-design</span></a></li>
+          <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener" data-link="older" data-kind="link">older<span class="links__host">/penningpence</span></a></li>
+          <li><a href="mailto:psinghpayal@outlook.com" data-link="email" data-kind="link">email</a></li>
+          <li><a href="/feed.xml" data-link="rss" data-kind="link">rss</a></li>
         </ul>
       </div>
     </section>
 
-    <section class="pane pane--terminal pane--span" id="terminal" tabindex="-1" aria-labelledby="terminal-title">
-      <h2 class="pane__title" id="terminal-title">terminal<span class="pane__meta">type help</span></h2>
-      <div class="pane__body">
+    <section class="pane pane--terminal pane--span" id="terminal" tabindex="-1" aria-labelledby="terminal-title" data-kind="cmd">
+      <h2 class="pane__title" id="terminal-title">terminal<span class="pane__meta" data-pane-meta>type help</span></h2>
+      <div class="pane__body" data-pane-body>
         <div class="scrollback" role="log" aria-live="polite" aria-label="Terminal output" data-scrollback>
           <noscript><p class="scrollback__line scrollback__line--dim">The terminal needs JavaScript. Everything else on this page works without it.</p></noscript>
+        </div>
+        {%- comment -%} Constellation (signature canvas): lives in the terminal pane's idle area
+        between the scrollback and the prompt, shrinking as output grows. Hidden until
+        constellation.js sizes it. Worker D. {%- endcomment %}
+        <div class="constellation" data-constellation hidden>
+          <canvas class="constellation__canvas" data-constellation-canvas role="img" aria-label="Constellation of posts and talks, connected by shared topic or year. The writing and talks panes list the same items."></canvas>
+          <p class="constellation__tip" data-constellation-tip role="status" aria-live="polite" hidden></p>
         </div>
         <div class="prompt" data-prompt>
           <label class="prompt__ps1" for="terminal-input">payal@payalsingh.me:~$</label>
@@ -211,10 +238,42 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
             <input class="prompt__input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="type help" aria-label="Enter a command" data-input>
           </span>
         </div>
+        {%- comment -%} Visitor top strip (V1): one row at the bottom of the terminal pane on
+        desktop, a collapsed disclosure below 1024px. Values are filled by topstats.js from
+        events on this page only; nothing is stored or sent. Hidden until JS runs. Worker C. {%- endcomment %}
+        <section class="top" data-top aria-labelledby="top-title" hidden>
+          <h3 class="top__title" id="top-title"><button class="top__toggle" type="button" data-top-toggle aria-expanded="false" aria-controls="top-body">top</button></h3>
+          <div class="top__body" id="top-body" data-top-body>
+            <dl class="top__fields">
+              <dt>viewport</dt><dd data-top-viewport>0x0</dd>
+              <dt>on page</dt><dd data-top-elapsed>0s</dd>
+              <dt>panes viewed</dt><dd data-top-panes>0</dd>
+              <dt>commands</dt><dd data-top-commands>0</dd>
+              <dt>keys</dt><dd data-top-keys>0</dd>
+            </dl>
+            <p class="top__note">This session only. Nothing is stored or sent anywhere.</p>
+          </div>
+        </section>
       </div>
     </section>
 
   </main>
+
+  {%- comment -%} Which-key tray: opened by ? or the help item, closed by the next key or
+  Escape. Static content; palette.js toggles it. Worker B. {%- endcomment %}
+  <div class="keytray" data-keytray role="status" hidden>
+    <ul class="keytray__list">
+      <li><kbd class="kbd">/</kbd> search</li>
+      <li><kbd class="kbd">0</kbd> to <kbd class="kbd">4</kbd> jump to a pane, twice to zoom it</li>
+      <li><kbd class="kbd">j</kbd> <kbd class="kbd">k</kbd> next and previous pane</li>
+      <li><kbd class="kbd">z</kbd> or <kbd class="kbd">enter</kbd> zoom the focused pane</li>
+      <li><kbd class="kbd">esc</kbd> or <kbd class="kbd">q</kbd> restore the grid, close, leave the prompt</li>
+      <li><kbd class="kbd">:</kbd> focus the prompt</li>
+      <li><kbd class="kbd">j</kbd> <kbd class="kbd">k</kbd> <kbd class="kbd">space</kbd> scroll inside the reader</li>
+      <li><kbd class="kbd">ctrl+b</kbd> <kbd class="kbd">z</kbd> zoom alias</li>
+      <li><kbd class="kbd">?</kbd> this tray</li>
+    </ul>
+  </div>
 
   <nav class="statusbar" aria-label="Panes" data-statusbar>
     <a class="statusbar__item" href="#now" data-pane="now"><kbd class="statusbar__key">0</kbd>now</a>
@@ -222,11 +281,34 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
     <a class="statusbar__item" href="#writing" data-pane="writing"><kbd class="statusbar__key">2</kbd>writing</a>
     <a class="statusbar__item" href="#cv" data-pane="cv"><kbd class="statusbar__key">3</kbd>cv</a>
     <a class="statusbar__item" href="#links" data-pane="links"><kbd class="statusbar__key">4</kbd>links</a>
+    <button class="statusbar__item statusbar__search" type="button" data-open-palette aria-keyshortcuts="/ Meta+K Control+K" aria-label="search" hidden><kbd class="statusbar__key">/</kbd><span class="statusbar__search-label">search</span></button>
     <a class="statusbar__item" href="#terminal" data-pane="terminal" data-help><kbd class="statusbar__key">?</kbd>help</a>
-    <span class="statusbar__hint">keys work while the prompt is not focused</span>
+    <span class="statusbar__toast" data-toast role="status" aria-live="polite" hidden></span>
+    <span class="statusbar__hint" data-hint>keys work while the prompt is not focused</span>
   </nav>
 
 </div>
+
+{%- comment -%} Palette (P1, P2): a dialog over the console. palette.js fills the listbox,
+traps focus, and returns it to the opener. Hidden at rest. Worker B. {%- endcomment %}
+<div class="palette" data-palette role="dialog" aria-modal="true" aria-labelledby="palette-label" hidden>
+  <div class="palette__box">
+    <div class="palette__head">
+      <span class="palette__glyph" aria-hidden="true">/</span>
+      <label class="sr-only" id="palette-label" for="palette-input">Search everything</label>
+      <input class="palette__input" id="palette-input" type="text" role="combobox" aria-controls="palette-results" aria-autocomplete="list" aria-expanded="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="posts, talks, cv, links, commands" data-palette-input>
+      <span class="palette__count" data-palette-count aria-live="polite"></span>
+    </div>
+    <ul class="palette__results" id="palette-results" role="listbox" aria-label="Results" data-palette-results></ul>
+    <p class="palette__foot"><kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> move <kbd class="kbd">enter</kbd> open or run <kbd class="kbd">esc</kbd> close</p>
+  </div>
+</div>
+
+{%- comment -%} Inline data so no module fetches at boot. Same records as data/*.json and the
+post front matter; the panes above are the rendered form of the same facts. {%- endcomment %}
+<script type="application/json" id="timeline-data">{{ site.data.timeline | jsonify | replace: "</", "<\/" }}</script>
+<script type="application/json" id="talks-data">{{ talks | jsonify | replace: "</", "<\/" }}</script>
+<script type="application/json" id="posts-data">[{% for post in site.posts %}{% assign words = post.content | strip_html | number_of_words %}{% assign minutes = words | plus: 199 | divided_by: 200 %}{"slug":{{ post.url | split: '/' | last | jsonify | replace: "</", "<\/" }},"url":{{ post.url | jsonify | replace: "</", "<\/" }},"title":{{ post.title | jsonify | replace: "</", "<\/" }},"subtitle":{{ post.subtitle | default: "" | jsonify | replace: "</", "<\/" }},"date":{{ post.date | date: "%Y-%m-%d" | jsonify | replace: "</", "<\/" }},"tags":{{ post.tags | jsonify | replace: "</", "<\/" }},"series":{{ post.series | default: "" | jsonify | replace: "</", "<\/" }},"part":{{ post.part | default: 0 | jsonify | replace: "</", "<\/" }},"minutes":{{ minutes }}}{% unless forloop.last %},{% endunless %}{% endfor %}]</script>
 
 <script type="module" src="/assets/js/main.js"></script>
 </body>

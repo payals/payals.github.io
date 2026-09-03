@@ -8,7 +8,7 @@ layout: default
   <h1 class="page__title">{{ page.title | escape }}</h1>
   {% if page.subtitle %}<p class="page__subtitle">{{ page.subtitle | escape }}</p>{% endif %}
   <p class="meta page__meta">
-    <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y-%m-%d' }}</time>
+    <time datetime="{{ page.date | date_to_xmlschema }}" data-year="{{ page.date | date: '%Y' }}">{{ page.date | date: '%Y-%m-%d' }}</time>
     &middot; {{ minutes }} min read
     {% if page.tags and page.tags != empty %}&middot; {% for tag in page.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}{% endif %}
   </p>

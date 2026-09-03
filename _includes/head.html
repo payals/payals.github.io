@@ -6,6 +6,32 @@
   <meta name="description" content="{{ page.description | default: page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/console.css">
+  {%- if page.url == '/' %}
+  {%- comment -%} Phase-2 feature styles, landing only: the eight per-feature sheets
+  folded into one file in cascade order, so the head links three stylesheets. {%- endcomment %}
+  <link rel="stylesheet" href="/assets/css/features.css">
+  {%- comment -%} The boot log's ready handoff is an absolute deadline measured from
+  navigation start (assets/js/bootlog.js), so every round trip spent loading modules
+  eats the 800ms budget. Without these hints the graph is three sequential round
+  trips deep: main.js, then its ten imports, then commands.js's own import of
+  mdlines.js. Preloading the whole graph makes it one round trip after the HTML,
+  which keeps the handoff at 750ms on a link with 200ms of per-request latency
+  instead of slipping to 839ms. Landing only; the blog pages load no modules.
+  {%- endcomment %}
+  <link rel="modulepreload" href="/assets/js/main.js">
+  <link rel="modulepreload" href="/assets/js/terminal.js">
+  <link rel="modulepreload" href="/assets/js/commands.js">
+  <link rel="modulepreload" href="/assets/js/mdlines.js">
+  <link rel="modulepreload" href="/assets/js/panes.js">
+  <link rel="modulepreload" href="/assets/js/reader.js">
+  <link rel="modulepreload" href="/assets/js/zoom.js">
+  <link rel="modulepreload" href="/assets/js/palette.js">
+  <link rel="modulepreload" href="/assets/js/clicks.js">
+  <link rel="modulepreload" href="/assets/js/topstats.js">
+  <link rel="modulepreload" href="/assets/js/scrubber.js">
+  <link rel="modulepreload" href="/assets/js/constellation.js">
+  <link rel="modulepreload" href="/assets/js/bootlog.js">
+  {%- endif %}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">

@@ -3,15 +3,19 @@
  * the mirrored text span that carries the block cursor, and command dispatch
  * with "command not found" plus a did-you-mean suggestion.
  *
- * Output lines are objects: { text } or { segments: [{ text, href, className }] }
- * with an optional className. Lines print through a queue so the 30ms per-line
- * stagger from .omc/design/motion.md never interleaves two commands.
+ * Output lines are objects: { text } or { segments: [{ text, href, className,
+ * year }] } with an optional className. A segment with `year` is a date column:
+ * it gets the seg--year class and data-year so the year token colours it.
+ * Lines print through a queue so the 30ms per-line stagger from
+ * .omc/design/motion.md never interleaves two commands.
  */
 
 const STAGGER_MS = 30;
 const STAGGER_MAX_LINES = 12;
 const TYPING_HOLD_MS = 500;
 const PANE_NAMES = ['about', 'cv', 'links', 'now', 'talks', 'writing'];
+const FACT_DIRS = ['cv/', 'now/', 'talks/', 'writing/'];
+const ZOOM_NAMES = ['cv', 'now', 'talks', 'writing'];
 
 export class Terminal {
   /**
@@ -77,6 +81,10 @@ export class Terminal {
     const name = tokens[0].toLowerCase();
     const args = tokens.slice(1);
     const entry = this._registry[name];
+
+    // Observers (the visitor top strip) count commands without a hook into
+    // the registry. Detail carries the raw line and whether it resolved.
+    document.dispatchEvent(new CustomEvent('console:command', { detail: { raw, name, known: Boolean(entry) } }));
 
     if (!entry) {
       this.print(`bash: ${name}: command not found`, { className: 'scrollback__line--err' });
@@ -173,6 +181,10 @@ export class Terminal {
           this._historyDown();
           break;
         case 'Tab':
+          // An empty prompt lets Tab move focus on to the statusbar, so
+          // keyboard users are never held in the field. Completion only
+          // runs once there is something to complete.
+          if (e.shiftKey || !this._input.value) break;
           e.preventDefault();
           this._tabComplete();
           break;
@@ -245,23 +257,25 @@ export class Terminal {
 
   _tabComplete() {
     const value = this._input.value;
-    const catMatch = value.match(/^(cat\s+)(\S*)$/);
+    const argMatch = value.match(/^(cat|open|zoom)(\s+)(\S*)$/i);
 
     let prefix = '';
     let partial = value.toLowerCase();
     let pool = this.names;
 
-    if (catMatch) {
-      prefix = catMatch[1];
-      partial = catMatch[2].toLowerCase();
-      pool = PANE_NAMES;
+    if (argMatch) {
+      prefix = `${argMatch[1].toLowerCase()}${argMatch[2]}`;
+      partial = argMatch[3].toLowerCase();
+      pool = argumentPool(argMatch[1].toLowerCase(), partial);
     }
 
     const matches = pool.filter((n) => n.startsWith(partial));
     if (matches.length === 0) return;
 
     if (matches.length === 1) {
-      this.setValue(`${prefix}${matches[0]} `);
+      // A directory completes without the trailing space so the next Tab
+      // lists what it holds.
+      this.setValue(`${prefix}${matches[0]}${matches[0].endsWith('/') ? '' : ' '}`);
       return;
     }
 
@@ -297,14 +311,19 @@ export class Terminal {
         const a = document.createElement('a');
         a.href = seg.href;
         a.textContent = seg.text;
+        if (seg.className) a.className = seg.className;
         if (/^https?:/.test(seg.href)) {
           a.target = '_blank';
           a.rel = 'noopener';
         }
         el.appendChild(a);
-      } else if (seg.className) {
+      } else if (seg.className || seg.year) {
         const span = document.createElement('span');
-        span.className = seg.className;
+        if (seg.className) span.className = seg.className;
+        if (seg.year) {
+          span.classList.add('seg--year');
+          span.dataset.year = String(seg.year);
+        }
         span.textContent = seg.text;
         el.appendChild(span);
       } else {
@@ -340,6 +359,29 @@ function normalise(line, opts = {}) {
   }
   if (line.segments) return { className: line.className || '', segments: line.segments };
   return { className: line.className || '', segments: line.text === '' ? [] : [{ text: line.text, href: line.href }] };
+}
+
+/**
+ * Completion pool for a command argument. `cat` takes the pane names plus
+ * the four fact directories, and inside a directory the ids the panes carry
+ * (talks/<id>, writing/<slug>, cv/<id>, now/<fact>); `open` takes the link
+ * names; `zoom` the four zoomable panes. Read from the DOM so the pool can
+ * never disagree with the rows.
+ */
+function argumentPool(command, partial) {
+  if (command === 'open') {
+    return [...document.querySelectorAll('#links a[data-link]')].map((a) => a.dataset.link).sort();
+  }
+  if (command === 'zoom') return ZOOM_NAMES;
+  const slash = partial.indexOf('/');
+  if (slash === -1) return [...PANE_NAMES, ...FACT_DIRS].sort();
+  const dir = partial.slice(0, slash);
+  let ids = [];
+  if (dir === 'talks') ids = [...document.querySelectorAll('#talks .row[data-id]')].map((r) => r.dataset.id);
+  else if (dir === 'writing') ids = [...document.querySelectorAll('#writing .row[data-slug]')].map((r) => r.dataset.slug);
+  else if (dir === 'cv') ids = ['headline', ...[...document.querySelectorAll('#cv .row[data-id]')].map((r) => r.dataset.id), 'education'];
+  else if (dir === 'now') ids = [...document.querySelectorAll('#now dd[data-fact]')].map((d) => d.dataset.fact);
+  return ids.map((id) => `${dir}/${id}`);
 }
 
 function commonPrefix(words) {

@@ -28,3 +28,6 @@ AGENTS.md
 
 # Python bytecode
 __pycache__/
+
+# Playwright MCP snapshots and logs
+.playwright-mcp/

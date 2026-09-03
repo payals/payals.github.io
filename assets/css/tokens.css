@@ -3,34 +3,97 @@
    Consumed by index.html (landing) and _layouts/default.html (blog).
    Source of truth: DESIGN.md at the repo root. Motion: .omc/design/motion.md.
    Dark only. System font stacks only. No web fonts.
-   Contrast for every text token is asserted by scripts/check-contrast.py.
+   Contrast for every text token is asserted by scripts/check-contrast.py,
+   which also asserts the token identities noted below (kind-now = ok,
+   warn = accent, year-2022 = ink, year-2026 = kind-post) and that the
+   year scale is the sRGB interpolation of its four anchors.
    ============================================================= */
 
 :root {
   color-scheme: dark;
 
   /* ---- Palette -------------------------------------------------
-     Surfaces (backgrounds). Text tokens are checked against each. */
-  --bg:           #0b0d10;   /* page ground */
-  --surface:      #12151a;   /* pane, code block, topbar, statusbar */
-  --surface-2:    #171b21;   /* hovered row, kbd, inline code on a pane */
+     Warm dark base (K1). Three surface steps of one red-brown black, in
+     the spirit of Rose Pine and Catppuccin Mocha with our own values.
+     Text tokens are checked against each surface. */
+  --bg:           #100e0c;   /* page ground */
+  --surface:      #181411;   /* pane, code block, topbar, statusbar, palette box */
+  --surface-2:    #201b17;   /* hovered row, kbd, inline code, button, selected chip */
 
-  /* Text. Ratios against --bg / --surface / --surface-2 in DESIGN.md. */
-  --ink:          #e6e8eb;   /* primary text */
-  --ink-2:        #9aa3ad;   /* secondary text, metadata, prose muted */
-  --ink-3:        #7a8590;   /* tertiary text, placeholders, footer, hints */
+  /* Text. Neutral off-white with a hair of warmth so it does not read blue
+     on the warm ground. Ratios against --bg / --surface / --surface-2 in
+     DESIGN.md. */
+  --ink:          #e9e4dd;   /* primary text */
+  --ink-2:        #a69e95;   /* secondary text, metadata, nav at rest */
+  --ink-3:        #8e857b;   /* tertiary text, placeholder, footer, hints; 12px and up only (4.71:1 floor on --surface-2) */
 
-  /* Accent: focus ring, active/hover state, cursor. Never decoration. */
+  /* ---- State (K2): one colour, amber. ------------------------------
+     Focus ring, hover, active statusbar key, cursor, active or zoomed
+     pane border, warn level, scrubber thumb, the "as of" banner. It is
+     also the command kind (command chips, the $ prefix, the palette
+     command badge). Never decoration. */
   --accent:       #d9a441;
+  --warn:         #d9a441;   /* attention: boot [warn] lines, archive leads, the as-of banner. Equals --accent. */
 
-  /* Status */
-  --ok:           #8fbf8f;
-  --err:          #d76c6c;
+  /* ---- Status ---------------------------------------------------- */
+  --ok:           #8fbf8f;   /* ok state, upcoming badge, [ ok ] level, "done" */
+  --err:          #d76c6c;   /* error lines, error badge, command not found */
+
+  /* ---- Kind key (K2): each hue means one kind of thing -------------
+     Used only on chips, badges, prefixes, printed URLs, constellation
+     nodes and blog tag chips at rest. Never on headings, body text,
+     borders at rest or backgrounds. Every use has a text twin (the badge
+     word, the [talk] prefix, the printed year) so colour never carries
+     meaning alone. */
+  --kind-now:     #8fbf8f;   /* now facts, the role LED. Equals --ok: now is the ok state of the person. */
+  --kind-talk:    #6fd3c4;   /* talks: pane key [1], statusbar key 1, [talk] prefix, talk nodes */
+  --kind-post:    #8ab4f8;   /* posts: pane key [2], statusbar key 2, [post] prefix, post nodes, blog tag chips; also "this year" (2026) and the cool progress signal */
+  --kind-cv:      #f0a3b8;   /* cv lines and roles: pane key [3], statusbar key 3, [cv] prefix */
+  --kind-link:    #c4a2f5;   /* links and URLs: pane key [4], statusbar key 4, URLs printed in the terminal */
+  --kind-cmd:     #d9a441;   /* commands: the $ prefix, the / and ? keys, command badges. Equals --accent. */
+
+  /* Dim fills: the kind hue at 14% under normal ink, for the row that a
+     palette result points at (.is-hit). Text keeps its surface ratio. */
+  --kind-now-dim:  rgba(143, 191, 143, 0.14);
+  --kind-talk-dim: rgba(111, 211, 196, 0.14);
+  --kind-post-dim: rgba(138, 180, 248, 0.14);
+  --kind-cv-dim:   rgba(240, 163, 184, 0.14);
+  --kind-link-dim: rgba(196, 162, 245, 0.14);
+  --kind-cmd-dim:  rgba(217, 164,  65, 0.14);
+  --accent-dim:    rgba(217, 164,  65, 0.14);
+
+  /* ---- Year temperature: date columns only -------------------------
+     Candle (2013) to cream (2018) to white (2022) to daylight (2026),
+     one token per year, linear in sRGB between the four anchors. Applied
+     through [data-year] on .row__date, .facts dd spans, .postlist__date,
+     .page__meta time, the boot log date column, palette result dates and
+     the scrubber output. Nothing else. 2022 equals --ink and 2026 equals
+     --kind-post so "this year" and "posts" share one blue. Lowest ratio
+     is 2013 on --surface-2 at 7.53:1. */
+  --year-2013:    #e89a6a;   /* candle */
+  --year-2014:    #eaa776;
+  --year-2015:    #ecb382;
+  --year-2016:    #edc08e;
+  --year-2017:    #efcc9a;
+  --year-2018:    #f1d9a6;   /* cream */
+  --year-2019:    #efdcb4;
+  --year-2020:    #eddec2;
+  --year-2021:    #ebe1cf;
+  --year-2022:    #e9e4dd;   /* white, equals --ink */
+  --year-2023:    #d1d8e4;
+  --year-2024:    #baccea;
+  --year-2025:    #a2c0f1;
+  --year-2026:    #8ab4f8;   /* daylight, equals --kind-post */
+
+  /* ---- Glow: exactly two things, one layer each, low opacity ---------
+     The cursor and the active or zoomed pane border. Nothing else. */
+  --glow-cursor:  0 0 6px rgba(217, 164, 65, 0.35);
+  --glow-pane:    0 0 0 1px rgba(217, 164, 65, 0.25);
 
   /* Lines and fills (decorative; excluded from the text contrast check) */
-  --line:         #232830;   /* pane borders, rules */
-  --line-strong:  #343b46;   /* rules that must read on --surface-2, table heads */
-  --selection:    #2b3644;   /* ::selection background; --ink on it is checked */
+  --line:         #2b2520;   /* pane borders at rest, rules */
+  --line-strong:  #3d352d;   /* pane title rule, kbd border, table head rule, scrubber track */
+  --selection:    #3a3128;   /* ::selection background; --ink on it is checked (10.07:1) */
   --focus:        var(--accent);
   --focus-width:  2px;
   --focus-offset: 2px;
@@ -57,10 +120,12 @@
 
   /* Prose column. Spec B4 asks for 65 to 75ch; read as characters per line,
      not the CSS ch unit (the width of "0"), which in a proportional face is
-     about 1.35 average glyphs. Measured on a post at 17px system-ui: average
-     glyph 7.52px, so 33rem (528px) is about 70 characters per line, and the
-     old 66ch (707px) was 94. See DESIGN.md, Typography. */
-  --measure: 33rem;
+     about 1.35 average glyphs. 33rem (528px) was estimated at about 70
+     characters per line on a post at 17px system-ui, but a real render at
+     1440x900 measured fewer than 65; raised to 545px (34.0625rem) to clear
+     the 65-character floor with margin. The old 66ch (707px) was 94. See
+     DESIGN.md, Typography. */
+  --measure: 545px;
 
   /* ---- Spacing (rem) ------------------------------------------- */
   --space-1: 0.25rem;   /*  4px */
@@ -94,6 +159,8 @@
   --z-base:      0;
   --z-topbar:    10;
   --z-statusbar: 20;
+  --z-keytray:   30;
+  --z-palette:   50;
   --z-skip:      100;
 }
 

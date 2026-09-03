@@ -1,21 +1,32 @@
 ---
 version: alpha
 name: payalsingh.me console
-description: A dark, quiet ops console. One mono face for chrome, one sans face for reading, one amber accent that only ever means state.
+description: A warm dark ops console. One mono face for chrome, one sans face for reading, one state colour (amber), one kind key (now, talk, post, cv, link, command) and one time scale (candle 2013 to daylight 2026).
 colors:
-  primary: "#e6e8eb"
-  bg: "#0b0d10"
-  surface: "#12151a"
-  surface-2: "#171b21"
-  ink: "#e6e8eb"
-  ink-2: "#9aa3ad"
-  ink-3: "#7a8590"
+  primary: "#e9e4dd"
+  bg: "#100e0c"
+  surface: "#181411"
+  surface-2: "#201b17"
+  ink: "#e9e4dd"
+  ink-2: "#a69e95"
+  ink-3: "#8e857b"
   accent: "#d9a441"
+  warn: "#d9a441"
   ok: "#8fbf8f"
   err: "#d76c6c"
-  line: "#232830"
-  line-strong: "#343b46"
-  selection: "#2b3644"
+  kind-now: "#8fbf8f"
+  kind-talk: "#6fd3c4"
+  kind-post: "#8ab4f8"
+  kind-cv: "#f0a3b8"
+  kind-link: "#c4a2f5"
+  kind-cmd: "#d9a441"
+  year-2013: "#e89a6a"
+  year-2018: "#f1d9a6"
+  year-2022: "#e9e4dd"
+  year-2026: "#8ab4f8"
+  line: "#2b2520"
+  line-strong: "#3d352d"
+  selection: "#3a3128"
 typography:
   console:
     fontFamily: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, "Liberation Mono", monospace
@@ -153,11 +164,59 @@ components:
     typography: "{typography.console}"
     rounded: "{rounded.md}"
     padding: 8px 12px
+  pane-key:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.kind-talk}"
+    typography: "{typography.console-xs}"
+    rounded: "{rounded.sm}"
+    padding: 0 0.3em
+  pane-active:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    typography: "{typography.console}"
+    rounded: "{rounded.md}"
+    padding: 12px
+  palette-result:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    typography: "{typography.console}"
+    padding: 4px 12px
+  palette-result-selected:
+    backgroundColor: "{colors.kind-post}"
+    textColor: "{colors.bg}"
+    typography: "{typography.console}"
+    padding: 4px 12px
+  keytray:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.console-xs}"
+    padding: 8px 12px
+  top-strip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.console-xs}"
+    padding: 4px 0
+  scrubber:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.console-xs}"
+    padding: 0 8px
+  zoomtabs:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.console-xs}"
+    rounded: "{rounded.md}"
+    padding: 4px 12px
+  reader:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    padding: 12px
 ---
 
 ## Overview
 
-payalsingh.me is an ops console. The landing is a tmux-style grid of five panes (now, talks, writing, cv, links) plus a working terminal pane and a status bar; the blog is a reading column under the same top bar. Everything a visitor needs to judge the site owner is on screen at first paint, in one typeface, on one dark ground. The chrome is monospace because the chrome is a terminal. Long prose is a system sans because sans is easier to read at 700px than mono. There is exactly one accent, amber, and it appears only when something has state: focus, hover, the active key, the cursor. Nothing glows, nothing scans, nothing loops except the cursor.
+payalsingh.me is an ops console. The landing is a tmux-style grid of five panes (now, talks, writing, cv, links) plus a working terminal pane and a status bar; the blog is a reading column under the same top bar. Everything a visitor needs to judge the site owner is on screen at first paint, in one typeface, on one dark ground. The chrome is monospace because the chrome is a terminal. Long prose is a system sans because sans is easier to read at 700px than mono. Colour has three jobs and no others: one state colour (amber) for focus, hover, the active key, the cursor and the active pane border; one kind key (six hues, one per kind of thing: now, talk, post, cv, link, command) on chips, badges and prefixes; one time scale (candle 2013 to daylight 2026) on date columns. Headings, body text, borders at rest and backgrounds never carry a hue. Two things glow, the cursor and the active pane border, one low-opacity layer each. Nothing scans, nothing loops except the cursor.
 
 Files: `assets/css/tokens.css` (custom properties, reduced-motion block), `assets/css/console.css` (components; sections 1 to 8 shared, 9 landing only, 10 blog only), `_includes/head.html` and `_includes/navbar.html` (the one head and the one topbar, used by the landing and by every layout), `scripts/check-contrast.py` (contrast gate), `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`. Motion timing lives in `.omc/design/motion.md`, which remains authoritative. The older `.omc/design/{palette,typography,layout,panel-mockups,aesthetic-rationale,ascii-motif}.md` and the `.omc/design/INDEX.md` file list are superseded by this file as of 2026-09-01; each carries a superseded marker on its first line. The portrait slot that `ascii-motif.md` describes no longer exists (`assets/js/portrait.js` was removed in this redesign).
 
@@ -170,29 +229,97 @@ Both heads load the two stylesheets in this order and nothing else:
 
 ## Colors
 
-Dark only. No green primary. Surfaces are three steps of the same blue-black; text is three steps of grey-white; state is one amber. Every text token is at or above 4.5:1 on every surface it is used on. `scripts/check-contrast.py` asserts this and fails the build otherwise; the ratios below are its output.
+Dark only, warm. Surfaces are three steps of one red-brown black (the Rose Pine and Catppuccin Mocha spirit, own values); text is three steps of neutral off-white with a hair of warmth so it does not read blue on the warm ground. Every hue on the site means one of three things and nothing else: a state (amber), a kind of thing (six kind hues), or a year (the time scale). Every text token is at or above 4.5:1 on every surface it is used on, and every hue that carries `--bg` text on a solid fill is checked too. `scripts/check-contrast.py` asserts all of it, plus the token identities and the year interpolation, and fails otherwise; the ratios below are its output (2026-09-02).
+
+### Base
 
 | Token | Hex | Role | on `--bg` | on `--surface` | on `--surface-2` |
 |---|---|---|---|---|---|
-| `--bg` | `#0b0d10` | page ground | | | |
-| `--surface` | `#12151a` | pane, code block, topbar, statusbar | | | |
-| `--surface-2` | `#171b21` | kbd, inline code, button, hovered row | | | |
-| `--ink` | `#e6e8eb` | primary text | 15.85:1 | 14.90:1 | 14.08:1 |
-| `--ink-2` | `#9aa3ad` | secondary text, metadata, nav at rest | 7.61:1 | 7.16:1 | 6.76:1 |
-| `--ink-3` | `#7a8590` | tertiary text, placeholder, footer, hints | 5.17:1 | 4.87:1 | 4.60:1 |
-| `--accent` | `#d9a441` | focus ring, hover, active key, cursor | 8.65:1 | 8.13:1 | 7.68:1 |
-| `--ok` | `#8fbf8f` | ok status, upcoming badge | 9.28:1 | 8.73:1 | 8.24:1 |
-| `--err` | `#d76c6c` | error lines, error badge | 5.79:1 | 5.45:1 | 5.14:1 |
-| `--line` | `#232830` | pane borders, rules (decorative) | | | |
-| `--line-strong` | `#343b46` | pane title rule, kbd border, table head rule (decorative) | | | |
-| `--selection` | `#2b3644` | `::selection` ground; `--ink` on it is 9.98:1 | | | |
+| `--bg` | `#100e0c` | page ground | | | |
+| `--surface` | `#181411` | pane, code block, topbar, statusbar, palette box | | | |
+| `--surface-2` | `#201b17` | hovered row, kbd, inline code, button, selected chip | | | |
+| `--ink` | `#e9e4dd` | primary text, pane titles, row titles | 15.23:1 | 14.48:1 | 13.49:1 |
+| `--ink-2` | `#a69e95` | secondary text, metadata, nav at rest, `[info]` | 7.29:1 | 6.93:1 | 6.46:1 |
+| `--ink-3` | `#8e857b` | tertiary text, placeholder, footer, hints, undated dates; 12px and up only | 5.31:1 | 5.05:1 | 4.71:1 |
+| `--line` | `#2b2520` | pane borders at rest, rules (decorative) | | | |
+| `--line-strong` | `#3d352d` | pane title rule, kbd border, table head rule, scrubber track (decorative) | | | |
+| `--selection` | `#3a3128` | `::selection` ground; `--ink` on it is 10.07:1 | | | |
 
-Extra pairs the script checks: `--bg` on `--accent` (text inside the block cursor and the active statusbar key) 8.65:1.
+The floor is `--ink-3` on `--surface-2` at 4.71:1; it is used only at 12px and up.
+
+### State: one colour
+
+| Token | Hex | Meaning | on `--bg` | on `--surface` | on `--surface-2` | `--bg` text on it |
+|---|---|---|---|---|---|---|
+| `--accent` | `#d9a441` | state: focus ring, hover, active statusbar key, cursor, active and zoomed pane border, scrubber thumb, the "as of" banner | 8.56:1 | 8.14:1 | 7.59:1 | 8.56:1 |
+| `--warn` | `#d9a441` | attention: boot `[warn]` lines, archive leads under reconstruction. Equals `--accent` | 8.56:1 | 8.14:1 | 7.59:1 | |
+| `--ok` | `#8fbf8f` | ok state: `[ ok ]` level, upcoming badge, "done" | 9.19:1 | 8.73:1 | 8.14:1 | 9.19:1 |
+| `--err` | `#d76c6c` | error lines, error badge, `command not found` | 5.73:1 | 5.45:1 | 5.08:1 | 5.73:1 |
+
+Amber is the only state colour. It is also the command kind (below), as in the winning concept prototype: a command is the thing the visitor acts with, so it shares the colour of action.
+
+### Kind key: six hues, one per kind of thing
+
+Applied at rest to the pane key chips `0` to `4`, the matching statusbar keys, palette result badges and the selected palette row, the `[talk]` `[post]` `[cv]` `[now]` and `$` prefixes in the boot log and terminal output, URLs printed in the terminal, constellation nodes (talks circles, posts squares) and blog tag chips. Never on headings, body text, borders at rest or backgrounds. Every use sits beside a text twin (the badge word, the prefix, the printed year), so colour never carries meaning alone.
+
+| Token | Hex | Kind | on `--bg` | on `--surface` | on `--surface-2` | `--bg` text on it |
+|---|---|---|---|---|---|---|
+| `--kind-now` | `#8fbf8f` | now facts, the topbar role LED. Equals `--ok`: now is the ok state of the person | 9.19:1 | 8.73:1 | 8.14:1 | 9.19:1 |
+| `--kind-talk` | `#6fd3c4` | talks | 10.82:1 | 10.28:1 | 9.58:1 | 10.82:1 |
+| `--kind-post` | `#8ab4f8` | posts; also "this year" (the 2026 end of the time scale), the boot progress bar and blog tag chips | 9.14:1 | 8.69:1 | 8.10:1 | 9.14:1 |
+| `--kind-cv` | `#f0a3b8` | cv lines and roles | 9.76:1 | 9.27:1 | 8.64:1 | 9.76:1 |
+| `--kind-link` | `#c4a2f5` | links and printed URLs | 9.02:1 | 8.57:1 | 7.99:1 | 9.02:1 |
+| `--kind-cmd` | `#d9a441` | commands, the `/` and `?` keys, the `$` prefix. Equals `--accent` | 8.56:1 | 8.14:1 | 7.59:1 | 8.56:1 |
+
+Each kind has a 14 % alpha twin (`--kind-now-dim` ... `--kind-cmd-dim`, and `--accent-dim`) for the row tint behind the palette; text on a tinted row keeps its surface ratio.
+
+How the hue reaches an element: any element with `data-kind` (`now talk post cv link cmd`) or a statusbar item with `data-pane` resolves the custom properties `--kind` and `--kind-dim` in `console.css` section 4, and its descendants inherit them. The chip, badge, prefix and tint rules read those two variables; nothing else does. A new component that needs its kind hue writes `color: var(--kind)` rather than naming a hue, so the mapping lives in one place.
+
+### The two-tone signal pair
+
+Where the inspiration used cyan against magenta, this system uses cool against warm, and both already have meanings above: `--kind-post` blue is the cool signal (progress bar fill, "this year", the daylight end of the time scale) and `--accent` amber is the warm signal (upcoming, attention, every state). No extra token.
+
+### Year temperature: date columns only
+
+One token per year from 2013 to 2026, linear in sRGB between four anchors: candle `#e89a6a` (2013), cream `#f1d9a6` (2018), white `#e9e4dd` (2022, equals `--ink`) and daylight `#8ab4f8` (2026, equals `--kind-post`, so "this year" and "posts" share one blue). Intermediate years are computed and the check script asserts each one against the interpolation. Applied through `data-year` on `.row__date`, the year spans in the now pane's `dd`, `.postlist__date`, `.page__meta time`, `.seg--year` in the terminal, palette result dates and the scrubber output; `[data-year]` sets the variable `--year` and only those date-column selectors read it, so the `data-year` that list rows also carry paints nothing. A date without a year (an archive lead's era) stays `--ink-3`.
+
+| Year | Hex | on `--surface` | Year | Hex | on `--surface` |
+|---|---|---|---|---|---|
+| 2013 | `#e89a6a` | 8.07:1 | 2020 | `#eddec2` | 13.80:1 |
+| 2014 | `#eaa776` | 8.97:1 | 2021 | `#ebe1cf` | 14.13:1 |
+| 2015 | `#ecb382` | 9.88:1 | 2022 | `#e9e4dd` | 14.48:1 |
+| 2016 | `#edc08e` | 10.93:1 | 2023 | `#d1d8e4` | 12.78:1 |
+| 2017 | `#efcc9a` | 12.01:1 | 2024 | `#baccea` | 11.26:1 |
+| 2018 | `#f1d9a6` | 13.27:1 | 2025 | `#a2c0f1` | 9.89:1 |
+| 2019 | `#efdcb4` | 13.57:1 | 2026 | `#8ab4f8` | 8.69:1 |
+
+Lowest year pair: 2013 on `--surface-2` at 7.53:1.
+
+### Glow: two things
+
+`--glow-cursor` (`0 0 6px rgba(217,164,65,.35)`) on the cursor, blinking off with the block; `--glow-pane` (`0 0 0 1px rgba(217,164,65,.25)`) beside the amber border of `.pane.is-active` and `.pane.is-zoom`. One `box-shadow` layer each, low opacity, both amber because both mark state. Nothing else glows, and no `text-shadow` anywhere.
+
+### Where each hue appears
+
+| Surface | Rule |
+|---|---|
+| Pane border | `--line` at rest; `--accent` plus `--glow-pane` while active or zoomed. Never a kind hue |
+| Pane title | `--ink`. The key chip beside it is the pane's kind hue (text and 1px border) |
+| Statusbar keys | `--surface-2` ground, `--ink` text at rest; on hover and `aria-current` a solid chip in the pane's kind hue with `--bg` text; `/` and `?` use amber |
+| List rows | title `--ink`, note `--ink-3`, aside `--ink-2`; `.row__date[data-year]` in the year token; `.badge--ok` green; `.row.is-hit` filled with `--kind-dim` |
+| Now pane | labels `--ink-2`, values `--ink`, year spans in the year token, the role LED `--kind-now` |
+| Terminal | lines `--ink`; `--ok` green, `--dim` `--ink-2`, `--err` red, `--warn` amber; `.seg--*` prefixes in their kind hue, URLs lilac, dates year-tinted, progress bar blue, "done" green |
+| Palette | badge and `mark` in the kind hue, selected row solid kind hue with `--bg` text, dates year-tinted, the `/` glyph amber |
+| Cursor | amber block with `--glow-cursor`, hollow amber outline while unfocused |
+| Scrubber | track `--line-strong`, thumb `--accent`, output year-tinted |
+| Constellation | talk nodes `--kind-talk`, post nodes `--kind-post`, edges `--line-strong` at rest and the shared kind hue on hover, tooltip `--ink` on `--surface` |
+| Blog | tag chips `--kind-post` at rest and amber on hover; dates year-tinted; links `--ink` underlined, amber on hover; code in three inks with no hue |
 
 Rules:
 
-- `--accent` is a state colour. It is allowed on: `:focus-visible` outline, link hover, nav hover and `aria-current`, the active statusbar key, the block cursor, a button border on hover. It is not allowed on headings, rules, borders at rest, icons, backgrounds, or any text that is not a state change.
-- `--ok` and `--err` are the only other chromatic tokens and they carry meaning (a status, a badge, an error line). Do not use them to colour headings or links.
+- `--accent` is a state colour. It is allowed on: `:focus-visible` outline, link hover, nav hover and `aria-current`, the active statusbar key, the block cursor, a button border on hover, the active or zoomed pane border, the scrubber thumb, warn lines and the "as of" banner. It is not allowed on headings, rules, borders at rest, icons, backgrounds, or any text that is not a state change.
+- A kind hue is allowed only on a chip, badge, prefix, printed URL, constellation node or tag chip, always beside its text twin, never on a border at rest or a background above 14 % alpha.
+- A year token is allowed only on a date column reached through `data-year`.
 - Use `--ink-3` only at 12px and up. It passes 4.5:1 but it is the floor.
 
 ## Typography
@@ -213,7 +340,7 @@ System stacks only, no web fonts. This is a decision, not a fallback: it costs z
 | `--text-2xl` | 1.5 | 24 | post h1, page title below 768px |
 | `--text-3xl` | 1.875 | 30 | page title from 768px |
 
-Line heights: `--leading-tight` 1.25 (headings, pane titles), `--leading-console` 1.5 (mono), `--leading-prose` 1.65 (sans). Measure: `--measure` 33rem (528px). Spec B4 asks for a 65 to 75ch column and this file reads that as characters per line, the typographic measure, not the CSS `ch` unit: `ch` is the width of "0", which in a proportional face is about 1.35 average glyphs, so a `66ch` column carried 94 characters per line. Measured on a post at 1440 by 900, 17px system-ui: average glyph 7.52px, column 528px, 70.2 characters per line (51.4 CSS ch). The two readings cannot both hold (65 CSS ch is 668px, 75 characters is 564px), so the characters-per-line reading wins and the `ch` reading is recorded as failed on purpose. The value is in rem so it does not move with the platform's "0" width. `.page__header` is not capped by the measure; a post title runs to the 48rem page width above the narrower body column. Headings are mono, weight 600, tracking -0.01em. Links are always underlined (1px, offset 0.15em) so they are distinguishable without colour.
+Line heights: `--leading-tight` 1.25 (headings, pane titles), `--leading-console` 1.5 (mono), `--leading-prose` 1.65 (sans). Measure: `--measure` 545px (34.0625rem). Spec B4 asks for a 65 to 75ch column and this file reads that as characters per line, the typographic measure, not the CSS `ch` unit: `ch` is the width of "0", which in a proportional face is about 1.35 average glyphs, so a `66ch` column carried 94 characters per line. An earlier value, 33rem (528px), was estimated at 70.2 characters per line (average glyph 7.52px on a post at 1440 by 900, 17px system-ui) but measured under 65 in the built site, so the measure was raised to 545px to clear the floor with margin; see the verify-B-1 evidence for the re-measured count. The two ch/characters readings cannot both hold (65 CSS ch is 668px, 75 characters is 564px), so the characters-per-line reading wins and the `ch` reading is recorded as failed on purpose. `.page__header` is not capped by the measure; a post title runs to the 48rem page width above the narrower body column. Headings are mono, weight 600, tracking -0.01em. Links are always underlined (1px, offset 0.15em) so they are distinguishable without colour.
 
 ## Layout
 
@@ -233,7 +360,7 @@ Console grid steps:
 
 The landing (`.shell--landing`, section 9 of `console.css`) composes six panes on that grid: now, talks, writing, cv, links, terminal. Below 768px they stack in that order, so the terminal prompt is the last thing above the sticky statusbar. From 1024px the shell is `100dvh` tall with rows `auto minmax(0, 1fr) auto`, the console has rows `1fr 1fr 1fr auto`, the terminal spans both columns on row 3 and the links pane is a one-row strip on row 4. From 1280px the console is three columns with rows `1fr 1fr auto`: now and talks on row 1, writing and cv on row 2, the terminal is the full-height right column, and the links strip spans all three columns on row 3.
 
-Height budget at 1440 by 900 with the shipped three-column composition: topbar 48 + console padding 24 + two gaps 24 + links strip 39 + statusbar 36 = 171px of chrome; the remaining 729px splits into two rows of 365px. Measured in the built site (headless Chromium, 2026-09-02): now and talks at top 60, writing and cv at top 437, each 464 by 365; terminal at top 60, 464 by 741; links at top 813, 1416 by 39; `document.scrollHeight` 900, so nothing scrolls. Between 1024px and 1279px the same chrome minus the third gap splits into three rows over two columns, with the terminal spanning row 3.
+Height budget at 1440 by 900 with the shipped three-column composition: topbar 70 (the id row 48 plus the 22px telemetry and scrubber row the landing reserves from 768px) + console padding 24 + two gaps 24 + links strip 39 + statusbar 36 = 193px of chrome; the remaining 707px splits into two rows of 354px. Measured in the built site (headless Chromium, 2026-09-03, phase 2): now and talks at top 82, writing and cv at top 448, each 464 by 354; terminal at top 82, 464 by 719; links at top 813, 1416 by 39; `document.scrollHeight` 900, so nothing scrolls. The topbar measures the same height with and without JavaScript at every width (1440, 1280 and 768: 70px; 1024 to 1279: 91px; 390: 113px) because the landing reserves the second row before the modules fill it, which is what keeps CLS at 0.002 on the desktop Lighthouse run. Between 1024px and 1279px the same chrome minus the third gap splits into three rows over two columns, with the terminal spanning row 3.
 
 Page composition, landing versus blog:
 
@@ -244,7 +371,7 @@ Deep links: `#now`, `#talks`, `#writing`, `#cv`, `#links`, `#terminal` target pa
 
 ## Elevation & Depth
 
-None. There are no shadows and no layered translucency. Depth is expressed as surface steps (`--bg` under `--surface` under `--surface-2`) and 1px lines. The only overlapping elements are the skip link and the sticky statusbar, ordered by `--z-skip` 100, `--z-statusbar` 20, `--z-topbar` 10.
+Depth is expressed as surface steps (`--bg` under `--surface` under `--surface-2`) and 1px lines. There are no drop shadows and no layered translucency, with one exception on exactly two elements: the cursor carries `--glow-cursor` (`0 0 6px rgba(217,164,65,.35)`) and the active or zoomed pane carries `--glow-pane` (`0 0 0 1px rgba(217,164,65,.25)`) beside its amber border. One `box-shadow` layer each, low opacity, and both are amber because both mark state. Nothing else may use `box-shadow` or `text-shadow`. Overlapping elements are ordered by `--z-skip` 100, `--z-palette` 50, `--z-keytray` 30, `--z-statusbar` 20, `--z-topbar` 10.
 
 ## Shapes
 
@@ -297,7 +424,7 @@ Below 768px the tagline drops to its own line under the id and nav.
 </main>
 ```
 
-`.pane__title` renders `[0] now ──────── meta`: the key in brackets, the lowercase name, a rule to the right edge, optional meta in `--ink-3`. `.pane__key` and `.pane__meta` are optional; the terminal pane has no key because it is reached by `?`, by clicking, or by `#terminal`. `.pane--terminal .pane__body` is a column flex so the scrollback takes the space and the prompt stays at the bottom.
+`.pane__title` renders `0 now ──────── meta`: the key as a small bordered chip, the lowercase name in `--ink`, a rule to the right edge, optional meta in `--ink-3`. Every pane carries `data-kind` (`now talk post cv link cmd`); the chip takes that kind's hue as text and border through the `--kind` variable (see Colors), the same shape and hue as the statusbar key it answers to. `.pane__key` and `.pane__meta` are optional; the terminal pane has no key because it is reached by `?`, by clicking, or by `#terminal`. A pane that holds focus gets `.is-active` from `panes.js` and a zoomed pane gets `.is-zoom` from `zoom.js`: both draw the border in `--accent` with `--glow-pane`, amber because a border shows state, never a kind hue. `.pane--terminal .pane__body` is a column flex so the scrollback takes the space and the prompt stays at the bottom.
 
 ### Statusbar
 
@@ -313,7 +440,7 @@ Below 768px the tagline drops to its own line under the id and nav.
 </nav>
 ```
 
-Key map, shared by this markup and `KEY_TO_PANE` in `assets/js/panes.js`: `0` now, `1` talks, `2` writing, `3` cv, `4` links; `?` focuses the terminal and runs `help`. Keys act only while no input has focus; `Escape` inside the prompt returns focus to the terminal pane so they work again. `aria-current` follows whichever pane holds focus (`data-pane` is the pane id). Sticky at the bottom below 1024px, a static row at 1024px and up. The active item's key is amber on `--bg`. The hint is hidden below 768px.
+Key map, shared by this markup and `KEY_TO_PANE` in `assets/js/panes.js`: `0` now, `1` talks, `2` writing, `3` cv, `4` links; `?` focuses the terminal and runs `help`. Keys act only while no input has focus; `Escape` inside the prompt returns focus to the terminal pane so they work again. `aria-current` follows whichever pane holds focus (`data-pane` is the pane id). Sticky at the bottom below 1024px, a static row at 1024px and up. On hover and while current, an item's key becomes a solid chip in its pane's kind hue with `--bg` text (`data-pane` maps to `--kind`: now green, talks teal, writing blue, cv rose, links lilac); the `/` search and `?` help keys use amber, the command kind. Every hue-on-`--bg` pair is in the contrast check. The hint is hidden below 768px.
 
 ### Prompt and cursor
 
@@ -355,7 +482,11 @@ The prompt is not focused after boot on any device. The ready line offers keys 0
 </div>
 ```
 
-Modifiers: `--echo` and `--dim` (`--ink-2`), `--ok`, `--err`. Lines are `white-space: pre-wrap`. No max-height; on desktop the scrollback scrolls inside the pane, on smaller screens it grows.
+Line modifiers: `--echo` and `--dim` (`--ink-2`), `--ok`, `--err`, `--warn` (amber). Segment classes colour one word inside a line while the rest stays the line colour: `.seg--talk .seg--post .seg--cv .seg--now .seg--cmd` for the `[talk]` `[post]` `[cv]` `[now]` and `$` prefixes, `.seg--link` for a printed URL (lilac, also on an `<a>`), `.seg--ok .seg--info .seg--warn .seg--err` for level words, `.seg--bar` for the boot progress bar (blue, the cool progress signal) and `.seg--year` with `data-year` for a date column. Lines are `white-space: pre-wrap`. No max-height; on desktop the scrollback scrolls inside the pane, on smaller screens it grows.
+
+```html
+<p class="scrollback__line"><span class="seg--year" data-year="2018">2018-06-01</span> <span class="seg--ok">[ ok ]</span> <span class="seg--talk">[talk]</span> Securing Your Data On PostgreSQL · PGCon 2018</p>
+```
 
 ### Rows
 
@@ -367,7 +498,7 @@ List panes use a date column, a title, and an optional aside.
 </ul>
 ```
 
-`.row__note` is an optional full-width line under a row in `--ink-3` at 12px (a talk's note, a role summary); `.row--current` sets the title to weight 600 for the upcoming talk or the current role. `.row__aside` may hold badges and evidence links separated by middle dots.
+`.row__note` is an optional full-width line under a row in `--ink-3` at 12px (a talk's note, a role summary); `.row--current` sets the title to weight 600 for the upcoming talk or the current role. `.row__aside` may hold badges and evidence links separated by middle dots. Rows carry `data-kind`, `data-year` and `data-cmd`; `.row__date[data-year]` takes the year token (candle to daylight) and `.row.is-hit` (set by `palette.js` for the row a palette result points at) fills the row with the kind hue at 14 % (`--kind-dim`). The title, aside and note keep their ink.
 
 ### Facts
 
@@ -430,7 +561,7 @@ The full cv inside the cv pane is `data/cv.md` rendered with its leading h1 drop
 </main>
 ```
 
-`.prose`: sans body at 16px (17px from 768px), 33rem measure (about 70 characters per line), mono headings, underlined links, inline code on `--surface-2`, code blocks on `--surface` with a `--line` border, tables in a `.table-wrap` for horizontal scroll, blockquotes with a 2px `--line-strong` left rule. `.prose--mono` keeps the same rhythm in the console face for the cv and about panes.
+`.prose`: sans body at 16px (17px from 768px), 545px measure (at least 65 characters per line, measured), mono headings, underlined links, inline code on `--surface-2`, code blocks on `--surface` with a `--line` border, tables in a `.table-wrap` for horizontal scroll, blockquotes with a 2px `--line-strong` left rule. `.prose--mono` keeps the same rhythm in the console face for the cv and about panes.
 
 ### Small parts
 
@@ -443,6 +574,34 @@ The full cv inside the cv pane is `data/cv.md` rendered with its leading h1 drop
 ```
 
 Utilities: `.muted` (`--ink-2`), `.faint` (`--ink-3`), `.ok`, `.err`, `.mono`, `.sr-only`.
+
+### Console features
+
+The eight phase-2 features are one folded stylesheet, `assets/css/features.css`, linked on the landing only, after `tokens.css` and `console.css`. It is the concatenation of the per-feature sheets in cascade order (zoom, reader, palette, clicks, bootlog, scrubber, topstats, constellation): the order matters because topstats reserves the second topbar row that the scrubber sits in, and constellation sizes the terminal body every other sheet leaves alone. The landing head therefore links three stylesheets and every other page links two.
+
+```html
+<nav class="zoomtabs" data-zoomtabs><button class="zoomtabs__tab"><kbd class="zoomtabs__key">1</kbd>talks</button></nav>
+<div class="reader" data-reader role="region" tabindex="-1"><p class="reader__status"><span class="reader__slug">slug</span><span class="reader__pos">line 22 of 179 12%</span><span class="reader__keys">j k space scroll · q back</span></p></div>
+<div class="palette" data-palette role="dialog" aria-modal="true"><ul class="palette__results" role="listbox"><li role="option" aria-selected="true"><span class="r__type" data-kind="talk">talk</span></li></ul></div>
+<div class="keytray" data-keytray role="status"><ul class="keytray__list"><li><kbd class="kbd">/</kbd> search</li></ul></div>
+<span class="statusbar__toast" data-toast role="status">$ cat talks/&lt;id&gt; <a href="#terminal">see terminal</a></span>
+<div class="scrubber" data-scrubber><label class="scrubber__label" for="year-scrubber">as of</label><input class="scrubber__input" type="range" min="2013" max="2026"><output class="scrubber__out" data-year="2018">2018</output></div>
+<p class="topbar__stats" data-topstats><span class="topbar__stat"><span class="topbar__led"></span>at Lore since 2026-06</span></p>
+<section class="top" data-top><h3 class="top__title"><button class="top__toggle" aria-expanded="true">top</button></h3><dl class="top__fields"><dt>viewport</dt><dd>1440x900</dd></dl><p class="top__note">This session only. Nothing is stored or sent anywhere.</p></section>
+<div class="constellation" data-constellation><canvas class="constellation__canvas" role="img"></canvas><p class="constellation__tip" role="status"></p></div>
+```
+
+| Component | Spec |
+|---|---|
+| `zoomtabs` | One row above the zoomed pane, `--surface` ground, one `.zoomtabs__tab` per collapsed pane with its `.zoomtabs__key` chip in the pane's kind hue plus an `esc grid` chip in the command amber. Shown only while `.console.is-zoomed`. |
+| `reader` | 1px `--line` frame inside the zoomed writing pane, a `post` badge in `--kind-post`, the year-tinted date, and a `less`-style status line at the foot: the slug (truncates first), the position in `--ink` with tabular numerals, and the key hint in `--ink-3` (hidden below 480px). Below 1024px the status line sticks above the statusbar. |
+| `palette-result` | Kind badge `.r__type[data-kind]` in the kind hue with a 1px border of the same hue, title in `--ink` with matched characters marked in the kind hue, date year-tinted, venue or subtitle in `--ink-2`. The selected row (`aria-selected="true"`) is a solid kind-hue ground with `--bg` text; the pane row behind the dialog takes a 14% tint of the same hue. |
+| `keytray` | Fixed above the statusbar, `--surface` on `--line`, `--z-keytray` 30. Position fixed, so opening it never moves the page. |
+| `toast` | One statusbar-height row fixed at the bottom of the viewport, shown when a clicked fact ran a command the visitor cannot see; clears itself after 4s. |
+| `scrubber` | `as of` label in `--ink-2`, a 5rem range (7rem from 1024px) with a 2px `--line-strong` track and a 12px `--accent` thumb, and a year-tinted `output`. While a past year is selected the topbar shows the `as of <year>` banner in amber with a `back to now` button. |
+| `topbar` telemetry | A second topbar row from 768px: the role LED (`--kind-now`), the countdown in days and hours, and the uptime. The uptime is not shown between 768px and 1023px, where the row is too narrow for three facts on any mono face. Below 768px the whole row is hidden and the scrubber moves to the id row. The landing topbar reserves that row's height before the modules fill it, so the measured height is identical with and without JavaScript. |
+| `top-strip` | One row at the foot of the terminal pane from 1024px: `dt` labels are visually hidden because each `dd` names itself (`1440x900`, `up 4s`, `3 panes`, `1 cmd`, `16 keys`), values in `--ink` with tabular numerals, separated by middle dots in `--ink-3`, 11px from 1024px so it fits the 411px terminal column at 1280px, with the note in `--ink-2` at that size (`--ink-3` is only allowed at 12px and up). Below 1024px it is a collapsed disclosure at 12px with the note in `--ink-3`. |
+| `constellation` | A canvas in the terminal pane's idle area between the scrollback and the prompt. Talk nodes are `--kind-talk` circles, post nodes `--kind-post` squares, ring guides `--line`, ring year labels `--ink-3` at 12px, edges `--line-strong` at rest and the hovered node's kind hue when lit. No shadow, no gradient, no hue on the ground. It is hidden below 768px, a 10rem block from 768px to 1023px, sized by whatever the scrollback leaves between 1024px and 1279px (usually nothing, so it hides), and a fixed 14rem block from 1280px so it is on screen at first paint and never resizes while the career log prints. |
 
 ### Blog parts
 
@@ -457,7 +616,7 @@ Section 10 of `console.css`, used only by the Jekyll layouts. Every colour, size
 <nav class="pager" aria-label="Adjacent posts"><p class="pager__item"><span class="pager__label">newer</span> <a href="...">Title</a></p></nav>
 ```
 
-`.tag-chip` is a badge that links to a topic; it is `--ink-2` at rest and takes the accent only on hover. Rouge output is mapped to three shades of ink (comments `--ink-3`, strings and numbers `--ink-2`, keywords `--ink` weight 600) with no hue, because code at rest has no state.
+`.tag-chip` is a post badge that links to a topic: `--kind-post` text and border at rest (the same blue as the writing pane key and the `[post]` prefix), amber on hover because hover is state. Dates on `/blog/` (`.postlist__date`), on a post (`.page__meta time`) and on `/blog/topics/` (`.row__date`) carry `data-year` and take the year token, so a 2026 date is the same daylight blue on every surface. In-text links stay `--ink` underlined, amber on hover. Rouge output is mapped to three shades of ink (comments `--ink-3`, strings and numbers `--ink-2`, keywords `--ink` weight 600) with no hue, because code at rest has no state; inline code sits on `--surface-2`, code blocks on `--surface`.
 
 ### Focus
 
@@ -467,20 +626,22 @@ Global `:focus-visible` is a 2px `--accent` outline, offset 2px. Panes use offse
 
 Do:
 
-- Load `tokens.css` then `console.css` and nothing else in the head.
-- Use `--accent` for focus, hover, the active key, and the cursor.
+- Load `tokens.css` then `console.css` (plus the landing's feature sheets) and nothing else in the head.
+- Use `--accent` for focus, hover, the active key, the cursor, the active pane border and warn.
+- Use a kind hue only on a chip, badge, prefix, printed URL, constellation node or tag chip, and always beside its text twin.
+- Use a year token only on a date column, through `data-year`.
 - Underline every in-text link.
-- Keep pane titles lowercase and in the mono face.
+- Keep pane titles lowercase, `--ink`, in the mono face.
 - Put wide content (tables, code) inside a scrolling container.
 - Run `python3 scripts/check-contrast.py` after any token change.
 
 Don't:
 
-- No green primary, no teal, no second accent.
-- No accent on headings, rules, borders at rest, or backgrounds.
+- No green primary, no neon, no hue without a meaning in the Colors table.
+- No hue on headings, body text, rules, borders at rest, or backgrounds; no kind hue on a border ever.
 - No web fonts, no CDN, no analytics, no third-party requests.
-- No CRT scanlines, glow, curvature, flicker, or animation libraries.
-- No shadows or gradients.
+- No CRT scanlines, curvature, flicker, glitch, or animation libraries.
+- No shadow or glow beyond the two in Elevation & Depth; no gradients.
 - No looping animation other than the cursor blink.
 - No radius above 4px.
 - No `--ink-3` below 12px.
@@ -491,7 +652,7 @@ Authoritative source: `.omc/design/motion.md`. Tokens: `--dur-press` 60ms, `--du
 
 ## Favicon
 
-`favicon.svg` is a 32 by 32 rounded square in `--bg` with a prompt chevron and a filled block cursor in `--ink`. `favicon.ico` holds PNG-encoded 16, 32 and 48px renders of the same SVG. `apple-touch-icon.png` is a 180px render of the square (unrounded) variant, since iOS masks its own corners. Both heads include:
+`favicon.svg` is a 32 by 32 rounded square in `--bg` (`#100e0c`) with a prompt chevron and a filled block cursor in `--ink` (`#e9e4dd`). `favicon.ico` holds PNG-encoded 16, 32 and 48px renders of the same SVG. `apple-touch-icon.png` is a 180px render of the square (unrounded) variant, since iOS masks its own corners. Both heads include:
 
 ```html
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -499,4 +660,4 @@ Authoritative source: `.omc/design/motion.md`. Tokens: `--dur-press` 60ms, `--du
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 ```
 
-To regenerate after editing the SVG: `qlmanage -t -s <size> -o <dir> favicon.svg` for each size, then pack the PNGs into the ICO (a 6-byte header, one 16-byte directory entry per image, then the PNG bytes).
+To regenerate after editing the SVG: rasterise it at 16, 32, 48 and 180px with headless Chromium (set the SVG's `width`/`height` to the target size in a blank page and screenshot the viewport with `omitBackground`; `qlmanage` keeps the SVG's intrinsic 32px inside a larger canvas, so it does not work for the bigger sizes), then pack the 16, 32 and 48px PNGs into the ICO (a 6-byte header, one 16-byte directory entry per image, then the PNG bytes).

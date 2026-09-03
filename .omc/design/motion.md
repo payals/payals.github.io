@@ -35,20 +35,42 @@ immediately.
 
 ## Boot Sequence Lines
 
-Total boot budget: **800ms** across ~5 lines. Scheduled at **780ms**; the
-remaining 20ms absorbs setTimeout lateness so the measured handoff stays
-inside the budget.
+Total boot budget: **800ms** across ~5 lines, measured from **navigation
+start**, not from DOMContentLoaded. `bootlog.js` schedules every deadline on
+the `performance.now()` timeline with origin 0, so HTML parse and module load
+time is spent inside the budget instead of being added to it; on a slow
+connection the header deadlines that have already passed print at once and the
+ready handoff still lands close to on time.
 
-| Line # | Content example              | Delay from prev | Reasoning                                  |
-|--------|------------------------------|-----------------|-------------------------------------------|
-| 0      | `PayalOS v1.0 booting...`    | 0ms (immediate) | Instant start — no dead silence           |
-| 1      | `loading bio............ok`  | 120ms           | Feels like reading a real boot log        |
-| 2      | `loading talks..........ok`  | 140ms           | Slight acceleration — tension builds      |
-| 3      | `fetching now.json......ok`  | 130ms           | Consistent with line 2                    |
-| 4      | `system ready`               | 200ms           | Longer pause before "ready" = payoff beat |
-| Prompt | Cursor appears + blink starts| 190ms           | Brief silence after "ready" before handoff|
+The ready handoff is scheduled at **700ms**; the remaining 100ms absorbs
+setTimeout lateness. An earlier schedule put the nominal ready at 750ms with
+only 50ms of headroom on the (mistaken) assumption that accumulated
+setTimeout lateness across the sequence topped out around 10ms; a 1440x900
+measurement with no injected latency caught it landing at 803.3ms on a fresh
+load — actual lateness ran to about 53ms, over the 800ms budget. Every other
+header deadline below is scaled down by the same factor (700/750) to keep the
+sequence's relative pacing. The career log starts at 740ms and prints one
+line every 40ms, ending at 1740ms for 26 records, inside the 2s ceiling.
 
-Total: 120 + 140 + 130 + 200 + 190 = **780ms** (budget 800ms)
+Because the deadline is absolute, the module graph has to arrive well before
+700ms or the handoff simply happens late. `_includes/head.html` therefore
+carries a `modulepreload` hint for all twelve landing modules, which collapses
+a three-round-trip import chain (`main.js`, its ten imports, then
+`mdlines.js`) into one round trip after the HTML.
+
+| Line   | Content                             | Deadline from navigation | Reasoning                                 |
+|--------|-------------------------------------|--------------------------|-------------------------------------------|
+| 0      | `payalsingh.me console`             | 0ms                      | Instant start — no dead silence           |
+| 1      | `[ ok ] now.json     updated ...`   | 100ms                    | Feels like reading a real boot log        |
+| 2      | `[ ok ] talks.json   ... sourced`   | 220ms                    | Slight acceleration — tension builds      |
+| 3      | `[ ok ] writing      N posts`       | 335ms                    | Consistent with line 2                    |
+| Bar    | `indexing N records ▓▓▓▓▓▓▓▓▓▓ done`| 390ms, +30ms per 2 cells | Work you can watch finish, ends at 540ms  |
+| 4      | `ready. type help, ...`             | 600ms                    | Longer pause before "ready" = payoff beat |
+| Prompt | Cursor appears + blink starts       | 700ms                    | Brief silence after "ready" before handoff|
+
+Ready handoff at **700ms** of an **800ms** budget, with 100ms of headroom for
+timer lateness (see the verify-B-1 evidence bundle for the 6-run, no-latency
+and 100ms-latency measurements taken after this schedule shipped).
 
 Each delay is an absolute deadline measured from one start timestamp, not a
 relative wait chained from the previous line, so timer jitter does not

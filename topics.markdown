@@ -13,7 +13,7 @@ permalink: /blog/topics/
 <section class="topic" id="{{ tag[0] | slugify }}" tabindex="-1">
   <h2 class="topic__title">{{ tag[0] }} <span class="topic__count">{{ tag[1] | size }}</span></h2>
   <ul class="rows">
-  {% for post in tag[1] %}<li class="row"><span class="row__date">{{ post.date | date: "%Y-%m-%d" }}</span><a class="row__title" href="{{ post.url }}">{{ post.title | escape }}</a></li>
+  {% for post in tag[1] %}<li class="row"><span class="row__date" data-year="{{ post.date | date: '%Y' }}">{{ post.date | date: "%Y-%m-%d" }}</span><a class="row__title" href="{{ post.url }}">{{ post.title | escape }}</a></li>
   {% endfor %}</ul>
 </section>
 {% endfor %}

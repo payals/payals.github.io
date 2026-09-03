@@ -1,13 +1,25 @@
 /**
  * main.js: entry point for the landing console. The panes are rendered by
- * Jekyll at build time; this file only wires the terminal, the boot
- * sequence, and pane navigation.
+ * Jekyll at build time and are complete at first paint; this file wires the
+ * terminal, the boot log, pane navigation, and the phase-2 modules. Module
+ * boundaries and the order below are fixed in scratchpad/phase2/PLAN.md.
+ *
+ * Wiring order: terminal -> panes -> reader -> zoom -> palette -> clicks ->
+ * topstats -> scrubber -> constellation -> boot log. Hash handling runs the
+ * chain zoom -> scrubber -> panes; the first module that returns true wins.
  */
 
 import { Terminal } from './terminal.js';
-import { runBoot } from './boot.js';
 import { buildCommands } from './commands.js';
 import { setupPanes } from './panes.js';
+import { setupReader } from './reader.js';
+import { setupZoom } from './zoom.js';
+import { setupPalette } from './palette.js';
+import { setupClicks } from './clicks.js';
+import { setupTopstats } from './topstats.js';
+import { setupScrubber } from './scrubber.js';
+import { setupConstellation } from './constellation.js';
+import { runBootLog, replayBootLog } from './bootlog.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // Inline data (no fetch at boot). Same records as data/*.json.
+  const timeline = readJson('timeline-data', []);
+  const talks = readJson('talks-data', []);
+  const posts = readJson('posts-data', []);
+
   const registry = buildCommands({ tagline: tagline ? tagline.textContent.replace(/\s+/g, ' ').trim() : 'Payal Singh' });
   const term = new Terminal({
     scrollback,
@@ -37,26 +54,89 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   term.enableMirror();
 
-  const panes = setupPanes({ term, reducedMotion });
+  // `replay` replays the career boot log (B2). Registered here because the
+  // log needs the console element and the timeline, not the registry.
+  registry.replay = {
+    description: 'replay the boot log',
+    handler() {
+      return replayBootLog({ term, console: consoleEl, timeline });
+    },
+  };
+
+  // panes is created first because every module navigates through it; the
+  // palette is assigned below, so onHelp reads it lazily.
+  let palette = null;
+  const panes = setupPanes({
+    term,
+    reducedMotion,
+    // `?` opens the which-key tray when palette.js provides one; until then
+    // it runs `help` in the terminal as in phase 1.
+    onHelp() {
+      if (palette && palette.toggleKeys()) return;
+      panes.focusTerminal();
+      term.run('help');
+    },
+  });
+
+  const reader = setupReader({ term, reducedMotion, posts });
+  // The constellation is created last (below); zoom tells it to refit after
+  // the grid changes, because its wrapper is display:none while the terminal
+  // is collapsed into the tab strip between 768px and 1279px.
+  let constellation = null;
+  const zoom = setupZoom({
+    term,
+    panes,
+    reader,
+    reducedMotion,
+    onChange() {
+      if (constellation) constellation.refresh();
+    },
+  });
+  palette = setupPalette({ term, zoom, panes, reducedMotion, posts, talks });
+
+  const clicks = setupClicks({ term, panes, reducedMotion });
+  const topstats = setupTopstats({ term, talks, timeline, reducedMotion });
+  const scrubber = setupScrubber({ term, timeline, reducedMotion });
+  constellation = setupConstellation({ term, posts, talks, reducedMotion });
+
+  // Hash chain: zoom (#cv, #writing/<slug>) -> scrubber (#2018) -> panes
+  // (#about, #links, #terminal, and any pane id the others left alone).
+  function applyHash() {
+    if (!location.hash) return;
+    if (zoom.applyHash()) return;
+    if (scrubber.applyHash()) return;
+    panes.applyHash();
+  }
+  window.addEventListener('hashchange', applyHash);
 
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     window.terminal = term;
+    window.console2 = { panes, zoom, reader, palette, clicks, topstats, scrubber, constellation };
   }
 
-  // Any key or click before boot finishes skips the remaining delays.
+  // Any key or click before the log finishes prints the rest at once.
   const skip = new AbortController();
   const triggerSkip = () => skip.abort();
   document.addEventListener('keydown', triggerSkip, { once: true });
   document.addEventListener('click', triggerSkip, { once: true });
 
-  runBoot({ term, console: consoleEl, skipSignal: skip.signal, reducedMotion }).then(() => {
-    document.removeEventListener('keydown', triggerSkip);
-    document.removeEventListener('click', triggerSkip);
+  runBootLog({ term, console: consoleEl, skipSignal: skip.signal, reducedMotion, timeline }).then(() => {
     term.showCursor();
 
     // The prompt is not focused after boot. The ready line offers keys 0 to
     // 4, which only work while the prompt is unfocused; a visitor who wants
     // to type clicks the prompt or tabs to it, and Escape leaves it again.
-    if (location.hash) panes.applyHash();
+    applyHash();
   });
 });
+
+function readJson(id, fallback) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  try {
+    return JSON.parse(el.textContent);
+  } catch (err) {
+    console.error(`console: could not parse #${id}`, err);
+    return fallback;
+  }
+}

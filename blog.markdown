@@ -11,7 +11,7 @@ permalink: /blog/
 <ol class="postlist">
 {% for post in site.posts %}
   <li class="postlist__item">
-    <time class="postlist__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+    <time class="postlist__date" datetime="{{ post.date | date_to_xmlschema }}" data-year="{{ post.date | date: '%Y' }}">{{ post.date | date: "%Y-%m-%d" }}</time>
     <div class="postlist__main">
       <a class="postlist__title" href="{{ post.url }}">{{ post.title | escape }}</a>
       {% if post.subtitle %}<p class="postlist__sub">{{ post.subtitle | escape }}</p>{% else %}<p class="postlist__sub">{{ post.excerpt | strip_html | normalize_whitespace | truncatewords: 24 }}</p>{% endif %}
