@@ -12,20 +12,25 @@ permalink: /reading/
 ## Finished
 
 {% assign scale = site.data.books.scale | default: 5 %}
+{% assign books = site.data.books.read | sort: "year" | reverse %}
+{% assign years = books | map: "year" | uniq %}
+{% for year in years %}
+### {{ year }}
+
 <table>
   <thead>
-    <tr><th>Book</th><th>Author</th><th>Rating</th><th>Read</th></tr>
+    <tr><th>Book</th><th>Author</th><th>Rating</th></tr>
   </thead>
   <tbody>
-  {%- for book in site.data.books.read %}
+  {%- for book in books %}{%- if book.year == year %}
     <tr>
-      <td>{{ book.title | escape }}</td>
+      <td>{% if book.url %}<a href="{{ book.url }}" rel="noopener">{{ book.title | escape }}</a>{% else %}{{ book.title | escape }}{% endif %}</td>
       <td>{{ book.author | escape }}</td>
-      <td><span aria-hidden="true">{% for i in (1..scale) %}{% if i <= book.rating %}★{% else %}☆{% endif %}{% endfor %}</span> {{ book.rating }} of {{ scale }}</td>
-      <td>{{ book.year }}</td>
+      <td>{% if book.rating > 0 %}<span aria-hidden="true">{% for i in (1..scale) %}{% if i <= book.rating %}★{% else %}☆{% endif %}{% endfor %}</span> {{ book.rating }} of {{ scale }}{% else %}not rated{% endif %}</td>
     </tr>
-  {%- endfor %}
+  {%- endif %}{%- endfor %}
   </tbody>
 </table>
+{% endfor %}
 
-Ratings are mine and out of {{ scale }}. The list grows as I finish books; the current one lives in the now pane on the [home page](/#now).
+Ratings are mine and out of {{ scale }}. Titles link to Goodreads. The current book lives in the now pane on the [home page](/#now).
