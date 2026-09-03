@@ -24,9 +24,18 @@
  * arrows or Ctrl+N and Ctrl+P move, Enter acts, Cmd+Enter or Ctrl+Enter
  * prints the record into the terminal instead, Tab stays in the dialog,
  * Escape clears the query and then closes. Focus returns to the opener.
+ *
+ * `/` is a bare single-character shortcut (WCAG 2.1.4), so besides the
+ * dialog-open check it also goes through shortcuts.js's isShortcutTarget()
+ * (never fires from a link, button, form control or other interactive
+ * element) and shortcutsEnabled() (the visitor's keys on/off switch).
+ * Cmd/Ctrl+K is a modified chord, outside 2.1.4's scope, and always works.
+ * The which-key tray carries a "keys: on/off" toggle button that calls
+ * setShortcutsEnabled(); the statusbar hint reflects the current state.
  */
 
 import { registerPhase2Commands } from './commands.js';
+import { isShortcutTarget, shortcutsEnabled, setShortcutsEnabled, onShortcutsChange } from './shortcuts.js';
 
 const MAX_RESULTS = 30;
 const KIND_LABEL = { now: 'now', talk: 'talk', post: 'post', cv: 'cv', link: 'link', cmd: 'cmd', pane: 'pane' };
@@ -420,7 +429,7 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
       return;
     }
     if (isOpen()) return;
-    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isEditable(e.target)) {
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && shortcutsEnabled() && isShortcutTarget(e.target)) {
       e.preventDefault();
       open();
     }
@@ -436,7 +445,18 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
     });
   }
 
-  if (hint) hint.textContent = `${hint.textContent.trim()} · / to search`;
+  // The base hint text ships in the markup ("keys work while the prompt is
+  // not focused"); / to search is appended once. Both states are computed
+  // up front so toggling never re-reads (and re-appends to) live text.
+  const HINT_ON = hint ? `${hint.textContent.trim()} · / to search` : '';
+  const HINT_OFF = 'keys are off · use the search button or type "keys on"';
+
+  function refreshHint() {
+    if (!hint) return;
+    hint.textContent = shortcutsEnabled() ? HINT_ON : HINT_OFF;
+  }
+  refreshHint();
+  onShortcutsChange(refreshHint);
 
   // ---- which-key tray ---------------------------------------------------
 
@@ -457,13 +477,39 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
     return true;
   }
 
+  // A user control for the keys on/off switch (WCAG 2.1.4's "turn off"
+  // option), reached without any single-character shortcut: Tab from the
+  // opener, or a click. Injected rather than shipped in the tray's static
+  // markup so this file is the one place both the state and its control
+  // live.
+  let keysToggle = null;
+  if (tray) {
+    const list = tray.querySelector('.keytray__list');
+    if (list) {
+      const li = h('li', { class: 'keytray__toggle' });
+      keysToggle = h('button', { type: 'button', class: 'btn btn--small', 'data-keys-toggle': '' });
+      li.appendChild(keysToggle);
+      list.appendChild(li);
+      keysToggle.addEventListener('click', () => setShortcutsEnabled(!shortcutsEnabled()));
+      const refreshToggle = () => {
+        const on = shortcutsEnabled();
+        keysToggle.textContent = `single-key shortcuts: ${on ? 'on' : 'off'}`;
+        keysToggle.setAttribute('aria-pressed', String(on));
+      };
+      refreshToggle();
+      onShortcutsChange(refreshToggle);
+    }
+  }
+
   if (tray) {
     // The tray closes on the next key (the key still does its job, except
-    // Escape and q which the tray consumes itself) or click. This listener
-    // is capture-phase on document, so it runs before zoom.js's own
-    // Escape/q handling (a bubble-phase document listener); stopping
-    // propagation for both keys here means zoom.js never also restores a
-    // zoomed pane for the same keypress that closed the tray.
+    // Escape and q which the tray consumes itself) or click, except a click
+    // on the keys toggle itself, which stays open so its new state is
+    // visible. This listener is capture-phase on document, so it runs
+    // before zoom.js's own Escape/q handling (a bubble-phase document
+    // listener); stopping propagation for both keys here means zoom.js
+    // never also restores a zoomed pane for the same keypress that closed
+    // the tray.
     document.addEventListener('keydown', (e) => {
       if (tray.hidden) return;
       if (e.key === '?' || e.key === 'Shift' || e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt') return;
@@ -475,7 +521,7 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
     }, { capture: true });
     document.addEventListener('click', (e) => {
       if (tray.hidden) return;
-      if (e.target.closest && e.target.closest('[data-help]')) return;
+      if (e.target.closest && e.target.closest('[data-help], [data-keys-toggle]')) return;
       closeKeys();
     }, { capture: true });
   }
@@ -686,8 +732,3 @@ function h(tag, attrs = {}) {
   return el;
 }
 
-function isEditable(el) {
-  if (!el || el === document || el === window) return false;
-  const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
-}

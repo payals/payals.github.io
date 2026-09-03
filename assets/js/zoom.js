@@ -27,9 +27,22 @@
  * pane (zoom), z or Enter on a focused pane, a pane number pressed twice
  * within 600ms, Ctrl+B then z (preventDefault alias). Esc, q, the same
  * number again, or a click on the tab strip restores. j and k move between
- * panes in statusbar order; : focuses the prompt. Single-letter keys fire
- * only while no field has focus and no dialog is open.
+ * panes in statusbar order; : focuses the prompt.
+ *
+ * Single-character shortcuts (z, q, j, k, :, the pane digits) go through
+ * shortcuts.js's isShortcutTarget() and shortcutsEnabled() gates (WCAG
+ * 2.1.4): they fire only when the visitor has not turned keys off and focus
+ * is on the document body or a non-interactive part of a pane, never a
+ * link, button, form control or other interactive element, and never while
+ * a dialog is open. Escape is a functional key, not a character shortcut,
+ * so it stays active regardless of the keys switch; it still steps aside
+ * for a focused form field so that field's own Escape handling runs
+ * instead. Enter only ever acts when the event target is the pane element
+ * itself (never a link or button inside it), which already satisfies the
+ * same intent, so it is not run through the extra gate either.
  */
+
+import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
 
 const ZOOMABLE = ['now', 'talks', 'writing', 'cv'];
 const ORDER = ['now', 'talks', 'writing', 'cv', 'links', 'terminal'];
@@ -157,9 +170,11 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
 
   function openPost(slug) {
     if (!zoom('writing')) return Promise.resolve(false);
-    return reader.open(slug).then((ok) => {
-      if (ok && current === 'writing') setHash(`writing/${slug}`);
-      return ok;
+    return reader.open(slug).then((result) => {
+      // Only a real success (=== true, never 'stale' or 'cancelled', which
+      // are also truthy) moves the hash to this post.
+      if (result === true && current === 'writing') setHash(`writing/${slug}`);
+      return result;
     });
   }
 
@@ -486,13 +501,33 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     panes.focusPane(list[next]);
   }
 
+  // Esc or q restores the grid / closes the reader. Shared so Escape (always
+  // active) and q (a gated single-character shortcut, see below) do the
+  // same thing.
+  function restoreOrCloseReader() {
+    // The which-key tray, if open, is closed by palette.js's own
+    // capture-phase keydown listener, which stops propagation for Escape
+    // and q — this handler never runs for the keypress that closes it.
+    if (reader.isOpen()) {
+      reader.close();
+      return true;
+    }
+    if (current) {
+      restore();
+      return true;
+    }
+    return false;
+  }
+
   document.addEventListener('keydown', (e) => {
     if (dialogOpen()) return;
     const editable = isEditable(e.target);
     const now = Date.now();
 
     // Ctrl+B prefix, then z within a second. Alias only; nothing else is
-    // bound under the prefix, and it is not read inside fields.
+    // bound under the prefix, and it is not read inside fields. A modified
+    // chord, so outside WCAG 2.1.4's scope -- not run through the
+    // shortcuts.js gate below.
     if (e.ctrlKey && !e.altKey && !e.metaKey && !editable && e.key.toLowerCase() === 'b') {
       e.preventDefault();
       prefixAt = now;
@@ -510,31 +545,39 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
 
     if (editable || e.altKey || e.ctrlKey || e.metaKey) return;
 
+    // Escape: a functional key, not a character shortcut, so it stays
+    // active regardless of the keys on/off switch and the interactive-
+    // target check below -- it is the one thing that keeps working when
+    // keys are off (besides the palette button and the statusbar's links).
+    if (e.key === 'Escape') {
+      if (restoreOrCloseReader()) e.preventDefault();
+      return;
+    }
+
+    // Enter only ever acts when the target is the pane element itself
+    // (never a link or button inside it), so it already can't steal a key
+    // from an interactive element; not run through the gate below either.
+    if (e.key === 'Enter') {
+      if (e.target instanceof Element && e.target.classList.contains('pane') && isZoomable(e.target.id)) {
+        e.preventDefault();
+        toggle(e.target.id);
+      }
+      return;
+    }
+
+    // Everything past this point is a bare single-character shortcut (z, q,
+    // j, k, :, the pane digits): WCAG 2.1.4 gate. Fires only when the
+    // visitor has not turned keys off and focus is the body or a
+    // non-interactive part of a pane.
+    if (!shortcutsEnabled() || !isShortcutTarget(e.target)) return;
+
     switch (e.key) {
       case 'z':
         e.preventDefault();
         toggle(focusedPaneId());
         return;
-      case 'Enter':
-        if (e.target instanceof Element && e.target.classList.contains('pane') && isZoomable(e.target.id)) {
-          e.preventDefault();
-          toggle(e.target.id);
-        }
-        return;
-      case 'Escape':
       case 'q':
-        // The which-key tray, if open, is closed by palette.js's own
-        // capture-phase keydown listener, which stops propagation for both
-        // keys — this handler never runs for the keypress that closes it.
-        if (reader.isOpen()) {
-          e.preventDefault();
-          reader.close();
-          return;
-        }
-        if (current) {
-          e.preventDefault();
-          restore();
-        }
+        if (restoreOrCloseReader()) e.preventDefault();
         return;
       case 'j':
         e.preventDefault();

@@ -2,7 +2,18 @@
  * panes.js: pane navigation. Keys 0 to 4 and ? while the prompt is not
  * focused, the statusbar's current item, fragment deep links, and the
  * focus management for the "show more" disclosures.
+ *
+ * The pane digits and ? are bare single-character shortcuts (WCAG 2.1.4),
+ * so they run through shortcuts.js's isShortcutTarget() (never fire from a
+ * link, button, form control -- including the year scrubber's range input
+ * -- or other interactive element) and shortcutsEnabled() (the visitor's
+ * keys on/off switch, toggled by the `keys on|off` terminal command and the
+ * ? key tray's toggle button). The statusbar's own pane links and the help
+ * link keep working when keys are off: they are real links with a click
+ * handler, not a keydown shortcut.
  */
+
+import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
 
 const KEY_TO_PANE = { 0: 'now', 1: 'talks', 2: 'writing', 3: 'cv', 4: 'links' };
 const PANE_IDS = new Set(['about', 'now', 'talks', 'writing', 'cv', 'links', 'terminal']);
@@ -40,10 +51,11 @@ export function setupPanes({ term, reducedMotion, onHelp }) {
     setCurrent('terminal');
   }
 
-  // Keys while nothing editable has focus.
+  // Pane digits and ? fire only while keys are on and focus is the body or
+  // a non-interactive part of a pane (WCAG 2.1.4; see the file banner).
   document.addEventListener('keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (isEditable(e.target)) return;
+    if (!shortcutsEnabled() || !isShortcutTarget(e.target)) return;
     if (Object.prototype.hasOwnProperty.call(KEY_TO_PANE, e.key)) {
       e.preventDefault();
       focusPane(KEY_TO_PANE[e.key]);
@@ -91,10 +103,4 @@ export function setupPanes({ term, reducedMotion, onHelp }) {
   }
 
   return { focusPane, focusTerminal, applyHash, setCurrent };
-}
-
-function isEditable(el) {
-  if (!el || el === document || el === window) return false;
-  const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
 }

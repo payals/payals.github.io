@@ -6,6 +6,7 @@
  */
 
 import { markdownToLines } from './mdlines.js';
+import { setShortcutsEnabled } from './shortcuts.js';
 
 const PANE_COMMANDS = ['now', 'talks', 'writing', 'cv', 'about', 'links'];
 const DATE_COL = 16;
@@ -289,8 +290,17 @@ export function registerPhase2Commands({ registry, palette, zoom, panes, search 
   };
 
   registry.keys = {
-    description: 'show the keys',
-    handler() {
+    description: 'keys: show the key tray. keys on|off: turn single-key shortcuts on or off',
+    handler(args, term) {
+      const arg = (args[0] || '').toLowerCase();
+      if (arg === 'on' || arg === 'off') {
+        setShortcutsEnabled(arg === 'on');
+        term.print(`keys: single-key shortcuts ${arg}`, { className: 'scrollback__line--dim' });
+        return;
+      }
+      if (arg) {
+        return term.print(`keys: ${arg}: try "keys", "keys on" or "keys off"`, { className: 'scrollback__line--err' });
+      }
       palette.toggleKeys();
     },
   };

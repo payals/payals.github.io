@@ -13,6 +13,23 @@
  * open and come back on close. A status line at the bottom reads
  * "<slug> line x of y NN%" from the real rendered height (aria-live off).
  *
+ * Cancellation contract: each open() call gets its own AbortController.
+ * Opening a second post while the first is still fetching aborts the
+ * first's request; closing the reader (or the pane it lives in) while a
+ * fetch is in flight aborts it too. open()'s returned promise always
+ * resolves, never rejects, to one of four distinct values so a caller can
+ * tell a real failure from a load that simply stopped mattering:
+ *   - true       the post rendered.
+ *   - false      a genuine failure of *this* request (not found, network
+ *                error, non-2xx response, or no post body in the page) --
+ *                the only case in which a caller should fall back to
+ *                navigating to the post's own URL.
+ *   - 'stale'    superseded by a later open() call before this one finished.
+ *   - 'cancelled' the reader (or its pane) was closed before this one finished.
+ * Both 'stale' and 'cancelled' are truthy but !== true and !== false, so
+ * `result === false` is the only correct failure check and `result === true`
+ * the only correct success check; callers must not use `if (result)`.
+ *
  * Keys inside the region only: j/k and arrows one line, space/b and
  * PageDown/PageUp one page, g/G and Home/End the ends, q or Esc back to the
  * list. The region is focused on open but never traps focus: Tab leaves it
@@ -37,6 +54,12 @@ export function setupReader({ term, reducedMotion, posts }) {
   const cache = new Map();
   let current = null;
   let token = 0;
+  // The fetch currently in flight, if any: { controller, reason }. reason is
+  // set to 'stale' or 'cancelled' immediately before controller.abort() is
+  // called, so the load's own catch block can report why it was aborted
+  // without relying on `token`, which a *later* load may have already
+  // advanced past this one's reason by the time the catch block runs.
+  let inflight = null;
   let scroller = null;
   let statusEl = null;
   let proseEl = null;
@@ -55,6 +78,15 @@ export function setupReader({ term, reducedMotion, posts }) {
 
   const behavior = reducedMotion ? 'auto' : 'smooth';
 
+  /** Abort whatever fetch is in flight (if any), tagging it with why. */
+  function abortInflight(reason) {
+    if (!inflight) return;
+    const load = inflight;
+    inflight = null;
+    load.reason = reason;
+    load.controller.abort();
+  }
+
   /* ----------------------------------------------------------------- open */
 
   async function open(slug) {
@@ -63,25 +95,36 @@ export function setupReader({ term, reducedMotion, posts }) {
       term.print(`reader: no post named ${slug}`, { className: 'scrollback__line--err' });
       return false;
     }
+    // A new open() supersedes whatever load is still in flight.
+    abortInflight('stale');
     const my = ++token;
     show(post);
     renderShell(post, 'loading');
 
     let html = cache.get(slug);
     if (!html) {
+      const controller = new AbortController();
+      const load = { controller, reason: null };
+      inflight = load;
       try {
-        const res = await fetch(post.url, { credentials: 'same-origin' });
+        const res = await fetch(post.url, { credentials: 'same-origin', signal: controller.signal });
         if (!res.ok) throw new Error(`http ${res.status}`);
         html = await res.text();
         cache.set(slug, html);
       } catch (err) {
-        if (my !== token) return false;
+        if (inflight === load) inflight = null;
+        if (load.reason) return load.reason;
         renderShell(post, 'error', err.message);
         term.print(`reader: could not load ${post.url} (${err.message})`, { className: 'scrollback__line--err' });
         return false;
       }
+      if (inflight === load) inflight = null;
     }
-    if (my !== token) return false;
+    // Reached only when nothing aborted this load's fetch (or it came from
+    // cache, with no fetch at all): a later open() may still have advanced
+    // past it synchronously, which abortInflight() cannot see when there was
+    // no controller to abort.
+    if (my !== token) return 'stale';
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const header = doc.querySelector('.page__header');
@@ -392,6 +435,7 @@ export function setupReader({ term, reducedMotion, posts }) {
     if (!current) return false;
     const slug = current;
     token++;
+    abortInflight('cancelled');
     unwatch();
     current = null;
     scroller = null;

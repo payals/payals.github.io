@@ -720,6 +720,13 @@
 
 .keytray .kbd { color: var(--kind-cmd); }
 
+/* The keys on/off control (WCAG 2.1.4's "turn off" option), injected by
+   palette.js as the tray's last item: a real button, reachable by Tab and
+   click without any single-character shortcut of its own. */
+.keytray__toggle { margin-left: auto; }
+.keytray__toggle .btn { color: var(--ink-2); }
+.keytray__toggle .btn[aria-pressed="false"] { color: var(--warn); border-color: var(--warn); }
+
 /* ---- small screens ------------------------------------------------- */
 @media (max-width: 767px) {
   .palette { padding: var(--space-2); }
