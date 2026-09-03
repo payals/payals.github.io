@@ -62,6 +62,18 @@ Payal on 2026-09-03: "terminal I liked the narrative boot terminal the best", "t
 - SB3. Keyboard: `t` focuses the slider, arrows step a year, Home is 2013, End is now; the log lines beyond the scrubbed year dim rather than disappear. Reduced motion: no transitions.
 - SB4. The scrubber composes with the topic filter (phase 3 T4) and with charts: timeline marks, calendar cells, and cv lanes beyond the scrubbed year dim too.
 
+## Mobile collapse (Payal, 2026-09-03: "on phone, does it look good or better to auto collapse the segments?")
+
+Assessment: the first screen at 390x844 is right (name, positioning, role, upcoming talk, latest post) but the page runs to about 4,700px because the career log wraps to about 100 lines. Collapse the tails of panes, never the panes themselves.
+
+### MB. Phone layout (below 768px)
+- MB1. `now` stays fully expanded.
+- MB2. `talks`, `writing`, `cv` render their first three rows (talks: upcoming first) and a `show N more` disclosure for the rest; the disclosure is a native `<details>` with the count in the summary; the topic filter and the year scrubber open it automatically when a match sits inside it.
+- MB3. The terminal shows the prompt plus the last three log lines at rest; the full scrollback sits in an internal scroller capped at 60vh, auto-scrolled to the newest line, and a `show log` control expands it to the cap. Typing or clicking in the terminal expands it.
+- MB4. Status-bar keys jump to the pane and expand its disclosure; `#talks`, `#writing`, `#cv` deep links open that pane expanded; zoom on phones remains the focus-and-scroll fallback from phase 2.
+- MB5. The landing at 390x844 is at most 2,400px tall after boot with all disclosures closed, and nothing above the fold moves after first paint (CLS at or under 0.05).
+- MB6. Charts (TL, W, CV) collapse to a compact height on phones (at most 96px each) and remain touch operable; the topic legend wraps to at most two lines.
+
 ## Delegation
 
 Payal on 2026-09-03: use dynamic workflows and delegate subtasks to Codex (codex plugin) or other models best suited; Fable is the manager and the responsible party for final verification. Implementation workers for charts, filter, terminal and scrubber go to Codex through `codex:codex-rescue` (foreground `task --write`); architecture, integration, adversarial verification and code review stay on Claude; a Codex `adversarial-review` of the working tree runs before commit as the second-family check; the session owner (Fable) does the final verification pass and commits.
