@@ -1,0 +1,644 @@
+"""Tests for scripts/sync_goodreads.py.
+
+Run with: python3 -m unittest discover -s scripts/tests
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import sys
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import sync_goodreads as sg  # noqa: E402
+
+
+def make_policy(**overrides):
+    policy = {
+        "mode": "opt-in",
+        "include_shelf": "site",
+        "remove_shelf": "no-site",
+        "include_unrated": True,
+        "title_overrides": {},
+        "author_overrides": {},
+        "strip_title_suffixes": [],
+    }
+    policy.update(overrides)
+    return policy
+
+
+def make_item(book_id, title="Some Title", author="Some Author", rating=5,
+              read_at="", date_added="Mon, 01 Jan 2024 00:00:00 -0800",
+              shelves=None, published="2020"):
+    return {
+        "book_id": book_id,
+        "title": title,
+        "author": author,
+        "rating": rating,
+        "user_read_at": read_at,
+        "user_date_added": date_added,
+        "user_shelves": shelves or [],
+        "book_published": published,
+    }
+
+
+class TestParsing(unittest.TestCase):
+    def test_read_fixture_parses_six_items(self):
+        items = sg.load_items_from_file(str(FIXTURES_DIR / "read.xml"))
+        self.assertEqual(len(items), 6)
+        book_ids = {it["book_id"] for it in items}
+        self.assertEqual(
+            book_ids, {"1111111", "2222222", "3333333", "4444444", "5555555", "6666666"}
+        )
+
+    def test_currently_reading_fixture_parses_one_item(self):
+        items = sg.load_items_from_file(str(FIXTURES_DIR / "currently-reading.xml"))
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["book_id"], "7777777")
+        self.assertEqual(items[0]["title"], "In Progress Book")
+        self.assertEqual(items[0]["user_shelves"], ["currently-reading", "site"])
+
+    def test_rating_and_shelves_parsed(self):
+        items = sg.load_items_from_file(str(FIXTURES_DIR / "read.xml"))
+        by_id = {it["book_id"]: it for it in items}
+        self.assertEqual(by_id["1111111"]["rating"], 5)
+        self.assertEqual(by_id["1111111"]["user_shelves"], ["site"])
+        self.assertEqual(by_id["2222222"]["rating"], 0)
+        self.assertEqual(by_id["3333333"]["user_shelves"], ["no-site"])
+
+    def test_non_digit_book_id_is_skipped(self):
+        xml_bytes = b"""<?xml version="1.0"?>
+        <rss><channel>
+          <item>
+            <title><![CDATA[No id book]]></title>
+            <book_id>abc123</book_id>
+            <author_name>Author</author_name>
+            <user_rating>5</user_rating>
+            <user_read_at></user_read_at>
+            <user_date_added><![CDATA[Mon, 01 Jan 2024 00:00:00 -0800]]></user_date_added>
+            <user_shelves></user_shelves>
+          </item>
+        </channel></rss>"""
+        self.assertEqual(sg.parse_items(xml_bytes), [])
+
+    def test_untrusted_content_tags_stripped_and_capped(self):
+        raw = "<script>alert(1)</script>Evil <b>Title</b>" + ("x" * 400)
+        cleaned = sg.clean_field(raw, sg.MAX_TITLE_LEN)
+        self.assertNotIn("<", cleaned)
+        self.assertNotIn(">", cleaned)
+        self.assertLessEqual(len(cleaned), sg.MAX_TITLE_LEN)
+        self.assertTrue(cleaned.startswith("alert(1)Evil Title"))
+
+    def test_doctype_declaration_is_rejected(self):
+        malicious = (
+            b'<?xml version="1.0"?>'
+            b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
+            b"<rss><channel><item><book_id>1</book_id></item></channel></rss>"
+        )
+        with self.assertRaises(ValueError):
+            sg.parse_items(malicious)
+
+
+class TestYearDerivation(unittest.TestCase):
+    def test_prefers_read_at_over_date_added(self):
+        year = sg.extract_year("Sat, 04 Mar 2023 00:00:00 +0000") or sg.extract_year(
+            "Sat, 04 Mar 2020 00:00:00 +0000"
+        )
+        self.assertEqual(year, 2023)
+
+    def test_falls_back_to_date_added_when_read_at_blank(self):
+        item = make_item("1", read_at="", date_added="Tue, 14 Jun 2022 09:30:00 -0700")
+        year = sg.extract_year(item["user_read_at"]) or sg.extract_year(item["user_date_added"])
+        self.assertEqual(year, 2022)
+
+    def test_unparseable_date_returns_none(self):
+        self.assertIsNone(sg.extract_year(""))
+
+
+class TestPolicy(unittest.TestCase):
+    def setUp(self):
+        self.items = sg.load_items_from_file(str(FIXTURES_DIR / "read.xml"))
+        self.by_id = {it["book_id"]: it for it in self.items}
+
+    def test_is_on_include_shelf(self):
+        policy = make_policy()
+        self.assertTrue(sg.is_on_include_shelf(self.by_id["1111111"], policy))
+        self.assertFalse(sg.is_on_include_shelf(self.by_id["4444444"], policy))
+
+    def test_is_removed(self):
+        policy = make_policy()
+        self.assertTrue(sg.is_removed(self.by_id["3333333"], policy))
+        self.assertFalse(sg.is_removed(self.by_id["1111111"], policy))
+
+    def test_passes_policy_requires_site_shelf_or_grandfather(self):
+        policy = make_policy()
+        self.assertTrue(sg.passes_policy(self.by_id["1111111"], policy))  # on site shelf
+        self.assertFalse(sg.passes_policy(self.by_id["4444444"], policy))  # neither
+        self.assertTrue(
+            sg.passes_policy(self.by_id["4444444"], policy, grandfathered_ids={"4444444"})
+        )
+
+    def test_remove_shelf_wins_even_when_grandfathered(self):
+        policy = make_policy()
+        self.assertFalse(
+            sg.passes_policy(self.by_id["3333333"], policy, grandfathered_ids={"3333333"})
+        )
+
+    def test_include_unrated_true_passes(self):
+        policy = make_policy(include_unrated=True)
+        self.assertTrue(sg.passes_policy(self.by_id["2222222"], policy))
+
+    def test_include_unrated_false_excludes(self):
+        policy = make_policy(include_unrated=False)
+        self.assertFalse(sg.passes_policy(self.by_id["2222222"], policy))
+        # a rated book on the site shelf is unaffected
+        self.assertTrue(sg.passes_policy(self.by_id["1111111"], policy))
+
+    def test_title_and_author_overrides_apply(self):
+        policy = make_policy(
+            title_overrides={"1111111": "Overridden Title"},
+            author_overrides={"1111111": "Overridden Author"},
+        )
+        title, author = sg.apply_overrides(self.by_id["1111111"], policy)
+        self.assertEqual(title, "Overridden Title")
+        self.assertEqual(author, "Overridden Author")
+
+    def test_strip_title_suffixes(self):
+        item = make_item("9", title="Some Book (Vintage International)")
+        policy = make_policy(strip_title_suffixes=[" (Vintage International)"])
+        title, _ = sg.apply_overrides(item, policy)
+        self.assertEqual(title, "Some Book")
+
+    def test_strip_title_suffixes_enables_edition_collapse(self):
+        # Same book, one edition carries a suffix that should be stripped
+        # before the normalized-title collapse key is computed.
+        a = make_item("10", title="Shared Book (Vintage International)", rating=3,
+                      read_at="Mon, 01 Jan 2018 00:00:00 +0000", shelves=["site"])
+        b = make_item("11", title="Shared Book", rating=5,
+                      read_at="Mon, 01 Jan 2019 00:00:00 +0000", shelves=["site"])
+        policy = make_policy(strip_title_suffixes=[" (Vintage International)"])
+        result = sg.build_read_list([a, b], [], policy)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["title"], "Shared Book")
+        self.assertEqual(result[0]["rating"], 5)
+        self.assertEqual(result[0]["year"], 2018)
+
+
+class TestBookIdFromUrl(unittest.TestCase):
+    def test_extracts_id(self):
+        self.assertEqual(
+            sg.book_id_from_url("https://www.goodreads.com/book/show/12345"), "12345"
+        )
+
+    def test_no_match_returns_none(self):
+        self.assertIsNone(sg.book_id_from_url("not a url"))
+        self.assertIsNone(sg.book_id_from_url(""))
+
+
+class TestGrandfatheredIds(unittest.TestCase):
+    def test_extracts_ids_from_existing_books(self):
+        old_books = {
+            "read": [
+                {"title": "A", "url": "https://www.goodreads.com/book/show/111"},
+                {"title": "B", "url": "https://www.goodreads.com/book/show/222"},
+            ]
+        }
+        self.assertEqual(sg.grandfathered_ids_from_books(old_books), {"111", "222"})
+
+    def test_none_returns_empty_set(self):
+        self.assertEqual(sg.grandfathered_ids_from_books(None), set())
+
+    def test_missing_read_key_returns_empty_set(self):
+        self.assertEqual(sg.grandfathered_ids_from_books({}), set())
+
+
+class TestBuildReadList(unittest.TestCase):
+    def setUp(self):
+        self.read_items = sg.load_items_from_file(str(FIXTURES_DIR / "read.xml"))
+        self.policy = make_policy()
+
+    def test_only_site_shelf_books_appear_by_default(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        titles = {b["title"] for b in result}
+        self.assertIn("Test Novel", titles)  # on site shelf
+        self.assertIn("Unrated Book", titles)  # on site shelf, unrated
+        self.assertIn("Duplicate Title", titles)  # both editions on site shelf
+        self.assertNotIn("No Site Tag Book", titles)  # on no-site shelf, no site tag
+        self.assertNotIn("Not Opted In Book", titles)  # no shelf tag, not grandfathered
+
+    def test_grandfathered_book_stays_without_site_shelf(self):
+        result = sg.build_read_list(
+            self.read_items, [], self.policy, grandfathered_ids={"4444444"}
+        )
+        titles = {b["title"] for b in result}
+        self.assertIn("Not Opted In Book", titles)
+
+    def test_grandfathered_book_on_no_site_shelf_is_removed(self):
+        # remove_shelf always wins, even for a book already published.
+        result = sg.build_read_list(
+            self.read_items, [], self.policy, grandfathered_ids={"3333333"}
+        )
+        titles = {b["title"] for b in result}
+        self.assertNotIn("No Site Tag Book", titles)
+
+    def test_edition_collapsing_keeps_earliest_year_and_best_rating(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        dup_rows = [b for b in result if b["title"] == "Duplicate Title"]
+        self.assertEqual(len(dup_rows), 1)
+        row = dup_rows[0]
+        self.assertEqual(row["year"], 2018)
+        self.assertEqual(row["rating"], 5)
+        self.assertEqual(row["url"], "https://www.goodreads.com/book/show/6666666")
+
+    def test_url_format(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        by_title = {b["title"]: b for b in result}
+        self.assertEqual(
+            by_title["Test Novel"]["url"], "https://www.goodreads.com/book/show/1111111"
+        )
+
+    def test_sorted_by_year_desc_then_title_asc(self):
+        items = [
+            make_item("100", title="Zed Book", read_at="Mon, 01 Jan 2020 00:00:00 +0000",
+                      shelves=["site"]),
+            make_item("101", title="Alpha Book", read_at="Mon, 01 Jan 2020 00:00:00 +0000",
+                      shelves=["site"]),
+            make_item("102", title="Newer Book", read_at="Mon, 01 Jan 2021 00:00:00 +0000",
+                      shelves=["site"]),
+        ]
+        result = sg.build_read_list(items, [], make_policy())
+        titles = [b["title"] for b in result]
+        self.assertEqual(titles, ["Newer Book", "Alpha Book", "Zed Book"])
+
+    def test_currently_reading_book_never_in_read_list(self):
+        # Same book_id shows up on both shelves at once (a real Goodreads
+        # quirk when a previously-read book is re-shelved as in-progress).
+        overlap_id = "9999999"
+        read_items = self.read_items + [
+            make_item(overlap_id, title="Being Reread", rating=5,
+                      read_at="Mon, 01 Jan 2019 00:00:00 +0000", shelves=["site"])
+        ]
+        currently_reading = [
+            make_item(overlap_id, title="Being Reread", rating=0,
+                      date_added="Mon, 01 Jan 2024 00:00:00 -0800",
+                      shelves=["currently-reading", "site"])
+        ]
+        result = sg.build_read_list(read_items, currently_reading, self.policy)
+        titles = {b["title"] for b in result}
+        self.assertNotIn("Being Reread", titles)
+
+    def test_currently_reading_book_excluded_even_when_grandfathered(self):
+        overlap_id = "9999999"
+        read_items = self.read_items + [
+            make_item(overlap_id, title="Being Reread", rating=5,
+                      read_at="Mon, 01 Jan 2019 00:00:00 +0000")
+        ]
+        currently_reading = [
+            make_item(overlap_id, title="Being Reread", rating=0,
+                      date_added="Mon, 01 Jan 2024 00:00:00 -0800",
+                      shelves=["currently-reading"])
+        ]
+        result = sg.build_read_list(
+            read_items, currently_reading, self.policy, grandfathered_ids={overlap_id}
+        )
+        titles = {b["title"] for b in result}
+        self.assertNotIn("Being Reread", titles)
+
+    def test_item_with_no_derivable_year_is_skipped(self):
+        items = [make_item("200", title="No Date Book", read_at="", date_added="",
+                            shelves=["site"])]
+        result = sg.build_read_list(items, [], make_policy())
+        self.assertEqual(result, [])
+
+
+class TestNowReading(unittest.TestCase):
+    def test_most_recently_added_wins(self):
+        items = [
+            make_item("1", title="Older", author="A1",
+                      date_added="Mon, 01 Jan 2024 00:00:00 -0800",
+                      shelves=["currently-reading", "site"]),
+            make_item("2", title="Newer", author="A2",
+                      date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                      shelves=["currently-reading", "site"]),
+        ]
+        result = sg.compute_now_reading(items, make_policy())
+        self.assertEqual(result, "Newer by A2")
+
+    def test_book_without_site_shelf_not_a_candidate(self):
+        items = [
+            make_item("4444444", title="Not Opted In",
+                      date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                      shelves=["currently-reading"]),
+        ]
+        result = sg.compute_now_reading(items, make_policy())
+        self.assertIsNone(result)
+
+    def test_book_on_no_site_shelf_only_is_not_a_candidate(self):
+        items = [
+            make_item("55", title="Private book",
+                      date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                      shelves=["currently-reading", "no-site"]),
+        ]
+        result = sg.compute_now_reading(items, make_policy())
+        self.assertIsNone(result)
+
+    def test_unrated_currently_reading_book_on_site_shelf_is_still_a_candidate(self):
+        # include_unrated only gates the finished-reading list; an in-progress
+        # book is naturally unrated and must not be filtered out by it.
+        items = [make_item("60", title="In Progress", rating=0,
+                            date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                            shelves=["currently-reading", "site"])]
+        result = sg.compute_now_reading(items, make_policy(include_unrated=False))
+        self.assertEqual(result, "In Progress by Some Author")
+
+    def test_empty_shelf_returns_none(self):
+        self.assertIsNone(sg.compute_now_reading([], make_policy()))
+
+    def test_fixture_currently_reading(self):
+        items = sg.load_items_from_file(str(FIXTURES_DIR / "currently-reading.xml"))
+        result = sg.compute_now_reading(items, make_policy())
+        self.assertEqual(result, "In Progress Book by Progress Author")
+
+
+class TestOutputAssembly(unittest.TestCase):
+    def test_build_books_output_no_change_when_read_list_identical(self):
+        old = {"scale": 5, "source": "old source", "read": [{"title": "A", "author": "B",
+                                                                "rating": 5, "year": 2020,
+                                                                "url": "u"}]}
+        new_data, changed = sg.build_books_output(old, old["read"], "2026-09-05")
+        self.assertFalse(changed)
+        # unchanged: source must not be rewritten just because the sync ran
+        self.assertEqual(new_data["source"], "old source")
+
+    def test_build_books_output_updates_source_when_read_list_differs(self):
+        old = {"scale": 5, "source": "old source", "read": []}
+        new_read = [{"title": "A", "author": "B", "rating": 5, "year": 2020, "url": "u"}]
+        new_data, changed = sg.build_books_output(old, new_read, "2026-09-05")
+        self.assertTrue(changed)
+        self.assertEqual(new_data["source"], "Goodreads read shelf, synced 2026-09-05")
+        self.assertEqual(new_data["read"], new_read)
+
+    def test_build_now_output_updates_reading_and_updated(self):
+        old_now = {"reading": "Old Book by Old Author", "shipping": "x", "state": "y",
+                   "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, "New Book by New Author", "2026-09-05")
+        self.assertTrue(changed)
+        self.assertEqual(new_now["reading"], "New Book by New Author")
+        self.assertEqual(new_now["updated"], "2026-09-05")
+        # other keys preserved, in original order
+        self.assertEqual(list(new_now.keys()), ["reading", "shipping", "state", "updated"])
+        self.assertEqual(new_now["shipping"], "x")
+        self.assertEqual(new_now["state"], "y")
+
+    def test_build_now_output_keeps_existing_value_when_shelf_empty(self):
+        old_now = {"reading": "Old Book by Old Author", "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, None, "2026-09-05")
+        self.assertFalse(changed)
+        self.assertEqual(new_now, old_now)
+
+    def test_build_now_output_no_change_when_value_identical(self):
+        old_now = {"reading": "Same Book by Same Author", "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, "Same Book by Same Author", "2026-09-05")
+        self.assertFalse(changed)
+        self.assertEqual(new_now["updated"], "2026-01-01")
+
+    def test_summarize_books_diff_added_and_removed(self):
+        old = [{"title": "Gone", "author": "A", "rating": 5, "year": 2020,
+                "url": "https://www.goodreads.com/book/show/1"}]
+        new = [{"title": "New One", "author": "B", "rating": 4, "year": 2021,
+                "url": "https://www.goodreads.com/book/show/2"}]
+        lines = sg.summarize_books_diff(old, new)
+        self.assertTrue(any(line.startswith("+ New One") for line in lines))
+        self.assertTrue(any(line.startswith("- Gone") for line in lines))
+
+
+class TestMainCLI(unittest.TestCase):
+    def _run(self, args):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            code = sg.main(args)
+        return code, buf.getvalue()
+
+    def test_dry_run_from_files_writes_nothing_and_prints_diff(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            code, output = self._run([
+                "--dry-run",
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ])
+
+            self.assertEqual(code, 0)
+            self.assertFalse(out_books.exists())
+            # now.json untouched on disk (dry run)
+            self.assertEqual(
+                json.loads(out_now.read_text())["reading"], "Nothing Yet"
+            )
+            self.assertIn("Test Novel", output)
+            self.assertIn("now:", output)
+
+    def test_real_run_writes_files_then_second_run_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+
+            code1, output1 = self._run(args)
+            self.assertEqual(code1, 0)
+            self.assertTrue(out_books.exists())
+            data = json.loads(out_books.read_text())
+            self.assertEqual(data["scale"], 5)
+            self.assertIn("Goodreads read shelf, synced", data["source"])
+            titles = {b["title"] for b in data["read"]}
+            self.assertIn("Test Novel", titles)
+            self.assertNotIn("No Site Tag Book", titles)
+            self.assertNotIn("Not Opted In Book", titles)
+            now_data = json.loads(out_now.read_text())
+            self.assertEqual(now_data["reading"], "In Progress Book by Progress Author")
+
+            code2, output2 = self._run(args)
+            self.assertEqual(code2, 0)
+            self.assertEqual(output2.strip(), "no changes")
+
+    def test_grandfathered_book_stays_across_a_real_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            # Seed books.json with a book that's on the read shelf in the
+            # fixture but carries no site tag there (book id 4444444).
+            out_books.write_text(json.dumps({
+                "scale": 5,
+                "source": "seed",
+                "read": [{
+                    "title": "Not Opted In Book",
+                    "author": "Plain Author",
+                    "rating": 5,
+                    "year": 2020,
+                    "url": "https://www.goodreads.com/book/show/4444444",
+                }],
+            }))
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code, _ = self._run(args)
+            self.assertEqual(code, 0)
+            data = json.loads(out_books.read_text())
+            titles = {b["title"] for b in data["read"]}
+            self.assertIn("Not Opted In Book", titles)
+
+    def test_grandfathered_book_on_no_site_shelf_is_removed_on_real_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            # Seed books.json with a book that IS tagged no-site in the
+            # fixture (book id 3333333): remove_shelf wins over grandfather.
+            out_books.write_text(json.dumps({
+                "scale": 5,
+                "source": "seed",
+                "read": [{
+                    "title": "No Site Tag Book",
+                    "author": "Hidden Author",
+                    "rating": 4,
+                    "year": 2021,
+                    "url": "https://www.goodreads.com/book/show/3333333",
+                }],
+            }))
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code, _ = self._run(args)
+            self.assertEqual(code, 0)
+            data = json.loads(out_books.read_text())
+            titles = {b["title"] for b in data["read"]}
+            self.assertNotIn("No Site Tag Book", titles)
+
+    def test_currently_reading_without_site_shelf_leaves_now_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            reading_path = tmp / "currently-reading-no-site.xml"
+            reading_path.write_text(
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<rss version="2.0"><channel>'
+                '<item>'
+                '<title><![CDATA[No Tag Book]]></title>'
+                '<book_id>8888888</book_id>'
+                '<author_name>No Tag Author</author_name>'
+                '<user_rating>0</user_rating>'
+                '<user_read_at></user_read_at>'
+                '<user_date_added>'
+                '<![CDATA[Mon, 01 Jan 2024 09:00:00 -0800]]>'
+                '</user_date_added>'
+                '<user_shelves>currently-reading</user_shelves>'
+                '</item>'
+                '</channel></rss>'
+            )
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            out_now.write_text(json.dumps({
+                "reading": "Existing Book by Existing Author",
+                "updated": "2020-01-01",
+            }))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(reading_path),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code, _ = self._run(args)
+            self.assertEqual(code, 0)
+            now_data = json.loads(out_now.read_text())
+            self.assertEqual(now_data["reading"], "Existing Book by Existing Author")
+            self.assertEqual(now_data["updated"], "2020-01-01")
+
+    def test_currently_reading_with_site_shelf_updates_now(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            out_now.write_text(json.dumps({
+                "reading": "Existing Book by Existing Author",
+                "updated": "2020-01-01",
+            }))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code, _ = self._run(args)
+            self.assertEqual(code, 0)
+            now_data = json.loads(out_now.read_text())
+            self.assertEqual(now_data["reading"], "In Progress Book by Progress Author")
+            self.assertEqual(now_data["updated"], sg.today_str())
+
+    def test_missing_key_without_from_file_errors(self):
+        import os
+
+        with tempfile.TemporaryDirectory() as tmp:
+            policy_path = Path(tmp) / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+
+            env_backup = os.environ.pop("GOODREADS_RSS_KEY", None)
+            try:
+                with self.assertRaises(SystemExit):
+                    sg.main(["--policy", str(policy_path)])
+            finally:
+                if env_backup is not None:
+                    os.environ["GOODREADS_RSS_KEY"] = env_backup
+
+
+if __name__ == "__main__":
+    unittest.main()

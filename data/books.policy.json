@@ -1,0 +1,14 @@
+{
+  "mode": "opt-in",
+  "include_shelf": "site",
+  "remove_shelf": "no-site",
+  "include_unrated": true,
+  "title_overrides": {
+    "49645708": "Unveiled",
+    "125116554": "Same As Ever"
+  },
+  "author_overrides": {
+    "28820444": "Kevin Simler and Robin Hanson"
+  },
+  "strip_title_suffixes": [" (Vintage International)"]
+}

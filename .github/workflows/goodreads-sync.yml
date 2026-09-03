@@ -1,0 +1,43 @@
+name: Sync reading list from Goodreads
+
+on:
+  schedule:
+    - cron: "23 13 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goodreads-sync
+
+jobs:
+  sync:
+    if: github.repository == 'payals/payals.github.io'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync Goodreads shelves
+        env:
+          GOODREADS_RSS_KEY: ${{ secrets.GOODREADS_RSS_KEY }}
+          GOODREADS_USER_ID: ${{ vars.GOODREADS_USER_ID }}
+        run: python3 scripts/sync_goodreads.py
+
+      - name: Commit and push if changed
+        run: |
+          if [ -n "$(git status --porcelain data/books.json data/now.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/books.json data/now.json
+            git commit -m "Sync reading list from Goodreads"
+            git push
+          else
+            echo "no changes to commit"
+          fi

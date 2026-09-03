@@ -25,3 +25,6 @@ drafts/
 # Operator notes: contains private home-server IPs — keep out of the public repo
 CLAUDE.md
 AGENTS.md
+
+# Python bytecode
+__pycache__/

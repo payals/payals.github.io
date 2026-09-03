@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[Test bookshelf: read]]></title>
+    <link><![CDATA[https://www.goodreads.com/review/list_rss/99999999?key=redacted&shelf=read]]></link>
+    <description><![CDATA[Test bookshelf: read]]></description>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000001]]></guid>
+      <title><![CDATA[Test Novel]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000001]]></link>
+      <book_id>1111111</book_id>
+      <author_name>Test Author</author_name>
+      <isbn></isbn>
+      <user_rating>5</user_rating>
+      <user_read_at><![CDATA[Sat, 04 Mar 2023 00:00:00 +0000]]></user_read_at>
+      <user_date_added><![CDATA[Sat, 04 Mar 2023 10:00:00 -0800]]></user_date_added>
+      <user_shelves>site</user_shelves>
+      <book_published>2019</book_published>
+    </item>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000002]]></guid>
+      <title><![CDATA[Unrated Book]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000002]]></link>
+      <book_id>2222222</book_id>
+      <author_name>Some Author</author_name>
+      <isbn></isbn>
+      <user_rating>0</user_rating>
+      <user_read_at></user_read_at>
+      <user_date_added><![CDATA[Tue, 14 Jun 2022 09:30:00 -0700]]></user_date_added>
+      <user_shelves>site</user_shelves>
+      <book_published>2015</book_published>
+    </item>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000003]]></guid>
+      <title><![CDATA[No Site Tag Book]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000003]]></link>
+      <book_id>3333333</book_id>
+      <author_name>Hidden Author</author_name>
+      <isbn></isbn>
+      <user_rating>4</user_rating>
+      <user_read_at><![CDATA[Mon, 12 Apr 2021 00:00:00 +0000]]></user_read_at>
+      <user_date_added><![CDATA[Mon, 12 Apr 2021 08:15:00 -0700]]></user_date_added>
+      <user_shelves>no-site</user_shelves>
+      <book_published>2010</book_published>
+    </item>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000004]]></guid>
+      <title><![CDATA[Not Opted In Book]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000004]]></link>
+      <book_id>4444444</book_id>
+      <author_name>Plain Author</author_name>
+      <isbn></isbn>
+      <user_rating>5</user_rating>
+      <user_read_at><![CDATA[Wed, 02 Sep 2020 00:00:00 +0000]]></user_read_at>
+      <user_date_added><![CDATA[Wed, 02 Sep 2020 11:45:00 -0700]]></user_date_added>
+      <user_shelves></user_shelves>
+      <book_published>2005</book_published>
+    </item>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000005]]></guid>
+      <title><![CDATA[Duplicate Title]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000005]]></link>
+      <book_id>5555555</book_id>
+      <author_name>Dup Author</author_name>
+      <isbn></isbn>
+      <user_rating>3</user_rating>
+      <user_read_at><![CDATA[Fri, 19 Jul 2019 00:00:00 +0000]]></user_read_at>
+      <user_date_added><![CDATA[Fri, 19 Jul 2019 14:00:00 -0700]]></user_date_added>
+      <user_shelves>site</user_shelves>
+      <book_published>2001</book_published>
+    </item>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/1000000006]]></guid>
+      <title><![CDATA[Duplicate Title]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/1000000006]]></link>
+      <book_id>6666666</book_id>
+      <author_name>Dup Author</author_name>
+      <isbn></isbn>
+      <user_rating>5</user_rating>
+      <user_read_at><![CDATA[Thu, 21 Feb 2018 00:00:00 +0000]]></user_read_at>
+      <user_date_added><![CDATA[Thu, 21 Feb 2018 16:20:00 -0800]]></user_date_added>
+      <user_shelves>site</user_shelves>
+      <book_published>2001</book_published>
+    </item>
+
+  </channel>
+</rss>

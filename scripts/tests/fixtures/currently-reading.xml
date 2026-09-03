@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[Test bookshelf: currently-reading]]></title>
+    <link><![CDATA[https://www.goodreads.com/review/list_rss/99999999?key=redacted&shelf=currently-reading]]></link>
+    <description><![CDATA[Test bookshelf: currently-reading]]></description>
+
+    <item>
+      <guid><![CDATA[https://www.goodreads.com/review/show/2000000001]]></guid>
+      <title><![CDATA[In Progress Book]]></title>
+      <link><![CDATA[https://www.goodreads.com/review/show/2000000001]]></link>
+      <book_id>7777777</book_id>
+      <author_name>Progress Author</author_name>
+      <isbn></isbn>
+      <user_rating>0</user_rating>
+      <user_read_at></user_read_at>
+      <user_date_added><![CDATA[Mon, 01 Jan 2024 09:00:00 -0800]]></user_date_added>
+      <user_shelves>currently-reading, site</user_shelves>
+      <book_published>2022</book_published>
+    </item>
+
+  </channel>
+</rss>
