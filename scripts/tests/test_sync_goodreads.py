@@ -10,7 +10,7 @@ import json
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
@@ -88,6 +88,65 @@ class TestParsing(unittest.TestCase):
         </channel></rss>"""
         self.assertEqual(sg.parse_items(xml_bytes), [])
 
+    def test_item_with_empty_book_id_raises_syncerror(self):
+        xml_bytes = b"""<?xml version="1.0"?>
+        <rss><channel>
+          <item>
+            <title><![CDATA[No book_id at all]]></title>
+            <book_id></book_id>
+            <author_name>Author</author_name>
+            <user_rating>5</user_rating>
+            <user_read_at></user_read_at>
+            <user_date_added><![CDATA[Mon, 01 Jan 2024 00:00:00 -0800]]></user_date_added>
+            <user_shelves></user_shelves>
+          </item>
+        </channel></rss>"""
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(xml_bytes)
+
+    def test_item_missing_title_raises_syncerror(self):
+        xml_bytes = b"""<?xml version="1.0"?>
+        <rss><channel>
+          <item>
+            <book_id>42</book_id>
+            <author_name>Author</author_name>
+            <user_rating>5</user_rating>
+            <user_read_at></user_read_at>
+            <user_date_added><![CDATA[Mon, 01 Jan 2024 00:00:00 -0800]]></user_date_added>
+            <user_shelves></user_shelves>
+          </item>
+        </channel></rss>"""
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(xml_bytes)
+
+    def test_malformed_xml_raises_syncerror_not_empty_list(self):
+        # A truncated/corrupt response must never be silently treated as
+        # "zero items" -- that's indistinguishable from a legitimate empty
+        # shelf and would let a bad fetch look like "nothing to publish".
+        xml_bytes = b"<?xml version=\"1.0\"?><rss><channel><item><book_id>1"
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(xml_bytes)
+
+    def test_root_element_not_rss_raises_syncerror(self):
+        xml_bytes = (
+            b'<?xml version="1.0"?>'
+            b"<feed><channel><item><book_id>1</book_id>"
+            b"<title>T</title></item></channel></feed>"
+        )
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(xml_bytes)
+
+    def test_missing_channel_raises_syncerror(self):
+        xml_bytes = b'<?xml version="1.0"?><rss></rss>'
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(xml_bytes)
+
+    def test_well_formed_empty_channel_returns_empty_list(self):
+        # The legitimate case: a well-formed page with zero items (end of
+        # pagination) must NOT raise -- only actual malformation should.
+        xml_bytes = b'<?xml version="1.0"?><rss><channel></channel></rss>'
+        self.assertEqual(sg.parse_items(xml_bytes), [])
+
     def test_untrusted_content_tags_stripped_and_capped(self):
         raw = "<script>alert(1)</script>Evil <b>Title</b>" + ("x" * 400)
         cleaned = sg.clean_field(raw, sg.MAX_TITLE_LEN)
@@ -104,6 +163,82 @@ class TestParsing(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             sg.parse_items(malicious)
+        # SyncError specifically, not just any ValueError.
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(malicious)
+
+    def test_doctype_padded_past_old_4096_byte_prefix_is_still_rejected(self):
+        # The DOCTYPE/ENTITY guard used to only scan the first 4096 bytes.
+        # Padding the DOCTYPE out past that (here, past 5000 bytes of
+        # padding) proves the guard now scans the complete body.
+        padding = b"<!-- " + (b"x" * 5000) + b" -->"
+        malicious = (
+            b'<?xml version="1.0"?>'
+            + padding
+            + b"<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
+            + b"<rss><channel><item><book_id>1</book_id>"
+              b"<title>T</title></item></channel></rss>"
+        )
+        self.assertGreater(len(malicious), 5000)
+        with self.assertRaises(sg.SyncError):
+            sg.parse_items(malicious)
+
+
+class TestFetchUrlAndShelf(unittest.TestCase):
+    def test_response_over_size_bound_raises_syncerror(self):
+        from unittest import mock
+
+        oversized = b"x" * (sg.MAX_RESPONSE_BYTES + 1)
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self, n=-1):
+                return oversized[:n] if n and n > 0 else oversized
+
+        with mock.patch.object(sg.urllib.request, "urlopen", return_value=FakeResponse()):
+            with self.assertRaises(sg.SyncError):
+                sg.fetch_url("https://example.invalid/feed", "shelf=read page=1")
+
+    def test_fetch_shelf_legitimate_empty_page_ends_pagination(self):
+        empty_page = b'<?xml version="1.0"?><rss><channel></channel></rss>'
+        calls = []
+
+        def fake_fetch(url, desc):
+            calls.append(desc)
+            return empty_page
+
+        result = sg.fetch_shelf("1", "key", "read", fetch=fake_fetch)
+        self.assertEqual(result, [])
+        self.assertEqual(len(calls), 1)  # stopped after the first empty page
+
+    def test_fetch_shelf_propagates_syncerror_instead_of_treating_as_end(self):
+        malformed_page = b"<?xml version=\"1.0\"?><rss><channel><item><book_id>1"
+
+        def fake_fetch(url, desc):
+            return malformed_page
+
+        with self.assertRaises(sg.SyncError):
+            sg.fetch_shelf("1", "key", "read", fetch=fake_fetch)
+
+    def test_fetch_shelf_paginates_until_empty_page(self):
+        page_one = (
+            b'<?xml version="1.0"?><rss><channel><item><book_id>1</book_id>'
+            b"<title>One</title></item></channel></rss>"
+        )
+        empty_page = b'<?xml version="1.0"?><rss><channel></channel></rss>'
+        pages = [page_one, empty_page]
+
+        def fake_fetch(url, desc):
+            return pages.pop(0)
+
+        result = sg.fetch_shelf("1", "key", "read", fetch=fake_fetch)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["book_id"], "1")
 
 
 class TestYearDerivation(unittest.TestCase):
@@ -338,7 +473,7 @@ class TestNowReading(unittest.TestCase):
                       shelves=["currently-reading"]),
         ]
         result = sg.compute_now_reading(items, make_policy())
-        self.assertIsNone(result)
+        self.assertEqual(result, "")
 
     def test_book_on_no_site_shelf_only_is_not_a_candidate(self):
         items = [
@@ -347,7 +482,19 @@ class TestNowReading(unittest.TestCase):
                       shelves=["currently-reading", "no-site"]),
         ]
         result = sg.compute_now_reading(items, make_policy())
-        self.assertIsNone(result)
+        self.assertEqual(result, "")
+
+    def test_removed_tag_wins_even_with_site_tag_on_same_record(self):
+        # A currently-reading item can carry both shelf tags at once (e.g. a
+        # book opted in earlier, then pulled). remove_shelf must win, same
+        # as it does for the read list.
+        items = [
+            make_item("77", title="Pulled Book",
+                      date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                      shelves=["currently-reading", "site", "no-site"]),
+        ]
+        result = sg.compute_now_reading(items, make_policy())
+        self.assertEqual(result, "")
 
     def test_unrated_currently_reading_book_on_site_shelf_is_still_a_candidate(self):
         # include_unrated only gates the finished-reading list; an in-progress
@@ -358,8 +505,20 @@ class TestNowReading(unittest.TestCase):
         result = sg.compute_now_reading(items, make_policy(include_unrated=False))
         self.assertEqual(result, "In Progress by Some Author")
 
-    def test_empty_shelf_returns_none(self):
-        self.assertIsNone(sg.compute_now_reading([], make_policy()))
+    def test_empty_shelf_returns_empty_string(self):
+        # "" (not None) -- a legitimately empty shelf is a definite result,
+        # not "couldn't tell, leave the old value alone".
+        self.assertEqual(sg.compute_now_reading([], make_policy()), "")
+
+    def test_finished_book_with_nothing_else_eligible_returns_empty_string(self):
+        # A book finished and nothing new started: the currently-reading
+        # shelf has items, but none pass the site-shelf/not-removed check.
+        items = [
+            make_item("81", title="Finished, not currently reading",
+                      date_added="Fri, 01 Mar 2024 00:00:00 -0800",
+                      shelves=["currently-reading"]),
+        ]
+        self.assertEqual(sg.compute_now_reading(items, make_policy()), "")
 
     def test_fixture_currently_reading(self):
         items = sg.load_items_from_file(str(FIXTURES_DIR / "currently-reading.xml"))
@@ -397,11 +556,22 @@ class TestOutputAssembly(unittest.TestCase):
         self.assertEqual(new_now["shipping"], "x")
         self.assertEqual(new_now["state"], "y")
 
-    def test_build_now_output_keeps_existing_value_when_shelf_empty(self):
+    def test_build_now_output_clears_reading_when_shelf_has_nothing_eligible(self):
+        # compute_now_reading() returns "" (never None) for a successful
+        # fetch with nothing eligible in progress, and build_now_output()
+        # must actually clear the stale value rather than keep it -- the
+        # now pane's Liquid hides the row when reading is genuinely empty.
         old_now = {"reading": "Old Book by Old Author", "updated": "2026-01-01"}
-        new_now, changed = sg.build_now_output(old_now, None, "2026-09-05")
+        new_now, changed = sg.build_now_output(old_now, "", "2026-09-05")
+        self.assertTrue(changed)
+        self.assertEqual(new_now["reading"], "")
+        self.assertEqual(new_now["updated"], "2026-09-05")
+
+    def test_build_now_output_no_change_when_already_empty(self):
+        old_now = {"reading": "", "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, "", "2026-09-05")
         self.assertFalse(changed)
-        self.assertEqual(new_now, old_now)
+        self.assertEqual(new_now["updated"], "2026-01-01")
 
     def test_build_now_output_no_change_when_value_identical(self):
         old_now = {"reading": "Same Book by Same Author", "updated": "2026-01-01"}
@@ -419,10 +589,79 @@ class TestOutputAssembly(unittest.TestCase):
         self.assertTrue(any(line.startswith("- Gone") for line in lines))
 
 
+class TestShrinkSafetyValve(unittest.TestCase):
+    def _read_entry(self, book_id, title=None):
+        return {
+            "title": title or f"Book {book_id}",
+            "author": "Author",
+            "rating": 4,
+            "year": 2020,
+            "url": f"https://www.goodreads.com/book/show/{book_id}",
+        }
+
+    def test_removed_books_computed_by_url(self):
+        old = [self._read_entry(1), self._read_entry(2), self._read_entry(3)]
+        new = [self._read_entry(1)]
+        removed = sg.removed_books(old, new)
+        self.assertEqual({b["url"] for b in removed},
+                          {self._read_entry(2)["url"], self._read_entry(3)["url"]})
+
+    def test_no_refusal_for_small_removal(self):
+        old = [self._read_entry(i) for i in range(1, 21)]  # 20 books
+        new = old[1:]  # remove 1 (5%): under both thresholds
+        self.assertIsNone(sg.read_list_shrink_refused(old, new))
+
+    def test_refused_when_removed_exceeds_absolute_threshold(self):
+        old = [self._read_entry(i) for i in range(1, 21)]  # 20 books
+        new = old[4:]  # remove 4 (>3 absolute, 20% > 10%)
+        shrunk = sg.read_list_shrink_refused(old, new)
+        self.assertIsNotNone(shrunk)
+        self.assertEqual(len(shrunk), 4)
+
+    def test_refused_when_removed_exceeds_percent_threshold_only(self):
+        old = [self._read_entry(i) for i in range(1, 21)]  # 20 books
+        new = old[3:]  # remove exactly 3 (not > 3 absolute) but 15% > 10%
+        shrunk = sg.read_list_shrink_refused(old, new)
+        self.assertIsNotNone(shrunk)
+        self.assertEqual(len(shrunk), 3)
+
+    def test_no_refusal_when_old_list_empty(self):
+        self.assertIsNone(sg.read_list_shrink_refused([], []))
+
+    def test_no_refusal_when_nothing_removed(self):
+        old = [self._read_entry(1)]
+        new = [self._read_entry(1), self._read_entry(2)]
+        self.assertIsNone(sg.read_list_shrink_refused(old, new))
+
+    def test_present_book_ids_excludes_deliberate_no_site_removal(self):
+        # A book that's present in this run's fetched feed but explicitly
+        # tagged remove_shelf is a deliberate, visible removal -- not the
+        # "book silently vanished from a bad feed" scenario the valve
+        # exists to catch -- so it must not count toward the threshold,
+        # even when it's the entire (single-book) list.
+        old = [self._read_entry(1)]
+        new = []
+        self.assertIsNotNone(sg.read_list_shrink_refused(old, new))  # without info: refused
+        self.assertIsNone(
+            sg.read_list_shrink_refused(old, new, present_book_ids={"1"})
+        )
+
+    def test_present_book_ids_still_counts_books_missing_from_feed(self):
+        old = [self._read_entry(i) for i in range(1, 21)]
+        new = old[4:]
+        # None of the removed ids (1-4) are present in this run's feed at
+        # all -- exactly the truncated/partial-feed scenario -- so they
+        # still count even with present_book_ids supplied.
+        present_ids = {str(i) for i in range(5, 21)}
+        shrunk = sg.read_list_shrink_refused(old, new, present_book_ids=present_ids)
+        self.assertIsNotNone(shrunk)
+        self.assertEqual(len(shrunk), 4)
+
+
 class TestMainCLI(unittest.TestCase):
     def _run(self, args):
         buf = io.StringIO()
-        with redirect_stdout(buf):
+        with redirect_stdout(buf), redirect_stderr(buf):
             code = sg.main(args)
         return code, buf.getvalue()
 
@@ -557,7 +796,10 @@ class TestMainCLI(unittest.TestCase):
             titles = {b["title"] for b in data["read"]}
             self.assertNotIn("No Site Tag Book", titles)
 
-    def test_currently_reading_without_site_shelf_leaves_now_untouched(self):
+    def test_currently_reading_without_site_shelf_clears_stale_now(self):
+        # A successful fetch with nothing eligible on the currently-reading
+        # shelf must actively clear a stale now.json value to "" rather than
+        # leave it pointing at a book that's no longer being read.
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             policy_path = tmp / "policy.json"
@@ -596,8 +838,8 @@ class TestMainCLI(unittest.TestCase):
             code, _ = self._run(args)
             self.assertEqual(code, 0)
             now_data = json.loads(out_now.read_text())
-            self.assertEqual(now_data["reading"], "Existing Book by Existing Author")
-            self.assertEqual(now_data["updated"], "2020-01-01")
+            self.assertEqual(now_data["reading"], "")
+            self.assertEqual(now_data["updated"], sg.today_str())
 
     def test_currently_reading_with_site_shelf_updates_now(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -638,6 +880,176 @@ class TestMainCLI(unittest.TestCase):
             finally:
                 if env_backup is not None:
                     os.environ["GOODREADS_RSS_KEY"] = env_backup
+
+    def test_malformed_read_feed_exits_nonzero_and_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            bad_feed = tmp / "bad.xml"
+            bad_feed.write_bytes(b'<?xml version="1.0"?><rss><channel><item><book_id>1')
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            seed_now = {"reading": "Existing Book by Existing Author", "updated": "2020-01-01"}
+            out_now.write_text(json.dumps(seed_now))
+
+            code, output = self._run([
+                "--from-file", str(bad_feed),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ])
+
+            self.assertEqual(code, 1)
+            self.assertFalse(out_books.exists())
+            # now.json completely untouched by a failed fetch.
+            self.assertEqual(json.loads(out_now.read_text()), seed_now)
+
+    def test_malformed_currently_reading_feed_leaves_now_json_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            bad_reading_feed = tmp / "bad-reading.xml"
+            bad_reading_feed.write_bytes(b"<rss><channel><item><book_id></book_id></item>")
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            seed_now = {"reading": "Existing Book by Existing Author", "updated": "2020-01-01"}
+            out_now.write_text(json.dumps(seed_now))
+
+            code, output = self._run([
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(bad_reading_feed),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ])
+
+            self.assertEqual(code, 1)
+            self.assertFalse(out_books.exists())
+            self.assertEqual(json.loads(out_now.read_text()), seed_now)
+
+    @staticmethod
+    def _items_xml(book_ids, shelf="site"):
+        items_xml = "".join(
+            f"""
+            <item>
+              <book_id>{bid}</book_id>
+              <title><![CDATA[Book {bid}]]></title>
+              <author_name>Author {bid}</author_name>
+              <user_rating>4</user_rating>
+              <user_read_at><![CDATA[Mon, 01 Jan 2018 00:00:00 +0000]]></user_read_at>
+              <user_date_added><![CDATA[Mon, 01 Jan 2018 00:00:00 +0000]]></user_date_added>
+              <user_shelves>{shelf}</user_shelves>
+            </item>
+            """
+            for bid in book_ids
+        )
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?><rss><channel>'
+            + items_xml
+            + "</channel></rss>"
+        ).encode("utf-8")
+
+    def _seed_books(self, path, book_ids):
+        path.write_text(json.dumps({
+            "scale": 5,
+            "source": "seed",
+            "read": [
+                {
+                    "title": f"Book {bid}",
+                    "author": f"Author {bid}",
+                    "rating": 4,
+                    "year": 2018,
+                    "url": f"https://www.goodreads.com/book/show/{bid}",
+                }
+                for bid in book_ids
+            ],
+        }))
+
+    def test_shrink_past_threshold_refused_by_default(self):
+        # 20 grandfathered books on disk; the fetched feed only carries 16 of
+        # them (a stand-in for a truncated/partial feed response). Losing 4
+        # exceeds both the absolute (>3) and percent (>10%) thresholds.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            all_ids = list(range(1, 21))
+            kept_ids = all_ids[4:]
+            feed_path = tmp / "read.xml"
+            feed_path.write_bytes(self._items_xml(kept_ids))
+
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            self._seed_books(out_books, all_ids)
+            out_now.write_text(json.dumps({"reading": "", "updated": "2020-01-01"}))
+            seed_books_text = out_books.read_text()
+
+            code, output = self._run([
+                "--from-file", str(feed_path),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ])
+
+            self.assertEqual(code, 1)
+            self.assertIn("refusing to publish", output)
+            # nothing written: books.json byte-identical to the seed
+            self.assertEqual(out_books.read_text(), seed_books_text)
+
+    def test_shrink_past_threshold_allowed_with_flag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            all_ids = list(range(1, 21))
+            kept_ids = all_ids[4:]
+            feed_path = tmp / "read.xml"
+            feed_path.write_bytes(self._items_xml(kept_ids))
+
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            self._seed_books(out_books, all_ids)
+            out_now.write_text(json.dumps({"reading": "", "updated": "2020-01-01"}))
+
+            code, output = self._run([
+                "--from-file", str(feed_path),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+                "--allow-shrink",
+            ])
+
+            self.assertEqual(code, 0)
+            data = json.loads(out_books.read_text())
+            self.assertEqual(len(data["read"]), len(kept_ids))
+
+    def test_small_shrink_under_threshold_proceeds_without_flag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            all_ids = list(range(1, 21))
+            kept_ids = all_ids[1:]  # remove 1 of 20 (5%): under both thresholds
+            feed_path = tmp / "read.xml"
+            feed_path.write_bytes(self._items_xml(kept_ids))
+
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            self._seed_books(out_books, all_ids)
+            out_now.write_text(json.dumps({"reading": "", "updated": "2020-01-01"}))
+
+            code, output = self._run([
+                "--from-file", str(feed_path),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ])
+
+            self.assertEqual(code, 0)
+            data = json.loads(out_books.read_text())
+            self.assertEqual(len(data["read"]), len(kept_ids))
 
 
 if __name__ == "__main__":

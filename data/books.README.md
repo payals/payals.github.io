@@ -37,6 +37,43 @@ match what is already on disk, it writes nothing and prints `no changes`. It
 never touches the `source` timestamp in `data/books.json` unless the read list
 actually changed.
 
+## Failure behaviour: the job fails rather than publishing on a bad feed
+
+A malformed, truncated, or otherwise unparseable response from Goodreads --
+bad XML, an unexpected root element, a missing `<channel>`, or an item
+missing its `book_id` or `title` -- makes the script exit non-zero and write
+nothing at all, to either `data/books.json` or `data/now.json`. The GitHub
+Actions job fails at the sync step, before the commit step ever runs, so a
+bad feed response can never publish a partial or empty result and can never
+get committed. A response is also capped at 8 MiB; anything larger is
+treated as a failure the same way.
+
+This also means a page that parses cleanly to zero items is *not* a failure:
+that is the normal end-of-pagination signal, and is handled separately from
+an actual parse failure.
+
+## The shrink safety valve
+
+Before writing, the script compares the newly computed read list against
+what is already in `data/books.json` and refuses to publish -- exit 1,
+nothing written -- if the new list would lose more than 3 books, or more
+than 10% of the existing list, in one run. A book that vanishes from the
+feed entirely (rather than being explicitly tagged `no-site` in a
+successfully-parsed feed) is exactly what a truncated or partial Goodreads
+response looks like, and grandfathering has no way to tell that apart from
+a deliberate mass removal once the book is simply absent from the fetch.
+
+A book that's present in the feed and explicitly tagged `no-site` does not
+count toward this threshold, no matter how many of them there are in one
+run -- that is a deliberate, visible removal, not a sign of a bad feed.
+
+If a shrink past the threshold is genuinely intended (a deliberate cleanup
+of the read list on Goodreads), pass `--allow-shrink` to publish it anyway:
+
+```
+GOODREADS_RSS_KEY=your_rss_key python3 scripts/sync_goodreads.py --allow-shrink
+```
+
 ## Publishing a book
 
 To put a finished book on the site, add it to the `site` shelf on Goodreads. The
@@ -59,10 +96,19 @@ Two other policy knobs are worth knowing about:
 ## How the now pane is driven
 
 `data/now.json`'s `reading` field is set to the most recently added book on the
-currently-reading shelf that is also tagged with the `site` shelf. Unrated books
-are eligible here, since a book in progress usually has no rating yet. If the
-currently-reading shelf has no book tagged `site`, the existing value is left
-alone.
+currently-reading shelf that is also tagged with the `site` shelf and not tagged
+`no-site` -- as with the read list, `no-site` always wins, even for a book that
+also carries the `site` tag. Unrated books are eligible here, since a book in
+progress usually has no rating yet.
+
+If the currently-reading shelf has no eligible book -- nothing tagged `site`,
+everything tagged `no-site`, or the shelf is simply empty -- a successful sync
+actively clears `reading` to an empty string rather than leaving a stale value
+in place. The home page's now pane and `reading.markdown` both hide the
+"reading" row when `reading` is empty, so finishing a book with nothing new
+started yet correctly makes the row disappear instead of showing a book
+that's no longer being read. `updated` only changes when `reading` actually
+changes.
 
 ## Running it locally
 

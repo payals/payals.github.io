@@ -25,7 +25,7 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
   {% include navbar.html %}
 
   <main id="main" class="console" tabindex="-1"
-        data-now-updated="{{ now.updated }}"
+        data-now-updated="{{ now.updated | escape }}"
         data-talks-sourced="{{ sourced.size }}"
         data-talks-leads="{{ leads.size }}"
         data-posts="{{ site.posts.size }}">
@@ -35,7 +35,7 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
     <nav class="zoomtabs" data-zoomtabs aria-label="Collapsed panes" hidden></nav>
 
     <section class="pane" id="now" tabindex="-1" aria-labelledby="now-title" data-kind="now">
-      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta" data-pane-meta>updated {{ now.updated }}</span>{% endif %}</h2>
+      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta" data-pane-meta>updated {{ now.updated | escape }}</span>{% endif %}</h2>
       <div class="pane__body" data-pane-body>
         <dl class="facts" data-facts>
           <dt>role</dt>
@@ -52,7 +52,7 @@ description: Payal Singh, staff platform engineer. Postgres, data systems, DevOp
           <dt>shipping</dt>
           <dd data-fact="shipping" data-cmd="cat now/shipping">{{ now.shipping | escape }}</dd>
           {%- endif %}
-          {%- if now.reading %}
+          {%- if now.reading and now.reading != "" %}
           <dt>reading</dt>
           <dd data-fact="reading" data-cmd="cat now/reading">{{ now.reading | escape }}</dd>
           {%- endif %}
