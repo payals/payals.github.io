@@ -41,7 +41,24 @@ import { setupScrubber } from './scrubber.js';
 import { setupConstellation } from './constellation.js';
 import { runBootLog, replayBootLog } from './bootlog.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+// Finding 2 (adversarial-review-4): this module used to run itself from a
+// top-level DOMContentLoaded listener, which meant every static import
+// above -- the whole console module graph -- was fetched by the browser's
+// module loader the instant this file was requested, regardless of the
+// isPhone guard that used to sit inside the listener. A phone below 768px
+// without ?console=1 was never supposed to pay for any of that, so the
+// decision of whether to request this file at all moved out to a tiny
+// inline importer in index.html; this file is now only ever requested via
+// `import('/assets/js/main.js')` once that importer has already decided
+// the console is wanted (desktop width, ?console=1, or a breakpoint
+// crossing). initConsole() is idempotent to call exactly once per page
+// (the importer guards a second call with its own `loaded` flag); it does
+// not re-guard internally because the importer is the sole caller.
+let started = false;
+export function initConsole() {
+  if (started) return;
+  started = true;
+
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const consoleEl = document.querySelector('.console');
@@ -190,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // to type clicks the prompt or tabs to it, and Escape leaves it again.
     applyHash();
   });
-});
+}
 
 function readJson(id, fallback) {
   const el = document.getElementById(id);

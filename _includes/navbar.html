@@ -24,9 +24,38 @@
   <button class="search-btn" type="button" data-open-palette aria-keyshortcuts="/ Meta+K Control+K" hidden><kbd class="kbd">/</kbd><span class="search-btn__label">search everything</span></button>
   {%- endif %}
   <nav class="topbar__nav" aria-label="Site">
+  {%- if on_home %}
+    {%- comment -%} adversarial-review-4 finding 6: this page renders two
+    experiences below 768px (PP1) that Liquid cannot tell apart at build
+    time, so both link sets ship and CSS (features.scss §15) shows exactly
+    one, the same test as .phone-page vs .console: html.console-forced or
+    768px and up gets the desktop set, a plain phone gets the phone set.
+
+    Desktop/forced set: unchanged from before this diff -- home, the full
+    blog index, and the console panes. Talks and cv are hash-only (#talks,
+    #cv, not /#talks) so a landing visitor's own ?console=1 survives the
+    click instead of reloading into the plain phone page; a root-absolute
+    link cannot do that because a new navigation drops the current query
+    string. Off this document (on_blog and everywhere else below) the
+    original root-absolute form remains, since a hash-only link would
+    resolve against that page's own URL instead of "/".
+
+    Phone set (PP6: "the topbar on phones shows only the name link and
+    the four nav links, pointing at phone sections"): now, writing, talks
+    and cv all point at the phone sections. Writing no longer exits
+    straight to /blog/ on a phone -- the phone writing section's own "all
+    posts" link (index.html) keeps the blog one tap away instead. {%- endcomment %}
+    <a href="/" aria-current="page" class="topbar__nav-desktop">home</a>
+    <a href="#now" class="topbar__nav-phone">now</a>
+    <a href="/blog/" class="topbar__nav-desktop">writing</a>
+    <a href="#writing" class="topbar__nav-phone">writing</a>
+    <a href="#talks">talks</a>
+    <a href="#cv">cv</a>
+  {%- else %}
     <a href="/"{% if on_home %} aria-current="page"{% endif %}>home</a>
     <a href="/blog/"{% if on_blog %} aria-current="page"{% endif %}>writing</a>
     <a href="/#talks">talks</a>
     <a href="/#cv">cv</a>
+  {%- endif %}
   </nav>
 </header>

@@ -86,7 +86,7 @@
  * @returns {{ setTopic(id: string|null): boolean, topic(): string|null,
  *             clear(): boolean, applyHash(): boolean, ids(): string[] }}
  */
-import { TOPICS, emit, getHashPart, setHashPart } from './chart-util.js';
+import { TOPICS, emit, getHashPart, on, setHashPart } from './chart-util.js';
 import { registerTopicFilterCommand } from './commands.js';
 
 export function setupTopics({ term, registry, reducedMotion } = {}) {
@@ -95,6 +95,15 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
   const body = document.body;
   const hint = document.querySelector('[data-legend-hint]');
   const live = document.querySelector('[data-topic-live]');
+  // PP7: the pill above the panes. Desktop keeps the T2 dim (features.css);
+  // a phone in the opt-in console (?console=1) hides non-matching rows
+  // instead, through a features.css rule scoped to html.console-forced at
+  // max-width:767px, because 0.76 opacity read as "nothing happened" on a
+  // touch screen. The pill is the same element and the same code at every
+  // width: it only ever mirrors body[data-topic-filter], never sets it.
+  const pill = document.querySelector('[data-filterpill]');
+  const pillText = document.querySelector('[data-filterpill-text]');
+  const pillClear = document.querySelector('[data-filterpill-clear]');
   const buttons = [...document.querySelectorAll('[data-legend-btn]')];
   const buttonById = new Map(buttons.map((button) => [button.dataset.legendBtn, button]));
   const topicIds = TOPICS.map((entry) => entry.id).filter((id) => buttonById.has(id));
@@ -105,6 +114,43 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
   let current = allowed.has(body && body.dataset.topicFilter) ? body.dataset.topicFilter : null;
   let announceTimer = null;
 
+  // adversarial-review-4 finding 1/4: the phone opt-in console hides a
+  // topic-mismatched row outright instead of dimming it (features.scss
+  // §16), scoped to html.console-forced at 767px and narrower. That is
+  // the only scope in which a row is actually removed from the page --
+  // everywhere else it is merely dimmed and stays a legitimate target --
+  // so every reader of "is this row really gone" below shares this one
+  // test, live-evaluated rather than cached, because a forced console can
+  // cross 767px while mounted (a rotation, a resize).
+  const narrowQuery = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
+  function hideScope() {
+    return Boolean(narrowQuery && narrowQuery.matches)
+      && document.documentElement.classList.contains('console-forced');
+  }
+
+  // Every `.row[data-topic]` the phone-forced hide can reach: not just
+  // talks and posts, but the cv pane's role rows too (features.scss's
+  // selector is generic over `.row[data-topic]`, not pane-scoped).
+  function filterableRows() {
+    return [...document.querySelectorAll('.row[data-topic]')];
+  }
+
+  // Mark every mismatched row `.topic-hidden` when the phone-forced hide
+  // scope actually applies, and clear it otherwise. features.scss's phone
+  // rule now keys off this class instead of the body[data-topic-filter]
+  // attribute directly, so this function is the one place that decides
+  // whether a row disappears; hitRow() (chart-util.js) also refuses a row
+  // carrying this class, and chart-talks.js, chart-writing.js and
+  // chart-cv.js each recompute their own marks' rover availability from
+  // the `console:topic` event this fires on, composing with their
+  // existing scrub-driven availability rather than overwriting it.
+  function syncVisibility() {
+    const hiding = hideScope() && Boolean(current);
+    for (const row of filterableRows()) {
+      row.classList.toggle('topic-hidden', hiding && row.dataset.topic !== current);
+    }
+  }
+
   // T1. The count has to be the number of records the filter actually lights,
   // because the chip and the hint sit on the same bar and are read together.
   // The legend chip's own count is written by Liquid over site.data.talks,
@@ -112,12 +158,20 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
   // like a sourced one, so the archive leads are counted here too. Excluding
   // them made the chip say "reliability 3" beside a hint saying "showing 2
   // talks" for the three topics that own a lead: reliability, platform, other.
+  //
+  // adversarial-review-4 finding 4: this used to count every row with a
+  // matching topic regardless of the year scrubber, so scrubbing to a past
+  // year while a filter was active left the pill and the hint reporting a
+  // stale, all-time total instead of the topic/year intersection actually
+  // on screen. `.scrubber-hidden` (scrubber.js) is excluded here the same
+  // way `.topic-hidden` is excluded from the rows this filter itself hides.
   function counts(id) {
+    const visible = (row) => row.dataset.topic === id && !row.classList.contains('scrubber-hidden');
     const talks = [...document.querySelectorAll('#talks .row[data-topic]')]
-      .filter((row) => row.dataset.topic === id)
+      .filter(visible)
       .length;
     const posts = [...document.querySelectorAll('#writing .row[data-topic]')]
-      .filter((row) => row.dataset.topic === id)
+      .filter(visible)
       .length;
     return { talks, posts };
   }
@@ -143,6 +197,19 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
     const message = current ? summary(current) : 'filter cleared';
     if (hint) hint.textContent = current ? `${message}. esc clears.` : restingHint;
     if (shouldAnnounce) announce(message);
+
+    // PP7: "postgres . 3 items . clear". The count is talks plus posts for
+    // the current topic, the same number counts() already gives the hint.
+    if (pill) {
+      if (current) {
+        const found = counts(current);
+        const total = found.talks + found.posts;
+        if (pillText) pillText.textContent = `${current} · ${total} item${total === 1 ? '' : 's'}`;
+        pill.hidden = false;
+      } else {
+        pill.hidden = true;
+      }
+    }
   }
 
   function applyTopic(id, { writeHash = true, shouldAnnounce = true } = {}) {
@@ -155,8 +222,15 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
     if (current) body.dataset.topicFilter = current;
     else delete body.dataset.topicFilter;
 
+    syncVisibility();
     render(shouldAnnounce && changed);
     if (writeHash) setHashPart('topic', current);
+    // adversarial-review-4 finding 4: chart-talks.js, chart-writing.js and
+    // chart-cv.js each subscribe to this same event to recompute their own
+    // marks' rover availability (and move focus off one that just became
+    // unavailable) -- not only on a genuine topic change, so the resize
+    // listener below re-fires it with an unchanged topic when only the
+    // hide scope changed.
     if (changed) emit('console:topic', { topic: current });
     return true;
   }
@@ -166,6 +240,10 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
       const id = button.dataset.legendBtn;
       applyTopic(current === id ? null : id);
     });
+  }
+
+  if (pillClear) {
+    pillClear.addEventListener('click', () => applyTopic(null));
   }
 
   // Escape is a functional key, not a character shortcut. A field or dialog
@@ -187,6 +265,30 @@ export function setupTopics({ term, registry, reducedMotion } = {}) {
     counts,
   });
 
+  // finding 4: a year scrub changes which rows `.scrubber-hidden` covers
+  // without changing the topic, so the pill and the hint need their own
+  // refresh here -- applyTopic() only runs on a genuine filter change and
+  // would otherwise leave counts() reporting the pre-scrub total.
+  on('console:asof', () => {
+    if (current) render(false);
+  });
+
+  // finding 4: a forced console can cross 767px while mounted (a rotation,
+  // a resize, a reduced browser zoom), which flips whether the phone-hide
+  // rule applies without the topic itself changing. Re-run the same sync
+  // and notify the charts so their rover availability and this filter's
+  // row-hiding never fall out of step with each other.
+  if (narrowQuery) {
+    const onScopeChange = () => {
+      if (!current) return;
+      syncVisibility();
+      emit('console:topic', { topic: current });
+    };
+    if (narrowQuery.addEventListener) narrowQuery.addEventListener('change', onScopeChange);
+    else narrowQuery.addListener(onScopeChange);
+  }
+
+  syncVisibility();
   render(false);
 
   return {

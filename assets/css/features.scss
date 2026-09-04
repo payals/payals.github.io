@@ -190,7 +190,15 @@
     color: #000;
   }
 
-  body.is-printing-cv .shell > :not(.console),
+  /* Finding 3 (adversarial-review-4): PP1 put #main between .shell and
+     .console (it wraps .phone-page and .console so both share one main
+     landmark), so ".shell > :not(.console)" now matches #main itself --
+     #main is not .console, so the whole thing, cv included, went
+     display:none. The hierarchy the print rule hides has to follow the
+     real one: .shell's non-main children, #main's non-console child
+     (.phone-page), then .console's non-cv children exactly as before. */
+  body.is-printing-cv .shell > :not(#main),
+  body.is-printing-cv #main > :not(.console),
   body.is-printing-cv .console > :not(#cv),
   body.is-printing-cv #cv > :not(.pane__body),
   body.is-printing-cv #cv .pane__body > :not([data-more]),
@@ -202,6 +210,7 @@
   }
 
   body.is-printing-cv .shell,
+  body.is-printing-cv #main,
   body.is-printing-cv .console,
   body.is-printing-cv #cv,
   body.is-printing-cv #cv .pane__body,
@@ -3015,7 +3024,11 @@ body[data-topic-filter="other"] .talks-timeline__span[data-topic]:not([data-topi
   .console,
   .legendbar,
   .statusbar,
-  .scrubber {
+  .scrubber,
+  /* PP4: the phone page repeats the same "nothing under 13px" rule as its
+     own document, not the console's fold, so it needs the same token
+     redefinition rather than inheriting one scoped to a sibling. */
+  .phone-page {
     --text-xs: 0.8125rem;    /* 13px */
     --text-2xs: 0.8125rem;   /* 13px */
   }
@@ -3574,4 +3587,381 @@ body[data-topic-filter="other"] .talks-timeline__span[data-topic]:not([data-topi
      role segment's own hit box. Nothing is lost by letting a tap fall
      through them to the segment underneath. */
   .career__lane:has(.career__ticks) { pointer-events: none; }
+}
+
+/* -------------------------------------------------------------
+   15. The phone page (PP1-PP6, phase-3 second round: "There's a lot in
+   there ... it's confusing and overwhelming").
+
+   Below 768px the same URL now renders a separate, simple document
+   instead of the console folded onto a phone: index.html server-renders
+   both, and this block plus the console-forced class head.html sets
+   before paint pick one with no client fetch and no layout shift.
+   Desktop never shows .phone-page (it has no media query of its own, so
+   it stays display:none until one applies); a phone without ?console=1
+   never shows the console, the legend bar or the status bar. Section 3's
+   13px token floor (MB10) is extended to .phone-page below, so a badge
+   or a date column here holds the same floor the console fold does.
+   ------------------------------------------------------------- */
+.phone-page { display: none; }
+
+@media (max-width: 767px) {
+  html:not(.console-forced) .phone-page { display: block; }
+  html:not(.console-forced) .legendbar,
+  html:not(.console-forced) .console,
+  html:not(.console-forced) .statusbar {
+    display: none;
+  }
+}
+
+/* Finding 6 (adversarial-review-4), PP6: the topbar's four nav links
+   point at different destinations in each experience (navbar.html), and
+   the same test that picks .phone-page vs .console picks which set of
+   links shows -- .topbar__nav-phone is hidden by default (desktop, and a
+   forced phone, both keep the desktop set only), and only a plain phone
+   below 768px swaps it in for .topbar__nav-desktop. */
+.topbar__nav .topbar__nav-phone { display: none; }
+
+@media (max-width: 767px) {
+  html:not(.console-forced) .topbar__nav .topbar__nav-desktop { display: none; }
+  html:not(.console-forced) .topbar__nav .topbar__nav-phone { display: inline; }
+}
+
+/* PP3: body 16px system sans, mono reserved for the small labels (the
+   section titles, the now-pane labels, dates, venues, the cv role dates).
+   The rest of the site is mono-first; the phone page reads as prose on
+   purpose, the way the cv and blog pages already do with .prose. */
+.phone-page {
+  min-width: 0;
+  padding: 0 var(--space-4) 6px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  /* PP5's 1,600px cap (390x844, both details closed) is what sets this,
+     not a text-size cut: --leading-prose (1.65, the blog's reading
+     measure) reads fine at 66ch but wastes a quarter of every line's
+     height in a 342px column. 1.3 is still inside a normal body-copy
+     range and keeps every string the same 16px PP3 asks for; nothing
+     shrinks, only the space around it. */
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.m-section { margin: 0 0 2px; }
+
+/* The cv headline, the one piece of running prose on the page that is
+   not a label or a row; a plain class rather than a bare `p` selector so
+   its margin cannot out-specificity a more specific .m-* rule below. */
+.m-lede { margin: 0 0 2px; }
+
+.m-section__title {
+  margin: 0 0 3px;
+  padding-bottom: 1px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.m-subhead {
+  margin: var(--space-4) 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--ink-2);
+}
+
+/* PP3's now: four short lines, a mono label then a sans value, prose
+   rather than the console's dt/dd facts grid. */
+.m-line { margin: 0 0 2px; }
+
+/* Finding 7 (adversarial-review-4): the speaking, writing and past-reads
+   links used to sit inline in 16px/1.3-line-height prose, about 21px
+   tall -- roughly half the 44px floor the rest of the phone page holds.
+   `.m-line a::after` cannot be padded to 44px on its own without
+   breaking the sentence it sits in (the label, and the venue/date prose
+   around the link, all share one <p>), so `:has(a)` grows the WHOLE line
+   instead -- the same "whole card is the tap target" technique
+   .m-talk/.m-post already use above. min-height alone (no padding) is
+   the floor: a single-line row is pulled up to exactly 44px, and a
+   title long enough to wrap already clears 44px on its own, so padding
+   on top of that content would only add dead space PP5's 1,600px height
+   budget does not have room for (measured: adding padding here pushed
+   390x844 from ~1,500px to 1,667px). The stretched `::after`
+   (position:relative on .m-line, absolute inset:0 on the pseudo) covers
+   the box either way. Each `.m-line` is its own block box, so two in a
+   row never overlap. Only lines that actually carry a link grow; "role"
+   (no link) stays a plain text row. */
+.m-line:has(a) {
+  position: relative;
+  min-height: 44px;
+}
+
+.m-line a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.m-label {
+  display: inline-block;
+  min-width: 5.5em;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.m-list { list-style: none; margin: 0; padding: 0; }
+
+.m-list li {
+  padding: 1px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.m-list li:last-child { border-bottom: 0; }
+
+/* PP3: "each one line of date and title with the venue on a second
+   line". Date and title share one flowing paragraph (wrapping onto a
+   second line only when a long title needs it) and the venue is a
+   second paragraph underneath; the post row keeps date, title and
+   minutes on one paragraph since PP3 does not ask it to split. */
+.m-talk__line,
+.m-talk__venue,
+.m-post__line { margin: 0; }
+
+.m-talk__date,
+.m-post__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-talk__venue,
+.m-post__min {
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+/* PP4: every tap target at least 44px. A single word of inline text
+   cannot be padded to 44px on its own without breaking the line it sits
+   on, so the title's link is stretched to cover its whole row instead
+   (the row is already taller than 44px once the venue or minutes line
+   is counted). The a. element selector, not a bare class, is what keeps
+   this off the archive-lead rows: their title is a <span>, not a link,
+   so it never matches. Evidence citations inside a venue line (archive,
+   slides, schedule) sit inside a sentence, which is WCAG 2.5.8's inline
+   exception rather than this floor; z-index keeps them tappable on top
+   of the stretch instead of swallowed by it. */
+.m-talk,
+.m-post {
+  position: relative;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+a.m-talk__title::after,
+a.m-post__title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.m-talk__venue a { position: relative; z-index: 1; }
+
+/* "all posts" and "download pdf" are primary actions, not inline
+   citations, so they take the same 44px floor as the links grid. */
+.m-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.m-role {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.m-role__dates {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-meta {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.m-actions { margin: var(--space-2) 0 0; }
+
+.phone-page .badge { font-size: var(--text-xs); }
+
+/* PP3: a native <details>, styled as a plain 44px row (MB7: every
+   primary control is 44px on a phone) since the phone page has no button
+   face elsewhere to match it to. The chevron is CSS content, not JS: PP2
+   allows this page exactly one script, and it only maps hashes. */
+.m-details { margin-top: var(--space-3); }
+
+.m-details > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  list-style: none;
+}
+
+.m-details > summary::-webkit-details-marker { display: none; }
+.m-details > summary::marker { content: ""; }
+
+.m-details > summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  color: var(--ink-3);
+}
+
+.m-details[open] > summary::before { content: "\2212"; }
+
+/* PP3, and MB11 binding over LK1 on a phone: a two-column grid of
+   44px-tall full-width targets; a handle wraps inside its cell instead
+   of truncating. */
+.m-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* flex-direction: column, not the row display:flex would default to: a
+   bare text node ("medium") and .m-links__host ("/@reliable-by-design")
+   are two flex items, and a row keeps them on one line by shrinking
+   both, which broke "medium" itself mid-word to make room for its own
+   host. Stacking them removes the competition; the host still wraps on
+   its own within the full column width. */
+.m-links a {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+
+.m-links__host {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.m-foot {
+  margin-top: 2px;
+  padding-top: 2px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.m-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* -------------------------------------------------------------
+   16. PP7: the topic-filter pill above the panes, and the phone
+   opt-in console's hide instead of dim.
+   ------------------------------------------------------------- */
+
+/* Shown at every width the console renders (desktop, and a phone
+   carrying ?console=1): topics.js toggles [hidden] and fills the text.
+   It never sets body[data-topic-filter] itself; it only mirrors it, the
+   same way the legend hint does, so there is exactly one place a filter
+   is turned on or off. */
+/* Finding 1 (adversarial-review-4): the pill is now a .legendbar child,
+   a flex row that already reserves --legendbar-h for one line of chips.
+   It no longer carries console-grid item spacing (margin-bottom, meant
+   for sitting above the first pane); .legendbar's own `gap` spaces it
+   from the legend and the hint instead, and flex-shrink:0 plus nowrap
+   keep it from wrapping the bar onto a second line, which would grow
+   .legendbar past its reserved height and push .console down. */
+.filterpill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.filterpill__clear {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .filterpill__clear {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Binding arbitration, T2 dimming row: a phone in the opt-in console
+     hides a non-matching row instead of dimming it to --dim-row, because
+     0.76 opacity read as "nothing happened" on a touch screen; the pill
+     above says what changed instead. Marks stay dimmed (decorative dots
+     in an already-compact chart, not a "row"), and so do the now facts
+     (a dt/dd pair with only its dd hidden reads as a broken row, unlike a
+     self-contained .row list item) -- this rule adds display:none only to
+     .row, section 3 above's opacity rule still reaches every data-topic
+     element including these two, unchanged. */
+  /* adversarial-review-4 finding 4: topics.js now computes this hide in
+     JavaScript instead of a pure attribute-selector match (it has to --
+     a mismatched row's own chart mark needed a real, readable signal to
+     stay in step with, for the roving tabindex sets and hitRow() in
+     chart-util.js), and marks the row `.topic-hidden` when this same
+     max-width:767px, html.console-forced scope applies. This rule reads
+     that class instead of re-deriving the scope from the attribute; the
+     class only ever exists when topics.js has already confirmed the
+     scope, so no `html.console-forced` prefix is required here, but it
+     stays for defense in depth and because every other rule in this
+     block is scoped the same explicit way. */
+  html.console-forced .row.topic-hidden {
+    display: none;
+  }
 }

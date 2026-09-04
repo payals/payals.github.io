@@ -5,6 +5,7 @@ import {
   hitRow,
   iso,
   mark,
+  on,
   roving,
   showTip,
   topicLabel,
@@ -52,6 +53,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
     refresh() {},
     cells() { return []; },
     applyAsOf() {},
+    applyTopicFilter() {},
   };
   if (!pane || !plot) return noop;
 
@@ -296,19 +298,52 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
    * it -- hitRow() itself also refuses a scrubber-hidden row, so a stray
    * mouse click on a dimmed cell still does nothing. `year` null (or any
    * non-finite value) resets every cell to live.
+   *
+   * adversarial-review-4 finding 4: a cell can also point at a row (or,
+   * for a two-post day, at more than one) the phone-forced topic filter
+   * has hidden. `asOfCutoff` and `topicFilter` are tracked separately and
+   * recomposed in updateAvailability() so applyAsOf() (the scrubber) and
+   * applyTopicFilter() (topics.js's `console:topic` event) never clobber
+   * each other's exclusions. A two-post cell stays available as long as
+   * any one of its days' posts still matches the filter -- hiding the
+   * whole cell over one non-matching post would strand the other.
    */
-  function applyAsOf(year) {
-    const cutoff = Number.isFinite(year) ? year : null;
+  let asOfCutoff = null;
+  let topicFilter = null;
+
+  function isPhoneHideScope() {
+    return document.documentElement.classList.contains('console-forced')
+      && Boolean(window.matchMedia) && window.matchMedia('(max-width: 767px)').matches;
+  }
+
+  function updateAvailability() {
     for (const cell of cellNodes) {
-      const after = cutoff != null && Number(cell.dataset.year) > cutoff;
+      const after = asOfCutoff != null && Number(cell.dataset.year) > asOfCutoff;
+      const dayPosts = postsByCell.get(cell) || [];
+      const topicHidden = Boolean(topicFilter) && isPhoneHideScope()
+        && !dayPosts.some((post) => post.topic === topicFilter);
+      const unavailable = after || topicHidden;
       cell.classList.toggle('is-after', after);
-      rover.setAvailable(cell, !after);
-      if (after) {
+      cell.classList.toggle('is-topic-hidden', topicHidden);
+      rover.setAvailable(cell, !unavailable);
+      if (unavailable) {
         if (primer.get() === cell) primer.clear();
         if (document.activeElement === cell) cell.blur();
       }
     }
   }
+
+  function applyAsOf(year) {
+    asOfCutoff = Number.isFinite(year) ? year : null;
+    updateAvailability();
+  }
+
+  function applyTopicFilter(topic) {
+    topicFilter = topic || null;
+    updateAvailability();
+  }
+
+  on('console:topic', (event) => applyTopicFilter(event && event.detail && event.detail.topic));
 
   /**
    * Size the cells to whatever the plot token is at this width. Every
@@ -336,6 +371,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
     refresh,
     cells() { return cellNodes.slice(); },
     applyAsOf,
+    applyTopicFilter,
   };
 }
 

@@ -19,6 +19,13 @@
   when a module will fill it, and what lets the phone disclosures render
   closed without a flash. One line, no request, no library. {%- endcomment %}
   <script>document.documentElement.classList.add('js');</script>
+  {%- comment -%} PP1/PP2 (phase 3): below 768px this page renders two
+  experiences, the plain phone page and the folded console, and picks one
+  before paint so nothing shifts after. A URL carrying ?console=1 opts into
+  the console; main.js reads this same class to decide whether it
+  initialises at all, so a phone without the flag never runs the boot log,
+  the charts, the palette, or any other console module. {%- endcomment %}
+  <script>if (/(?:^|[?&])console=1(?:&|$)/.test(location.search)) document.documentElement.classList.add('console-forced');</script>
   {%- comment -%} The boot log's ready handoff is an absolute deadline measured from
   navigation start (assets/js/bootlog.js), so every round trip spent loading modules
   eats the 800ms budget. Without these hints the graph is three sequential round
@@ -26,26 +33,42 @@
   mdlines.js. Preloading the whole graph makes it one round trip after the HTML,
   which keeps the handoff at 750ms on a link with 200ms of per-request latency
   instead of slipping to 839ms. Landing only; the blog pages load no modules.
-  {%- endcomment %}
-  <link rel="modulepreload" href="/assets/js/main.js">
-  <link rel="modulepreload" href="/assets/js/terminal.js">
-  <link rel="modulepreload" href="/assets/js/commands.js">
-  <link rel="modulepreload" href="/assets/js/mdlines.js">
-  <link rel="modulepreload" href="/assets/js/panes.js">
-  <link rel="modulepreload" href="/assets/js/reader.js">
-  <link rel="modulepreload" href="/assets/js/zoom.js">
-  <link rel="modulepreload" href="/assets/js/palette.js">
-  <link rel="modulepreload" href="/assets/js/clicks.js">
-  <link rel="modulepreload" href="/assets/js/topstats.js">
-  <link rel="modulepreload" href="/assets/js/scrubber.js">
-  <link rel="modulepreload" href="/assets/js/constellation.js">
-  <link rel="modulepreload" href="/assets/js/bootlog.js">
-  <link rel="modulepreload" href="/assets/js/chart-util.js">
-  <link rel="modulepreload" href="/assets/js/topics.js">
-  <link rel="modulepreload" href="/assets/js/chart-talks.js">
-  <link rel="modulepreload" href="/assets/js/chart-writing.js">
-  <link rel="modulepreload" href="/assets/js/chart-cv.js">
-  <link rel="modulepreload" href="/assets/js/mobile.js">
+
+  Finding 2 (adversarial-review-4): these used to be plain, unconditional
+  <link> tags, so a phone below 768px without ?console=1 -- which never
+  wants a single byte of this graph (PP2) -- preloaded the whole thing
+  anyway; a modulepreload hint is not conditioned on what the module it
+  names does at runtime, only on whether the tag exists. index.html's
+  inline importer gates the actual `import('/assets/js/main.js')` on the
+  same test this script runs; these hints have to be gated identically or
+  they defeat that gate before it ever runs. matchMedia is evaluated here
+  in <head>, before the body parses, exactly like the console-forced class
+  just above, so a desktop load or a forced phone still gets every hint in
+  time to shorten the module graph to one round trip; a plain phone
+  requests none of them. A later breakpoint crossing (the importer's own
+  matchMedia listener) pays the normal, un-preloaded module-graph cost
+  once, which is an acceptable trade against never preloading a phone that
+  never asked for the console at all. {%- endcomment %}
+  <script>
+  (function () {
+    var wantsConsole = document.documentElement.classList.contains('console-forced')
+      || (window.matchMedia && window.matchMedia('(min-width: 768px)').matches);
+    if (!wantsConsole) return;
+    var modules = [
+      'main', 'terminal', 'commands', 'mdlines', 'panes', 'reader', 'zoom',
+      'palette', 'clicks', 'topstats', 'scrubber', 'constellation', 'bootlog',
+      'chart-util', 'topics', 'chart-talks', 'chart-writing', 'chart-cv', 'mobile',
+    ];
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < modules.length; i++) {
+      var link = document.createElement('link');
+      link.rel = 'modulepreload';
+      link.href = '/assets/js/' + modules[i] + '.js';
+      frag.appendChild(link);
+    }
+    document.head.appendChild(frag);
+  })();
+  </script>
   {%- endif %}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="32x32">

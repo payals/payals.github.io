@@ -1,0 +1,24 @@
+{%- comment -%}
+safe-link.html: adversarial-review-4 finding 8. event_url, archive_url and
+slides_url come from data/talks.json, a data file rather than a compiled
+template, so a bad or compromised record was reaching straight into a
+quoted href attribute unescaped and with no scheme check -- a quote in the
+value could inject attributes, and a javascript: value stayed clickable.
+Every attribute value goes through Liquid's `escape`, closing the
+attribute-injection path outright, and a url is rendered as a link only
+when it starts with http:// or https:// -- anything else (a bad scheme, a
+blank value, a missing field) prints as plain text instead.
+
+Params:
+  url          required. The raw, unescaped candidate URL.
+  text         required. Pre-escaped by the caller (this include never
+               escapes it, so a caller that wants literal markup, such as
+               a talk title span, can still pass one).
+  class        optional. Escaped.
+  target       optional, e.g. "_blank". Escaped.
+  rel          optional, e.g. "noopener". Escaped.
+{%- endcomment -%}
+{%- assign _url = include.url | default: "" -%}
+{%- assign _http = _url | slice: 0, 7 -%}
+{%- assign _https = _url | slice: 0, 8 -%}
+{%- if _http == "http://" or _https == "https://" -%}<a href="{{ _url | escape }}"{% if include.class %} class="{{ include.class | escape }}"{% endif %}{% if include.target %} target="{{ include.target | escape }}"{% endif %}{% if include.rel %} rel="{{ include.rel | escape }}"{% endif %}>{{ include.text }}</a>{%- else -%}{{ include.text }}{%- endif -%}

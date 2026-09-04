@@ -390,8 +390,12 @@ export function hitRow(paneId, row, markEl = null, reducedMotion = false) {
   // for any other reason, is not a valid landing spot -- a mark whose own
   // tabindex slipped through (a stale roving stop, a direct click) must
   // still fail to activate rather than hit-highlight and scroll to a row
-  // display:none has already removed from the page.
-  if (row.classList.contains('scrubber-hidden') || row.hidden) return false;
+  // display:none has already removed from the page. adversarial-review-4
+  // finding 4: topics.js's phone-forced topic filter hides a mismatched
+  // row the same way (features.scss §16, `.topic-hidden`), and a chart
+  // mark for that row is only dimmed, never removed, so the same refusal
+  // has to cover that class too.
+  if (row.classList.contains('scrubber-hidden') || row.classList.contains('topic-hidden') || row.hidden) return false;
   row.classList.add('row--hit');
   if (markEl) markEl.setAttribute('aria-current', 'true');
   emit('console:hit', { pane: paneId, el: row });

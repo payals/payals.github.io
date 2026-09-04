@@ -15,6 +15,7 @@ import {
   hitRow,
   iso,
   mark,
+  on,
   pct,
   showTip,
   topicLabel,
@@ -74,6 +75,7 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
     hitRole() { return false; },
     refresh() {},
     applyAsOf() {},
+    applyTopicFilter() {},
   };
 
   if (!pane || !plot || !rolesTrack || !talksTrack || !postsTrack || !axis || !hairline || !summary || !axisFrom) {
@@ -289,17 +291,37 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
    * `year` null (or any non-finite value) restores every role to its real
    * span.
    */
-  function applyAsOf(year) {
-    const cutoff = Number.isFinite(year) ? year : null;
-    const cutoffEnd = cutoff ? dateOf(`${cutoff}-12-31`) : null;
+  // adversarial-review-4 finding 4: a role button can also point at a row
+  // the phone-forced topic filter has hidden (features.scss §16), a
+  // second, independent reason it can be unavailable alongside the
+  // scrubbed-year cutoff above. `cutoffYear` and `topicFilter` are tracked
+  // separately and recomposed together in updateAvailability() so
+  // applyAsOf() (the scrubber) and applyTopicFilter() (topics.js's
+  // `console:topic` event) never clobber each other's exclusions. Topic
+  // mismatch never touches the bar's own geometry (left/width stay keyed
+  // to the scrub cutoff only), because `hidden` alone already removes it
+  // from layout, click and Tab order.
+  let cutoffYear = null;
+  let topicFilter = null;
+
+  function isPhoneHideScope() {
+    return document.documentElement.classList.contains('console-forced')
+      && Boolean(window.matchMedia) && window.matchMedia('(max-width: 767px)').matches;
+  }
+
+  function updateAvailability() {
+    const cutoffEnd = cutoffYear ? dateOf(`${cutoffYear}-12-31`) : null;
     for (const { button, role } of roleButtons.values()) {
       const startsAfter = Boolean(cutoffEnd && role.from > cutoffEnd);
-      if (startsAfter) {
+      const topicHidden = Boolean(topicFilter) && isPhoneHideScope() && role.topic !== topicFilter;
+      const unavailable = startsAfter || topicHidden;
+      if (unavailable) {
         if (primer.get() === button) primer.clear();
         if (document.activeElement === button) button.blur();
       }
-      button.hidden = startsAfter;
-      button.tabIndex = startsAfter ? -1 : 0;
+      button.hidden = unavailable;
+      button.tabIndex = unavailable ? -1 : 0;
+      button.classList.toggle('is-topic-hidden', topicHidden);
       const to = cutoffEnd && role.to > cutoffEnd ? cutoffEnd : role.to;
       const left = axisPct(role.from, axisFrom);
       const width = startsAfter ? 0 : Math.max(0, axisPct(to, axisFrom) - left);
@@ -308,17 +330,30 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
     }
     for (const ticks of tickSets) {
       for (const tick of ticks) {
-        tick.el.classList.toggle('is-after', Boolean(cutoff != null && tick.record.year > cutoff));
+        tick.el.classList.toggle('is-after', Boolean(cutoffYear != null && tick.record.year > cutoffYear));
       }
     }
     refresh();
   }
+
+  function applyAsOf(year) {
+    cutoffYear = Number.isFinite(year) ? year : null;
+    updateAvailability();
+  }
+
+  function applyTopicFilter(topic) {
+    topicFilter = topic || null;
+    updateAvailability();
+  }
+
+  on('console:topic', (event) => applyTopicFilter(event && event.detail && event.detail.topic));
 
   return {
     scrubTo,
     hitRole(id) { return activateRole(String(id)); },
     refresh,
     applyAsOf,
+    applyTopicFilter,
   };
 }
 

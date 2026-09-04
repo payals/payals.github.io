@@ -201,6 +201,26 @@ a:hover {
   border-bottom-color: var(--accent);
 }
 
+/* Finding 7 (adversarial-review-4): the phase-3 spec's own arbitration
+   table lists "topbar nav" among the primary controls that get a 44px
+   floor on a phone, alongside status bar items, links, legend chips and
+   row links -- this diff's phone-page work never actually applied it
+   here. inline-flex plus align-items:center centers each link's own,
+   single, self-contained text node (never a mixed run shared with a
+   sibling the way a paragraph's inline content can be), so this is safe
+   the way .m-line's stretched-link technique below is not. min-width
+   keeps the two-letter "cv" link from being a 44px-tall sliver. */
+@media (max-width: 767px) {
+  .topbar__nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 var(--space-2);
+  }
+}
+
 @media (min-width: 768px) {
   .topbar__tagline {
     order: 0;
@@ -1032,8 +1052,22 @@ a:hover {
        arithmetic everywhere else is unchanged. */
     grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
+  /* PP1 (phase 3): #main is now the shell's grid item here (it wraps the
+     phone page and the console so the two share one main landmark and one
+     id="main"), and a grid item's own stretch does not flow through a
+     plain block child on its own. #main becomes a one-child flex column
+     so its stretched, definite height reaches .console the same way it
+     used to when .console was the grid item directly; flex: 1 replaces
+     the old height: auto once .console is the thing being stretched
+     rather than the thing stretched into. */
+  .shell--landing #main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   .shell--landing .console {
-    height: auto;
+    flex: 1;
+    min-height: 0;
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   }
   .shell--landing .topbar__tagline {

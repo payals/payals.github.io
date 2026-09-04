@@ -91,6 +91,7 @@ import {
   el,
   hitRow,
   mark,
+  on,
   pad2,
   pct,
   roving,
@@ -134,6 +135,7 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     refresh() {},
     marks() { return []; },
     applyAsOf() {},
+    applyTopicFilter() {},
   };
   if (!plot) return noop;
 
@@ -352,19 +354,51 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
    * it -- hitRow() itself also refuses a scrubber-hidden row, so a stray
    * mouse click on a dimmed mark still does nothing. `year` null (or any
    * non-finite value) resets every mark to live.
+   *
+   * adversarial-review-4 finding 4: a mark can also point at a row the
+   * phone-forced topic filter has hidden (features.scss §16), a second,
+   * independent reason a mark can be unavailable. `asOfCutoff` and
+   * `topicFilter` are tracked separately and recomposed together in
+   * updateAvailability() below, so applyAsOf() and applyTopicFilter() --
+   * called independently, from the scrubber and from topics.js's
+   * `console:topic` event -- never clobber each other's exclusions the
+   * way two independent `rover.setAvailable()` callers over the same
+   * boolean would.
    */
-  function applyAsOf(year) {
-    const cutoff = Number.isFinite(year) ? year : null;
+  let asOfCutoff = null;
+  let topicFilter = null;
+
+  function isPhoneHideScope() {
+    return document.documentElement.classList.contains('console-forced')
+      && Boolean(window.matchMedia) && window.matchMedia('(max-width: 767px)').matches;
+  }
+
+  function updateAvailability() {
     for (const item of markerRecords) {
-      const after = cutoff != null && item.spec.year > cutoff;
+      const after = asOfCutoff != null && item.spec.year > asOfCutoff;
+      const topicHidden = Boolean(topicFilter) && isPhoneHideScope() && item.spec.topic !== topicFilter;
+      const unavailable = after || topicHidden;
       item.el.classList.toggle('is-after', after);
-      rover.setAvailable(item.el, !after);
-      if (after) {
+      item.el.classList.toggle('is-topic-hidden', topicHidden);
+      rover.setAvailable(item.el, !unavailable);
+      if (unavailable) {
         if (primer.get() === item.el) primer.clear();
         if (document.activeElement === item.el) item.el.blur();
       }
     }
   }
+
+  function applyAsOf(year) {
+    asOfCutoff = Number.isFinite(year) ? year : null;
+    updateAvailability();
+  }
+
+  function applyTopicFilter(topic) {
+    topicFilter = topic || null;
+    updateAvailability();
+  }
+
+  on('console:topic', (event) => applyTopicFilter(event && event.detail && event.detail.topic));
 
   root.addEventListener('pointermove', (event) => scrubAt(event.clientX));
   root.addEventListener('pointerleave', clearScrub);
@@ -443,6 +477,7 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     refresh,
     marks() { return markerRecords.map((item) => item.el); },
     applyAsOf,
+    applyTopicFilter,
   };
 }
 
