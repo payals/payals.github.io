@@ -18,6 +18,7 @@
 - 2026-07-21 Deep-interview for ladder post: spawning field-fact-check + receipts-audit agents at Round 0 (before questions) meant evidence arrived mid-interview; contrarian round caught that ladder order contradicts field record → claim recast as "compression, not order" before drafting.
 
 ## What Worked (cont.)
+- 2026-09-04 Phone changes: publish the built site to a here.now preview (`~/.claude/skills/here-now/scripts/publish.sh <built dir>`) and get Payal's verdict on her phone before pushing; two pushed phone layouts (folded console, text-list page) were rejected on sight, the previewed card landing was approved first try. Domain is behind Cloudflare, so http→https is a Cloudflare "Always Use HTTPS" toggle, not a GitHub Pages setting.
 - 2026-09-03 Codex `adversarial-review --wait --scope branch --base master` as a second-family check after Claude's own review found six real issues Claude's reviewer missed (malformed feed published as deletions, mutable action tags with write permission, Markdown injection through Liquid, no-site not clearing the now line, reader cancel race, WCAG 2.1.4 single-key shortcuts). Run it before every push.
 - 2026-09-03 Adversarial verifiers per acceptance group with "reproduce, do not trust EVIDENCE.md" caught the boot budget measured from DOMContentLoaded instead of navigation start, and the slider showing an empty talks pane for 2013 to 2017.
 
