@@ -1,5 +1,14 @@
 <head>
   <meta charset="utf-8">
+  {%- comment -%} PM6 (2026-09-04, minimal phone landing): the real fix
+  for an http:// visit is Cloudflare's "Always Use HTTPS", a dashboard
+  setting Payal owns; this is the client-side fallback for whatever gap
+  it does not cover. First script in the document, before anything else
+  loads, so a stray http:// hit costs at most one redirect instead of a
+  page's worth of requests over the insecure scheme. Guarded to this
+  site's own host so it can never fire against a Jekyll preview, a
+  file:// open, or a bare IP during local development. {%- endcomment -%}
+  <script>if (location.protocol === "http:" && location.hostname === "payalsingh.me") { location.replace("https://" + location.hostname + location.pathname + location.search + location.hash); }</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>{% if page.title %}{{ page.title | escape }} - {{ site.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>

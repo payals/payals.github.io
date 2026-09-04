@@ -31,13 +31,6 @@ than holding a year of its own. {%- endcomment -%}
 {%- assign mobile_more_posts = site.posts.size | minus: mobile_visible -%}
 {%- assign mobile_initial_posts = visible_posts | minus: mobile_visible -%}
 {%- assign more_visible_talks = visible_talks | minus: mobile_visible -%}
-{%- comment -%} PP3 (phone page): the upcoming talk plus the three most
-recent, the latest five posts. Independent of the folded console's own
-mobile_visible (3 rows before a disclosure): the phone page is a different
-document, not the console's fold, so it gets its own counts. {%- endcomment -%}
-{%- assign phone_talks_visible = 4 -%}
-{%- assign phone_talks_more = ordered.size | minus: phone_talks_visible -%}
-{%- assign phone_posts_visible = 5 -%}
 <!DOCTYPE html>
 <html lang="en">
 {% include head.html %}
@@ -99,133 +92,72 @@ document, not the console's fold, so it gets its own counts. {%- endcomment -%}
   staying on the console div below). {%- endcomment %}
   <main id="main" tabindex="-1">
 
-    {%- comment -%} PP1-PP5: the phone page. Below 768px this section
-    renders and the console beneath it is display:none; at 768px and up it
-    is display:none and the console renders, as does a phone carrying
-    ?console=1 (the console-forced class set by head.html before paint).
-    Every id below is m--prefixed so nothing collides with the console's
-    own ids while both sit in one document. No chart, no legend, no
-    slider, no terminal, no status bar, no boot log (PP4), and no script
-    beyond the one at the end of this file that maps #talks, #writing,
-    #cv, #now and #links to their m- id here (PP2). {%- endcomment %}
+    {%- comment -%} PM1-PM6 (2026-09-04, "minimal phone page, second pass":
+    "looks worse now, we need a redesign for mobile or at least
+    minimalistic principles, too much text"). Binding over PP3 and PP5.
+    Below 768px this section renders and the console beneath it is
+    display:none; at 768px and up it is display:none and the console
+    renders, as does a phone carrying ?console=1 (the console-forced
+    class set by head.html before paint). One card: name, positioning,
+    a two-line now block, three door cards to real pages (PM2), a
+    four-link row, and a footer link to the full console. No lists, no
+    dates column, no handles, no reading line, no topbar nav (features.scss
+    section 15 hides the topbar's tagline and nav here). No chart, no
+    legend, no slider, no terminal, no status bar, no boot log, and no
+    script beyond the one at the end of this file, which now only maps
+    #talks and #cv (PM2 moved those from in-page sections to real pages,
+    so it navigates instead of scrolling). Every number below is Liquid,
+    not hand-typed (PM5). {%- endcomment %}
+    {%- assign pm_next_talk = upcoming | first -%}
+    {%- if pm_next_talk %}
+    {%- assign pm_next_venue = pm_next_talk.venue | split: "," | first -%}
+    {%- assign pm_next_date = pm_next_talk.date | date: "%b %-d" -%}
+    {%- endif -%}
+    {%- if latest %}{%- assign pm_latest_date = latest.date | date: "%b %-d" -%}{%- endif -%}
+    {%- comment -%} Years around Postgres: site.time is the build clock, so
+    this never needs a hand edit; the start year is read off career_start
+    above (itself derived from data/cv.md's "2013-June 2026"), not a second
+    literal 2013. {%- endcomment -%}
+    {%- assign pm_year_now = site.time | date: "%Y" | plus: 0 -%}
+    {%- assign pm_start_year = career_start | slice: 0, 4 | plus: 0 -%}
+    {%- assign pm_years = pm_year_now | minus: pm_start_year -%}
     <div class="phone-page" id="phone-page">
 
-      <section class="m-section" id="m-now" aria-labelledby="m-now-title">
-        <h2 class="m-section__title" id="m-now-title">now</h2>
-        <p class="m-line"><span class="m-label">role</span> Staff Data Engineer at Lore, since June 2026</p>
-        {%- for talk in upcoming limit:1 %}
-        {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-        <p class="m-line"><span class="m-label">speaking</span> {% include safe-link.html url=talk.event_url text=talk_title_safe target="_blank" rel="noopener" %}, {{ talk.venue | escape }}, {{ talk.date }}</p>
-        {%- endfor %}
-        {%- if latest %}
-        <p class="m-line"><span class="m-label">writing</span> <a href="{{ latest.url | escape }}">{{ latest.title | escape }}</a>, {{ latest.date | date: "%Y-%m-%d" }}</p>
+      <h1 class="pm-name">{{ site.author | escape }}</h1>
+      <p class="pm-role">Staff platform engineer</p>
+      <p class="pm-desc">Postgres &middot; data platforms &middot; AI-native systems</p>
+
+      <div class="pm-now">
+        <p class="pm-now__line">Staff Data Engineer at Lore</p>
+        {%- if pm_next_talk %}
+        {%- capture pm_speaking_text %}Speaking at {{ pm_next_venue | escape }}, {{ pm_next_date }}{% endcapture %}
+        <p class="pm-now__line">{% include safe-link.html url=pm_next_talk.event_url text=pm_speaking_text target="_blank" rel="noopener" %}</p>
         {%- endif %}
-        {%- if now.reading and now.reading != "" %}
-        <p class="m-line"><span class="m-label">reading</span> {{ now.reading | escape }} <a href="/reading/">past reads</a></p>
-        {%- endif %}
-      </section>
+      </div>
 
-      <section class="m-section" id="m-talks" aria-labelledby="m-talks-title">
-        <h2 class="m-section__title" id="m-talks-title">talks</h2>
-        <ul class="m-list">
-          {%- for talk in ordered limit: phone_talks_visible %}
-          {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-          <li class="m-talk">
-            <p class="m-talk__line"><span class="m-talk__date">{% if talk.date %}{{ talk.date }}{% else %}{{ talk.date_label | escape }}{% endif %}</span> {% include safe-link.html url=talk.event_url text=talk_title_safe class="m-talk__title" target="_blank" rel="noopener" %}{% if talk.status == 'upcoming' %} <span class="badge badge--ok">upcoming</span>{% endif %}</p>
-            <p class="m-talk__venue">{{ talk.venue | escape }}</p>
-          </li>
-          {%- endfor %}
-        </ul>
-        {%- if phone_talks_more > 0 or leads.size > 0 %}
-        <details class="m-details">
-          <summary>all {{ ordered.size }} talks</summary>
-          {%- if phone_talks_more > 0 %}
-          <ul class="m-list">
-            {%- for talk in ordered offset: phone_talks_visible %}
-            {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-            {%- capture talk_progsched_safe %}{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}{% endcapture %}
-            {%- capture talk_archive_safe %}{{ talk.archive_label | default: "archive" | escape }}{% endcapture %}
-            <li class="m-talk">
-              <p class="m-talk__line"><span class="m-talk__date">{% if talk.date %}{{ talk.date }}{% else %}{{ talk.date_label | escape }}{% endif %}</span> {% include safe-link.html url=talk.event_url text=talk_title_safe class="m-talk__title" target="_blank" rel="noopener" %}</p>
-              <p class="m-talk__venue">{{ talk.venue | escape }}
-                {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
-                &middot; {% include safe-link.html url=talk.event_url text=talk_progsched_safe target="_blank" rel="noopener" %}
-                {%- if talk.archive_url %} &middot; {% include safe-link.html url=talk.archive_url text=talk_archive_safe target="_blank" rel="noopener" %}{% endif %}
-                {%- if talk.slides_url %} &middot; {% include safe-link.html url=talk.slides_url text="slides" target="_blank" rel="noopener" %}{% endif %}
-              </p>
-            </li>
-            {%- endfor %}
-          </ul>
-          {%- endif %}
-          {%- if leads.size > 0 %}
-          <h3 class="m-subhead" id="m-talks-leads-title">archive leads</h3>
-          <p class="m-meta">Remembered appearances still being reconstructed. No title or date is claimed without a recovered record.</p>
-          <ul class="m-list" aria-labelledby="m-talks-leads-title">
-            {%- for lead in leads %}
-            <li class="m-talk">
-              <p class="m-talk__line"><span class="m-talk__date">{{ lead.era | escape }}</span> <span class="m-talk__title">{{ lead.label | escape }}</span></p>
-              <p class="m-talk__venue">{{ lead.detail | escape }}</p>
-            </li>
-            {%- endfor %}
-          </ul>
-          {%- endif %}
-          <p class="m-meta">Schedule records establish scheduling, not delivery. Source: <a href="/data/talks.json">talks.json</a>.</p>
-        </details>
-        {%- endif %}
-      </section>
+      <div class="pm-doors">
+        <a class="pm-door" href="/talks/">
+          <span class="pm-door__title">Talks</span>
+          <span class="pm-door__meta">{{ sourced.size }} talk{% unless sourced.size == 1 %}s{% endunless %}{% if pm_next_date %} &middot; next {{ pm_next_date }}{% endif %}</span>
+        </a>
+        <a class="pm-door" href="/blog/">
+          <span class="pm-door__title">Writing</span>
+          <span class="pm-door__meta">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if pm_latest_date %} &middot; latest {{ pm_latest_date }}{% endif %}</span>
+        </a>
+        <a class="pm-door" href="/cv/">
+          <span class="pm-door__title">CV</span>
+          <span class="pm-door__meta">{{ pm_years }} years around Postgres</span>
+        </a>
+      </div>
 
-      <section class="m-section" id="m-writing" aria-labelledby="m-writing-title">
-        <h2 class="m-section__title" id="m-writing-title">writing</h2>
-        <ul class="m-list">
-          {%- for post in site.posts limit: phone_posts_visible %}
-          {%- assign words = post.content | strip_html | number_of_words -%}
-          {%- assign minutes = words | plus: 199 | divided_by: 200 -%}
-          <li class="m-post">
-            <p class="m-post__line"><span class="m-post__date">{{ post.date | date: "%Y-%m-%d" }}</span> <a class="m-post__title" href="{{ post.url | escape }}">{{ post.title | escape }}</a> <span class="m-post__min">{{ minutes }} min</span></p>
-          </li>
-          {%- endfor %}
-        </ul>
-        <p class="m-actions"><a href="/blog/">all posts</a></p>
-      </section>
+      <ul class="pm-links">
+        <li><a href="https://github.com/payals" target="_blank" rel="noopener">github</a></li>
+        <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener">linkedin</a></li>
+        <li><a href="mailto:{{ site.email }}">email</a></li>
+        <li><a href="/feed.xml">rss</a></li>
+      </ul>
 
-      <section class="m-section" id="m-cv" aria-labelledby="m-cv-title">
-        <h2 class="m-section__title" id="m-cv-title">cv</h2>
-        <p class="m-lede">Staff platform engineer working across data systems, DevOps, and AI-native systems.</p>
-        <ul class="m-list">
-          <li class="m-role"><strong>Staff Data Engineer, Lore</strong><span class="m-role__dates">2026-06 to now</span></li>
-          <li class="m-role"><strong>Senior Database Reliability Engineer</strong><span class="m-role__dates">{{ career_start | slice: 0, 4 }} to 2026-06</span></li>
-        </ul>
-        <p class="m-meta">M.S. Computer Science, UMBC. B.E. Computer Science, Panjab University.</p>
-        <p class="m-actions"><a href="/data/cv.pdf" download="payal-singh-cv.pdf">download pdf</a></p>
-        <details class="m-details">
-          <summary>full cv</summary>
-          {%- comment -%} The same drop-h1-and-shift transform the console's
-          own cv pane uses, plus one more step: every kramdown auto id in
-          this converted block gets an m- prefix. Without it this copy and
-          the console's copy of the same data/cv.md would both mint
-          id="professional-record" and the page would carry a duplicate id,
-          which PP1 rules out. The prefix works on any heading text data/cv.md
-          ever grows into, because it rewrites every id="..." kramdown wrote
-          rather than naming the headings by hand. {%- endcomment %}
-          <div class="prose prose--mono">{{ cv_markdown | markdownify | split: '</h1>' | last | replace: '<h3', '<h4' | replace: '</h3>', '</h4>' | replace: '<h2', '<h3' | replace: '</h2>', '</h3>' | replace: 'id="', 'id="m-' }}</div>
-        </details>
-      </section>
-
-      <section class="m-section" id="m-links" aria-labelledby="m-links-title">
-        <h2 class="m-section__title" id="m-links-title">links</h2>
-        <ul class="m-links">
-          <li><a href="https://github.com/payals" target="_blank" rel="noopener">github<span class="m-links__host">/payals</span></a></li>
-          <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener">codeberg<span class="m-links__host">/sillygoose</span></a></li>
-          <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener">linkedin<span class="m-links__host">/in/payalsingh</span></a></li>
-          <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener">medium<span class="m-links__host">/@reliable-by-design</span></a></li>
-          <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener">older<span class="m-links__host">/penningpence</span></a></li>
-          <li><a href="/reading/">reading<span class="m-links__host">/books</span></a></li>
-          <li><a href="mailto:psinghpayal@outlook.com">email</a></li>
-          <li><a href="/feed.xml">rss</a></li>
-        </ul>
-      </section>
-
-      <p class="m-foot">phone view &middot; <a href="/?console=1">open the full console</a></p>
+      <p class="pm-foot"><a href="/?console=1">open the full console</a></p>
 
     </div>
 
@@ -754,34 +686,39 @@ resize. {%- endcomment %}
   else wideQuery.addListener(onChange);
 })();
 </script>
-{%- comment -%} PP1/PP2: the phone page's only other script. The phone
-sections use m- prefixed ids (PP1), so a fragment like #talks, written by
-the topbar nav or a shared link, has nothing to scroll to on a phone
-without ?console=1 -- the desktop pane with that literal id is
-display:none there and the browser's own fragment navigation finds no
-box to scroll. This maps the five console fragments to their phone
-section on load and on every later hash change; everywhere else (768px
-and up, or console=1) it is a no-op because forced() is true or the
-plain id already resolves. Nothing here imports, fetches, or times
-anything, and it runs whether or not the importer above decided to boot
-the console.
+{%- comment -%} PP2 (phase-3, updated for PM1): the phone landing's only
+other script. PM1 replaced the five m--prefixed sections a fragment like
+#talks or #cv used to scroll to with two real pages (PM2: /talks/,
+/cv/), so a shared link, a status-bar click carried over from another
+page's navbar (which still points at /#talks and /#cv, navbar.html), or
+a hand-typed hash now has nowhere on this document to land. Only #talks
+and #cv are handled: navbar.html never links this page to /#now,
+/#writing or /#links, so those never need a phone-landing target.
 
-Finding 5 (adversarial-review-4): the console's hash grammar composes a
+Decision: navigate straight to /talks/ or /cv/ instead of scrolling to
+the matching door card. The door card is a two-line summary, not the
+content the link promised -- a visitor who followed /#talks from a blog
+post wants the talks list, not a card that itself just links to it.
+location.replace so the mid-navigation hash never becomes a dead back-
+button entry. Everywhere else (768px and up, or console=1) this is a
+no-op because forced() is true or isPhone() is false. Nothing here
+imports, fetches, or times anything, and it runs whether or not the
+importer above decided to boot the console.
+
+The leading-segment parser is unchanged from the pre-PM1 version
+(adversarial-review-4 finding 5): the console's hash grammar composes a
 year and a topic onto the leading segment with `&` (#cv&year=2018&topic=
 security), and a post reader nests a slug under a slash (#writing/<slug>).
-The old lookup indexed the whole fragment, so every composite or nested
-URL the console itself produces missed the fixed MAP and stranded a
-shared link or a back/forward entry on the bare phone page. This takes
-only the segment before the first `&`, then only the segment before its
-first `/`, so #cv&year=2018&topic=ai, #talks&topic=security and
-#writing/<slug> all resolve exactly like the bare #cv, #talks and
-#writing they compose with. decodeURIComponent can throw on a malformed
-percent-escape from a hand-edited URL; that is caught and treated as no
-segment at all, same as an absent hash, rather than aborting the whole
-handler. {%- endcomment %}
+Taking only the segment before the first `&`, then only the segment
+before its first `/`, means #cv&year=2018&topic=ai and #talks&topic=
+security still resolve like the bare #cv and #talks they compose with,
+should either ever reach this page. decodeURIComponent can throw on a
+malformed percent-escape from a hand-edited URL; that is caught and
+treated as no segment at all, same as an absent hash, rather than
+aborting the whole handler. {%- endcomment %}
 <script>
 (function () {
-  var MAP = { now: 'm-now', talks: 'm-talks', writing: 'm-writing', cv: 'm-cv', links: 'm-links' };
+  var MAP = { talks: '/talks/', cv: '/cv/' };
   function isPhone() {
     return window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
   }
@@ -799,11 +736,9 @@ handler. {%- endcomment %}
   }
   function go() {
     if (!isPhone() || forced()) return;
-    var target = document.getElementById(MAP[leadingSegment()]);
-    if (!target) return;
-    var details = target.closest ? target.closest('details') : null;
-    if (details) details.open = true;
-    target.scrollIntoView();
+    var dest = MAP[leadingSegment()];
+    if (!dest) return;
+    location.replace(dest);
   }
   window.addEventListener('hashchange', go);
   if (document.readyState === 'loading') {
