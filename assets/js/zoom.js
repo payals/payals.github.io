@@ -43,6 +43,7 @@
  */
 
 import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
+import { firstHashPart, hashParts } from './chart-util.js';
 
 const ZOOMABLE = ['now', 'talks', 'writing', 'cv'];
 const ORDER = ['now', 'talks', 'writing', 'cv', 'links', 'terminal'];
@@ -98,9 +99,15 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     return ZOOMABLE.includes(id) && Boolean(paneEl(id));
   }
 
+  // Phase 3: the hash is `leading&key=value` segments. Zoom owns the leading
+  // segment and must keep every key=value segment (the topic filter) intact,
+  // so zooming a pane never clears a filter.
   function setHash(fragment) {
     const base = location.pathname + location.search;
-    history.replaceState(null, '', fragment ? `${base}#${fragment}` : base);
+    const kept = hashParts().filter((p) => p.includes('='));
+    const parts = fragment ? [fragment, ...kept] : kept;
+    const hash = parts.join('&');
+    history.replaceState(null, '', hash ? `${base}#${hash}` : base);
   }
 
   function zoom(id) {
@@ -113,10 +120,10 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     if (current) {
       if (reader.isOpen()) reader.close({ silent: true });
       unzoomDom();
-    } else if (/^#20\d\d$/.test(location.hash)) {
+    } else if (/^20\d\d$/.test(firstHashPart())) {
       // Starting fresh from the grid with a scrubber year in the hash: keep
       // it so restore() can put it back once this zoom session ends.
-      yearHashBeforeZoom = location.hash;
+      yearHashBeforeZoom = firstHashPart();
     }
 
     const pane = paneEl(id);
@@ -144,7 +151,7 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     const id = current;
     if (reader.isOpen()) reader.close({ silent: true });
     unzoomDom();
-    setHash(yearHashBeforeZoom ? yearHashBeforeZoom.slice(1) : '');
+    setHash(yearHashBeforeZoom || '');
     yearHashBeforeZoom = null;
     panes.focusPane(id);
     notify();
@@ -185,7 +192,7 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
   function applyHash() {
     let raw;
     try {
-      raw = decodeURIComponent(location.hash.slice(1));
+      raw = firstHashPart();
     } catch (err) {
       return false;
     }
@@ -459,7 +466,7 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
         return;
       }
       skipNextHashZoom = true;
-      if (location.hash === `#${id}`) {
+      if (firstHashPart() === id) {
         // Same hash: no hashchange fires, so focus the pane here.
         skipNextHashZoom = false;
         e.preventDefault();

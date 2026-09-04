@@ -320,6 +320,116 @@ export function registerPhase2Commands({ registry, palette, zoom, panes, search 
   }
 }
 
+// ---- phase 3: topic filter command and completion (worker T) ----
+// topics.js owns filter state. This section only adapts that state to the
+// terminal registry and its input, so the command and its argument completion
+// stay beside the rest of the command surface.
+const TOPIC_COMPLETION_INPUTS = new WeakSet();
+
+/**
+ * Register `filter <topic|off>` and its topic-name completion.
+ *
+ * The command entry exposes complete(prefix), which is the registry contract
+ * for argument-aware completion. The phase-2 Terminal predates that hook and
+ * only knows its original cat, open and zoom pools, so this adapter handles a
+ * Tab pressed after `filter ` in capture phase. Command-name completion still
+ * belongs to Terminal and sees `filter` through term.names.
+ */
+export function registerTopicFilterCommand({ registry, term, ids, setTopic, topic, counts }) {
+  if (!registry || !term || typeof setTopic !== 'function' || typeof topic !== 'function') return false;
+
+  const topicIds = [...new Set((Array.isArray(ids) ? ids : [])
+    .map((id) => String(id).toLowerCase())
+    .filter(Boolean))];
+  const choices = [...topicIds, 'off'];
+  const usage = `filter <${choices.join('|')}>`;
+
+  registry.filter = {
+    description: 'filter <topic|off>: light one topic across every pane',
+    usage,
+    complete(prefix = '') {
+      const partial = String(prefix).trim().toLowerCase();
+      return choices.filter((id) => id.startsWith(partial));
+    },
+    handler(args, activeTerm = term) {
+      const value = String(args[0] || '').toLowerCase();
+      if (!value || args.length !== 1) {
+        activeTerm.printLines([
+          dimLine(`usage: ${usage}`),
+          dimLine(`topics: ${topicIds.join('  ')}`),
+          dimLine(`current: ${topic() || 'off'}`),
+        ]);
+        return undefined;
+      }
+
+      if (value === 'off') {
+        setTopic(null);
+        activeTerm.print('filter cleared', { className: 'scrollback__line--dim' });
+        return undefined;
+      }
+
+      if (!topicIds.includes(value)) {
+        activeTerm.printLines([
+          { text: `filter: ${value}: no such topic`, className: 'scrollback__line--err' },
+          dimLine(`topics: ${topicIds.join('  ')}`),
+        ]);
+        return undefined;
+      }
+
+      setTopic(value);
+      const found = typeof counts === 'function' ? counts(value) : null;
+      const talks = found && Number.isFinite(found.talks) ? found.talks : 0;
+      const posts = found && Number.isFinite(found.posts) ? found.posts : 0;
+      activeTerm.print(topicSummary(value, talks, posts), { className: 'scrollback__line--dim' });
+      return undefined;
+    },
+  };
+
+  const input = document.querySelector('[data-input]');
+  if (input && !TOPIC_COMPLETION_INPUTS.has(input)) {
+    TOPIC_COMPLETION_INPUTS.add(input);
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+      const match = input.value.match(/^(filter)(\s+)(\S*)$/i);
+      if (!match) return;
+
+      const partial = match[3].toLowerCase();
+      const matches = registry.filter.complete(partial);
+      // Nothing to offer: leave Tab alone rather than swallowing it, so an
+      // unmatched `filter xyz` still hands the key back to the Terminal.
+      if (matches.length === 0) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const command = `${match[1].toLowerCase()}${match[2]}`;
+      if (matches.length === 1) {
+        term.setValue(`${command}${matches[0]} `);
+        return;
+      }
+
+      const common = topicCommonPrefix(matches);
+      if (common.length > partial.length) term.setValue(`${command}${common}`);
+      else term.print(matches.join('  '), { className: 'scrollback__line--dim' });
+    }, { capture: true });
+  }
+
+  return true;
+}
+
+function topicSummary(id, talks, posts) {
+  return `showing ${talks} talk${talks === 1 ? '' : 's'} and ${posts} post${posts === 1 ? '' : 's'} about ${id}`;
+}
+
+function topicCommonPrefix(words) {
+  let prefix = words[0] || '';
+  for (const word of words.slice(1)) {
+    while (prefix && !word.startsWith(prefix)) prefix = prefix.slice(0, -1);
+  }
+  return prefix;
+}
+// ---- end phase 3: topic filter command and completion ----
+
 /** Intent rules first, then the palette's fuzzy index. */
 function resolvePhrase(raw, term, { registry, search }) {
   const s = raw.toLowerCase().replace(/[?!.,]/g, ' ').replace(/\s+/g, ' ').trim();

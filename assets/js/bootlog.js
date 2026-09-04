@@ -19,11 +19,11 @@
  * and nothing here touches them.
  *
  * Every career line is a record from data/timeline.json (inlined as
- * #timeline-data): the date column carries the entry's label and takes the
- * year token through data-year, the level word is coloured ([ ok ] green,
- * [info] --ink-2, [warn] amber), the kind prefix takes its kind hue, and the
- * text stays --ink. Facts only; entries without a date print last as
- * "undated".
+ * #timeline-data): a year-temperature date column, a kind-coloured column
+ * (talk, post, role or next), then neutral text that wraps inside its own
+ * grid cell. Talk and post titles use the record's real href. Facts only;
+ * entries without a date print last as "undated". The now.json audit entry
+ * is not a career event, so it stays in the data but not in this log.
  *
  * Skip: the skipSignal (any key or click, wired in main.js) prints every
  * remaining line at once. Reduced motion prints the whole log immediately.
@@ -39,7 +39,7 @@
  *
  * Accessibility: the scrollback is role="log" aria-live="polite" so a
  * visitor's own typed commands are announced. That would also mean the
- * whole 26-line career log gets read out unprompted the moment it lands, so
+ * whole career log gets read out unprompted the moment it lands, so
  * this module flips aria-live to "off" for the duration of the boot (header
  * plus career log) and back to "polite" once the very last line has
  * printed, whether that happens on schedule, via skip, or (synchronously)
@@ -50,20 +50,21 @@
 // call (a replay), scaled down from an earlier 750ms-ready schedule (factor
 // 700/750) to buy back the headroom the measurement above needed. Ready at
 // 700 keeps 100ms of the 800ms budget for timer lateness; the career log
-// ends at 740 + 25 * 40 = 1740, inside 2s.
+// ends with its computed summary at 740 + 25 * 40 = 1740, inside 2s.
 const HEADER_AT_MS = [0, 100, 220, 335];
 const BAR_AT_MS = 390;
-const READY_LINE_AT_MS = 600;
 const READY_AT_MS = 700;
 const CAREER_START_MS = 740;
 const CAREER_LINE_MS = 40;
 const BAR_CELLS = 10;
 const BAR_STEP_MS = 30;
-const DATE_COL = 16;
-const KIND_COL = 7;
 
-const LEVEL_WORD = { ok: '[ ok ]', info: '[info]', warn: '[warn]' };
-const KIND_WORD = { talk: '[talk]', post: '[post]', cv: '[cv]', now: '[now]' };
+const CAREER_KINDS = new Set(['cv', 'talk', 'post']);
+
+// Only one direct-to-scrollback playback may own the log at a time. A replay
+// retires the still-running initial career tail (or an earlier replay) before
+// clearing, so two clocks can never interleave their lines.
+let cancelActivePlayback = null;
 
 /**
  * @param {object} opts
@@ -102,6 +103,7 @@ export function runBootLog({ term, console: consoleEl, skipSignal, reducedMotion
 export function replayBootLog({ term, console: consoleEl, timeline }) {
   const out = document.querySelector('[data-scrollback]');
   if (!out) return Promise.resolve();
+  if (cancelActivePlayback) cancelActivePlayback(false);
   term.clear();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const events = buildEvents(out, consoleEl, timeline);
@@ -133,7 +135,9 @@ export function replayBootLog({ term, console: consoleEl, timeline }) {
  */
 function buildEvents(out, consoleEl, timeline) {
   const d = consoleEl ? consoleEl.dataset : {};
-  const records = Array.isArray(timeline) ? timeline.slice() : [];
+  const records = Array.isArray(timeline)
+    ? timeline.filter((entry) => entry && CAREER_KINDS.has(entry.kind))
+    : [];
   const ok = { text: '[ ok ]', className: 'seg--ok' };
   const events = [];
 
@@ -176,10 +180,9 @@ function buildEvents(out, consoleEl, timeline) {
     });
   }
 
-  events.push({
-    at: READY_LINE_AT_MS,
-    run: () => appendLine(out, { segments: [{ text: 'ready. type help, or press 0 to 4 to jump to a pane.' }] }),
-  });
+  // Readiness is the cursor/prompt handoff at 700ms. The visible ready
+  // summary belongs at the end of the career log, which may keep printing
+  // in the background without blocking input.
   events.push({ at: READY_AT_MS, ready: true, run() {} });
 
   // Career log: dated records ascending, undated last, one line each.
@@ -193,28 +196,84 @@ function buildEvents(out, consoleEl, timeline) {
     events.push({ at: CAREER_START_MS + i * CAREER_LINE_MS, run: () => appendLine(out, careerLine(entry)) });
   });
 
+  const summary = careerSummary(d, records);
+  events.push({
+    at: CAREER_START_MS + records.length * CAREER_LINE_MS,
+    run: () => appendLine(out, {
+      className: 'bootlog__summary',
+      segments: [
+        { text: '[ ok ]', className: 'seg--ok' },
+        { text: ` ready. ${plural(summary.years, 'year')}, ${plural(summary.talks, 'sourced talk')}, ${plural(summary.posts, 'post')}. type help, replay, or drag the timeline.` },
+      ],
+    }),
+  });
+
   return events;
 }
 
 /** One timeline entry as a scrollback line. */
 function careerLine(entry) {
-  const label = String(entry.label || 'undated');
   const year = entry.date ? String(entry.date).slice(0, 4) : null;
-  const dateSeg = year
-    ? { text: label.padEnd(DATE_COL), className: 'seg--year', attrs: { 'data-year': year } }
-    : { text: label.padEnd(DATE_COL), className: 'seg--dim' };
-  const level = LEVEL_WORD[entry.level] || LEVEL_WORD.info;
-  const kindWord = KIND_WORD[entry.kind] || `[${entry.kind}]`;
-  const segments = [
-    dateSeg,
-    { text: level, className: `seg--${entry.level in LEVEL_WORD ? entry.level : 'info'}` },
-    { text: ' ' },
-    { text: kindWord, className: `seg--${entry.kind}` },
-    { text: ' '.repeat(Math.max(1, KIND_COL - kindWord.length)) },
-    { text: String(entry.text || '') },
-  ];
-  if (entry.detail) segments.push({ text: ` · ${entry.detail}`, className: 'seg--dim' });
-  return { segments };
+  const next = entry.kind === 'talk' && entry.status === 'upcoming';
+  return {
+    career: true,
+    className: 'bootlog__entry',
+    year,
+    date: careerDate(entry),
+    kind: entry.kind,
+    kindLabel: entry.kind === 'cv' ? 'role' : next ? 'next' : entry.kind,
+    text: String(entry.text || ''),
+    detail: entry.detail ? String(entry.detail) : '',
+    href: (entry.kind === 'talk' || entry.kind === 'post') ? safeHref(entry.href) : null,
+  };
+}
+
+/** Month precision keeps the date column compact; years and circa years
+ * retain the evidence precision recorded in timeline.json. */
+function careerDate(entry) {
+  if (!entry.date) return 'undated';
+  const year = String(entry.date).slice(0, 4);
+  if (entry.precision === 'circa') return `c.${year}`;
+  if (entry.precision === 'year') return year;
+  return String(entry.date).slice(0, 7);
+}
+
+/** Summary values come from the same rendered/data sources as the panes. */
+function careerSummary(dataset, records) {
+  const start = String(dataset.careerStart || records.find((entry) => entry.kind === 'cv' && entry.date)?.date || '');
+  const startYear = parseInt(start.slice(0, 4), 10);
+  const now = new Date();
+  let years = Number.isFinite(startYear) ? now.getFullYear() - startYear : 0;
+  if (Number.isFinite(startYear)) {
+    const anniversary = new Date(now.getFullYear(), 0, 1);
+    const startMonth = /^\d{4}-\d{2}/.test(start) ? parseInt(start.slice(5, 7), 10) - 1 : 0;
+    const startDay = /^\d{4}-\d{2}-\d{2}/.test(start) ? parseInt(start.slice(8, 10), 10) : 1;
+    anniversary.setMonth(startMonth, startDay);
+    if (anniversary > now) years--;
+  }
+
+  const sourcedTalks = Number(dataset.talksSourced);
+  const postCount = Number(dataset.posts);
+  return {
+    years: Math.max(0, years),
+    talks: Number.isFinite(sourcedTalks)
+      ? sourcedTalks
+      : records.filter((entry) => entry.kind === 'talk' && entry.level !== 'warn').length,
+    posts: Number.isFinite(postCount)
+      ? postCount
+      : records.filter((entry) => entry.kind === 'post').length,
+  };
+}
+
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+/** Only navigation schemes already used by the site can become anchors. */
+function safeHref(value) {
+  const href = String(value || '').trim();
+  if ((href.startsWith('/') && !href.startsWith('//')) || href.startsWith('#') || /^https?:\/\//i.test(href)) return href;
+  return null;
 }
 
 /**
@@ -246,14 +305,18 @@ function play(events, skipSignal, { resolveAtEnd = false, origin = null, onDone 
       if (ev.ready && !resolveAtEnd) settle();
     };
 
-    const finish = () => {
+    const finish = (flush = true) => {
       if (finished) return;
       finished = true;
       clearTimeout(timer);
-      for (; idx < events.length; idx++) runEvent(events[idx]);
+      if (flush) for (; idx < events.length; idx++) runEvent(events[idx]);
       settle();
       if (onDone) onDone();
+      if (cancelActivePlayback === cancel) cancelActivePlayback = null;
     };
+
+    const cancel = (flush = false) => finish(flush);
+    cancelActivePlayback = cancel;
 
     const step = () => {
       if (finished) return;
@@ -266,14 +329,14 @@ function play(events, skipSignal, { resolveAtEnd = false, origin = null, onDone 
         runEvent(events[idx]);
         idx++;
       }
-      finish();
+      finish(false);
     };
 
     if (skipSignal && skipSignal.aborted) {
       finish();
       return;
     }
-    if (skipSignal) skipSignal.addEventListener('abort', finish, { once: true });
+    if (skipSignal) skipSignal.addEventListener('abort', () => finish(), { once: true });
     step();
   });
 }
@@ -285,6 +348,12 @@ function play(events, skipSignal, { resolveAtEnd = false, origin = null, onDone 
 function appendLine(out, line) {
   const el = document.createElement('p');
   el.className = ['scrollback__line', line.className].filter(Boolean).join(' ');
+  if (line.career) {
+    appendCareerLine(el, line);
+    out.appendChild(el);
+    out.scrollTop = out.scrollHeight;
+    return el;
+  }
   for (const seg of line.segments) {
     let node;
     if (seg.href) {
@@ -309,4 +378,42 @@ function appendLine(out, line) {
   out.appendChild(el);
   out.scrollTop = out.scrollHeight;
   return el;
+}
+
+function appendCareerLine(el, line) {
+  if (line.year) el.dataset.year = line.year;
+  const asof = parseInt(document.body.dataset.asof, 10);
+  if (line.year && Number.isFinite(asof) && Number(line.year) > asof) el.classList.add('is-after');
+
+  const date = document.createElement('span');
+  date.className = line.year ? 'bootlog__date seg--year' : 'bootlog__date seg--dim';
+  if (line.year) date.dataset.year = line.year;
+  date.textContent = line.date;
+
+  const kind = document.createElement('span');
+  kind.className = 'bootlog__kind';
+  kind.dataset.kind = line.kind;
+  kind.textContent = line.kindLabel;
+
+  const message = document.createElement('span');
+  message.className = 'bootlog__message';
+  if (line.href) {
+    const anchor = document.createElement('a');
+    anchor.href = line.href;
+    anchor.textContent = line.text;
+    if (/^https?:\/\//i.test(line.href)) {
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+    }
+    message.appendChild(anchor);
+  } else {
+    message.appendChild(document.createTextNode(line.text));
+  }
+  if (line.detail) {
+    const detail = document.createElement('span');
+    detail.className = 'bootlog__detail';
+    detail.textContent = ` · ${line.detail}`;
+    message.appendChild(detail);
+  }
+  el.append(date, kind, message);
 }

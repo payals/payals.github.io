@@ -1,6 +1,8 @@
 /**
- * scrubber.js: the year scrubber (B2). A range input in the topbar, 2013 to
- * 2026, that shows the panes as of a year. Nothing here runs during boot:
+ * scrubber.js: the year scrubber (B2, SB1 to SB4). A range input in the
+ * topbar, 2013 to a live-state sentinel, that shows the panes as of a year.
+ * The rightmost value is rendered as "now" and shows every record. Nothing
+ * here runs during boot:
  * the panes are complete at first paint and change only on user input (the
  * range's input event, the "back to now" button) or a #<year> hash.
  *
@@ -18,16 +20,20 @@
  * counts; every talk before 2019 lives only inside the talks pane's
  * collapsed "show N more" details, so a past year with talks but nothing
  * visible in the primary list forces that details open (and restores the
- * visitor's own open/closed state once back at 2026); the topbar banner
- * reads "as of <year>: N sourced talks, M posts" beside "back to now", and
- * one dim line goes to the terminal (debounced 150ms while dragging). 2026
- * restores the live state exactly from a snapshot taken at setup.
+ * visitor's own open/closed state once back at now); a persistent status
+ * bar line reads "as of <year>: N talks, M posts, ROLE." beside "back to
+ * now", and one dim line goes to the terminal (debounced 150ms while
+ * dragging). The rightmost value restores the live state exactly from a
+ * snapshot taken at setup.
  *
  * The hash mirrors the year (#2018, replaceState, so no history entries and
- * no hashchange loop) but only while the hash is empty or already a year,
- * so a zoomed pane's #cv is never overwritten. Nothing animates, so reduced
- * motion needs no branch here.
+ * no hashchange loop) while the hash has no pane/reader owner. A topic-only
+ * hash gains the year in front; a zoomed pane's #cv is never overwritten.
+ * Nothing animates, so reduced motion needs no branch here.
  */
+
+import { emit, firstHashPart, hashParts } from './chart-util.js';
+import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
 
 const MIN_YEAR = 2013;
 const MAX_YEAR = 2026;
@@ -42,6 +48,8 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
   const asof = document.querySelector('[data-asof]');
   const asofText = asof ? asof.querySelector('[data-asof-text]') : null;
   const asofReset = asof ? asof.querySelector('[data-asof-reset]') : null;
+  const statusbar = document.querySelector('[data-statusbar]');
+  const focusControl = document.querySelector('[data-focus-scrubber]');
   const facts = document.querySelector('#now [data-facts]');
   const then = document.querySelector('#now [data-then]');
   const records = Array.isArray(timeline) ? timeline : [];
@@ -49,12 +57,35 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
   const noop = { setYear: () => false, reset: () => false, year: () => MAX_YEAR, applyHash: () => false };
   if (!root || !input || !output) return noop;
 
-  // Live-state snapshot, restored exactly at 2026.
+  // The server-rendered control lives in the topbar so the no-JS page keeps
+  // the phase-2 structure. With JavaScript active, SB2's persistent line is
+  // the last child of the status bar and sits beside the bar's own keys.
+  //
+  // It used to be an absolute overlay across the whole bar, with every other
+  // child set inert while a past year showed. That took the pane keys, the
+  // `/` search button, the `t` timeline button, the `?` help item and the C2
+  // toast away from a deep link such as #2018, and on a phone the status bar
+  // is the only thumb path to search and help (MB7). SB2 asked for a line
+  // beside "back to now", not for the bar to be replaced, so the line is now
+  // an ordinary flex child: at 1440 it shares the row (the bar keeps its
+  // height and the 900px fit), and where there is no room for it the bar
+  // wraps it onto its own line. features.css section "as of" owns that.
+  if (asof && statusbar && asof.parentElement !== statusbar) {
+    asof.classList.remove('topbar__asof');
+    asof.classList.add('statusbar__asof');
+    statusbar.appendChild(asof);
+  }
+  if (asof && statusbar) statusbar.classList.add('has-asof');
+
+  // Live-state snapshot, restored exactly at the rightmost "now" value.
   const rows = [...document.querySelectorAll('#talks .row[data-year], #writing .row[data-year], #cv .row[data-year]')];
   const live = new Map();
   for (const row of rows) {
     const date = row.querySelector('.row__date');
-    live.set(row, { current: row.classList.contains('row--current'), date: date ? date.textContent : null });
+    live.set(row, {
+      current: row.classList.contains('row--current'),
+      dateNodes: date ? [...date.childNodes].map((node) => node.cloneNode(true)) : null,
+    });
   }
   const metas = new Map();
   for (const id of ['now', 'talks', 'writing']) {
@@ -70,7 +101,7 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
   // "show N more" details; every talk before 2019 sits inside it. Force it
   // open for a past year whose talks are only reachable there, and remember
   // whatever the visitor's own open/closed state was so reset() can put it
-  // back exactly when the scrubber returns to 2026.
+  // back exactly when the scrubber returns to now.
   const talksDetails = document.querySelector('#talks details[data-more]');
   let talksPreScrubOpen = null;
 
@@ -80,10 +111,30 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
   input.min = String(MIN_YEAR);
   input.max = String(MAX_YEAR);
   input.value = String(MAX_YEAR);
-  input.setAttribute('aria-valuetext', `${MAX_YEAR}, now`);
-  output.textContent = String(MAX_YEAR);
+  input.setAttribute('aria-valuetext', 'now');
+  output.textContent = 'now';
   output.dataset.year = String(MAX_YEAR);
   root.hidden = false;
+
+  function focusScrubber() {
+    input.focus();
+    return document.activeElement === input;
+  }
+
+  if (focusControl) {
+    focusControl.hidden = false;
+    focusControl.addEventListener('click', focusScrubber);
+  }
+
+  // TB3/SB3: `t` is the only new bare character shortcut. It uses both
+  // shared WCAG 2.1.4 gates, so it never fires from a field or button and
+  // honours the visitor's keys-off setting.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 't' || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!shortcutsEnabled() || !isShortcutTarget(event.target)) return;
+    event.preventDefault();
+    focusScrubber();
+  });
 
   input.addEventListener('input', () => {
     setYear(parseInt(input.value, 10));
@@ -92,7 +143,7 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
   if (asofReset) {
     asofReset.addEventListener('click', () => {
       reset();
-      input.focus({ preventScroll: true });
+      focusScrubber();
     });
   }
 
@@ -107,9 +158,12 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
     const start = `${y}-01-01`;
 
     if (input.value !== String(y)) input.value = String(y);
-    input.setAttribute('aria-valuetext', past ? String(y) : `${MAX_YEAR}, now`);
-    output.textContent = String(y);
+    input.setAttribute('aria-valuetext', past ? String(y) : 'now');
+    output.textContent = past ? String(y) : 'now';
     output.dataset.year = String(y);
+
+    if (past) document.body.dataset.asof = String(y);
+    else delete document.body.dataset.asof;
 
     // Rows: hide what came later, mark the role that brackets the year.
     for (const row of rows) {
@@ -119,7 +173,7 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       const date = row.querySelector('.row__date');
       if (!past) {
         row.classList.toggle('row--current', snapshot.current);
-        if (date && snapshot.date != null) date.textContent = snapshot.date;
+        restoreDate(date, snapshot.dateNodes);
         continue;
       }
       if (row.dataset.from == null) continue;
@@ -127,7 +181,18 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       const to = row.dataset.to;
       const holds = from <= end && (!to || to >= start);
       row.classList.toggle('row--current', holds);
-      if (date && snapshot.date != null) date.textContent = holds ? `since ${from}` : snapshot.date;
+      if (holds) renderRoleDate(date, snapshot.dateNodes, `since ${from}`);
+      else restoreDate(date, snapshot.dateNodes);
+    }
+
+    // SB3/SB4: the career log and chart geometry stay in place. Only their
+    // later records dim, while pane list rows retain phase 2's hide/show
+    // behaviour above.
+    for (const line of document.querySelectorAll('.bootlog__entry[data-year]')) {
+      line.classList.toggle('is-after', past && Number(line.dataset.year) > y);
+    }
+    for (const mark of document.querySelectorAll('.chart-mark[data-year]')) {
+      mark.classList.toggle('is-after', past && Number(mark.dataset.year) > y);
     }
 
     const talkCount = countTalks(y, past);
@@ -152,15 +217,31 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
     // A past year can have sourced talks that are only reachable inside the
     // collapsed "show N more" details (every talk before 2019 does). If the
     // year has talks but none are visible in the primary list, force the
-    // details open so every year from 2013 to 2026 actually shows its talks;
-    // restore whatever the visitor's own state was once back at 2026.
+    // details open so every historical position actually shows its talks;
+    // restore whatever the visitor's own state was once back at now.
     if (talksDetails) {
       if (past && talkCount > 0) {
         const primaryVisible = [...document.querySelectorAll('#talks .row[data-status]:not([data-status="lead"])')]
           .some((row) => !row.closest('details') && !row.classList.contains('scrubber-hidden'));
         if (!primaryVisible) {
           if (talksPreScrubOpen === null) talksPreScrubOpen = talksDetails.open;
-          talksDetails.open = true;
+          if (!talksDetails.open) {
+            const restoreTarget = document.activeElement;
+            talksDetails.addEventListener('toggle', () => {
+              // panes.js gives focus to newly revealed content for a visitor-
+              // initiated disclosure. This open is a scrubber side effect, so
+              // keep the slider (and consecutive arrow steps) as the keyboard
+              // anchor. If the initiator now sits under the inert status-bar
+              // overlay, use the visible reset control instead.
+              const target = restoreTarget instanceof HTMLElement
+                && restoreTarget.isConnected
+                && !restoreTarget.closest('[inert]')
+                ? restoreTarget
+                : asofReset;
+              if (target && typeof target.focus === 'function') target.focus({ preventScroll: true });
+            }, { once: true });
+            talksDetails.open = true;
+          }
         }
       } else if (talksPreScrubOpen !== null) {
         talksDetails.open = talksPreScrubOpen;
@@ -168,7 +249,7 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       }
     }
 
-    // Now pane: facts at 2026, one "then" line for a past year.
+    // Now pane: live facts at the right edge, one "then" line for a past year.
     if (facts) facts.hidden = past;
     if (then) {
       const entry = past ? latestRecord(end) : null;
@@ -184,13 +265,15 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
     // Banner.
     if (asof && asofText) {
       if (past) {
-        asofText.textContent = `as of ${y}: ${plural(talkCount, 'sourced talk')}, ${plural(postCount, 'post')}`;
+        asofText.textContent = `as of ${y}: ${plural(talkCount, 'talk')}, ${plural(postCount, 'post')}, ${roleTitleAt(y)}.`;
         asof.hidden = false;
       } else {
         asofText.textContent = '';
         asof.hidden = true;
       }
     }
+
+    emit('console:asof', { year: y, past });
 
     if (changed) schedule(y, talkCount, postCount);
     return true;
@@ -204,14 +287,35 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
     return current;
   }
 
-  /** #2013 to #2026 in the address bar renders that year. */
+  /** #2013 to #2026 in the address bar renders that year. The hash may
+   *  carry a topic segment too (#2018&topic=security), so this reads the
+   *  leading segment only. */
   function applyHash() {
-    const m = /^#(20\d\d)$/.exec(location.hash);
+    const m = /^(20\d\d)$/.exec(firstHashPart());
     if (!m) return false;
     const y = parseInt(m[1], 10);
     if (y < MIN_YEAR || y > MAX_YEAR) return false;
-    return setYear(y);
+    const applied = setYear(y);
+    if (y === MAX_YEAR) {
+      // The numeric maximum is an implementation sentinel, not a historical
+      // view. Normalize stale #2026 links to the live hash while retaining
+      // every composable key=value segment such as the topic filter.
+      const kept = hashParts().filter((part) => part.includes('='));
+      const hash = kept.join('&');
+      history.replaceState(null, '', `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`);
+    }
+    return applied;
   }
+
+  // Escape is functional rather than a character shortcut. Other layers
+  // get first refusal: a topic filter clears first, a zoom restores first,
+  // and Escape in the prompt leaves that field. If nobody consumed it, the
+  // historical view returns to now.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || event.defaultPrevented || current === MAX_YEAR) return;
+    event.preventDefault();
+    reset();
+  });
 
   // Debounced side effects while dragging: one terminal line and the hash.
   function schedule(y, talkCount, postCount) {
@@ -220,9 +324,17 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       const past = y < MAX_YEAR;
       const who = past ? `as of ${y}` : 'as of now';
       term.print(`${who}: ${plural(talkCount, 'sourced talk')}, ${plural(postCount, 'post')}`, { className: 'scrollback__line--dim' });
-      const hash = location.hash;
-      if (hash === '' || hash === '#' || /^#20\d\d$/.test(hash)) {
-        const url = past ? `#${y}` : location.pathname + location.search;
+      // Keep every key=value segment (the topic filter) so a scrub never
+      // clears a filter and a filter never clears a scrub.
+      const lead = firstHashPart();
+      // A topic-only hash starts with key=value and has no phase-2 leading
+      // segment yet, so the scrubber may prepend its year. A pane/reader
+      // hash such as #cv or #writing/slug remains owned by that feature.
+      if (lead === '' || /^20\d\d$/.test(lead) || lead.includes('=')) {
+        const kept = hashParts().filter((p) => p.includes('='));
+        const parts = past ? [String(y), ...kept] : kept;
+        const hash = parts.join('&');
+        const url = hash ? `#${hash}` : location.pathname + location.search;
         history.replaceState(null, '', url);
       }
     }, DEBOUNCE_MS);
@@ -246,6 +358,31 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       if (parseInt(row.dataset.year, 10) <= y) n++;
     }
     return n;
+  }
+
+  function roleTitleAt(y) {
+    const end = `${y}-12-31`;
+    const start = `${y}-01-01`;
+    const roles = records
+      .filter((entry) => entry.kind === 'cv' && entry.date && entry.date <= end && (!entry.end || entry.end >= start))
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    const text = roles[0] ? String(roles[0].text || '') : '';
+    return text.split(',')[0].trim() || 'role not on record';
+  }
+
+  function restoreDate(date, nodes) {
+    if (!date || !nodes) return;
+    date.replaceChildren(...nodes.map((node) => node.cloneNode(true)));
+  }
+
+  // A role's historical label changes, but its topic shape is part of the
+  // record identity and must survive both the scrub and the live restore.
+  function renderRoleDate(date, nodes, text) {
+    if (!date || !nodes) return;
+    const mark = nodes.find((node) => node.nodeType === Node.ELEMENT_NODE && node.classList.contains('row__mark'));
+    date.replaceChildren();
+    if (mark) date.appendChild(mark.cloneNode(true));
+    date.appendChild(document.createTextNode(text));
   }
 
   function setMeta(id, text) {

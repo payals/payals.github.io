@@ -295,6 +295,42 @@ One token per year from 2013 to 2026, linear in sRGB between four anchors: candl
 
 Lowest year pair: 2013 on `--surface-2` at 7.53:1.
 
+### Topic key: six topics, one per subject (phase 3)
+
+A second key, orthogonal to the kind key. Kind says what a thing is (a talk, a post, a role); topic says what it is about. The map from record to topic is `data/topics.json`, hand authored, one line of reasoning per entry, covering every talk id, every archive lead id and every post slug. It adds no facts: every entry points at a record that already exists.
+
+| Token | Hex | Shape | Meaning | On `--bg` / `--surface` / `--surface-2` |
+|---|---|---|---|---|
+| `--topic-postgres` | `#3987e5` | circle | The engine, its performance, its internals | 5.29 / 5.03 / 4.69 |
+| `--topic-reliability` | `#199e70` | square | Backups, disaster recovery, data integrity, staying up | 5.66 / 5.38 / 5.01 |
+| `--topic-security` | `#e66767` | diamond | Access control, hardening, securing data | 5.96 / 5.67 / 5.28 |
+| `--topic-platform` | `#d85d8a` | hexagon | Provisioning, automation, configuration management | 5.37 / 5.10 / 4.76 |
+| `--topic-ai` | `#9085e9` | triangle | Model-driven systems, agents, control planes | 6.16 / 5.86 / 5.46 |
+| `--topic-other` | `#8e857b` | ring | On record but outside the five. Equals `--ink-3` | 5.31 / 5.05 / 4.71 |
+
+The hues come from the data-portrait prototype, which validated them on a cool base. This base is warm, so all six were recomputed: `--topic-platform` moved from `#d55181` (4.33:1 on `--surface-2`, under the floor) to `#d85d8a`, and `--topic-other` from a cool grey to this site's own `--ink-3`, which reads neutral beside warm ink. `scripts/check-contrast.py` holds all six to the 4.5:1 **text** floor on all three surfaces even though no glyph is painted with them, so a topic hue can never be the weakest thing on the page. There is no yellow and no orange in the set, so amber stays unmistakably the one state colour.
+
+Topic identity is never colour alone. Every mark carries a shape class (`.mark--circle`, `--square`, `--diamond`, `--hexagon`, `--triangle`, `--ring`) and every place a topic is named carries its text label: the legend chip, the tooltip, the `aria-label`, the terminal output.
+
+A topic hue is allowed on: chart marks, calendar cells, career ticks, the now pane's LEDs, the small mark beside a list row, legend chips, and `.chart-fill`. It is not allowed on body text, headings, pane borders, or a background above the `.chart-fill` weight (22 %).
+
+**Area rule.** A mark under about 16px may be a solid topic fill. Anything with real area may not: it uses `.chart-fill`, the hue at `--chart-fill` (22 %) with a solid 2px leading edge and an `--ink` label. A solid `--topic-postgres` bar spanning the cv pane was, in the combined-colour render, the loudest object on the page, louder than the amber state colour it must never outrank.
+
+### The three colour dimensions, and what was muted
+
+Three dimensions coexist on the landing:
+
+| Dimension | Allowed on | Never on |
+|---|---|---|
+| Topic hues | chart marks, LEDs, calendar cells, career ticks, `.chart-fill`, legend chips, row marks | body text, headings, borders, backgrounds |
+| Kind key | statusbar keys, palette badges and selected rows, terminal `.seg--*` prefixes, the `--kind-dim` row tint, constellation nodes, blog tag chips | pane key chips (see below), anything else |
+| Year temperature | date columns only, through `data-year` | everything else |
+| Amber (`--accent`) | state only: focus, hover, the active or zoomed pane border, the cursor, the scrubber thumb, the scrub hairline, `.row--hit`, warn lines, the "as of" banner, a pressed legend chip | never a kind or a topic |
+
+The phase-3 brief set the order of reduction if the combined page read loud. The architect rendered all three dimensions at once with a representative field of chart marks (`scratchpad/evidence/phase3/plan/k3-all-three.png`) and applied **reduction 1 only**: `.pane__key` and `.linksrow__key` lost their kind hue and are now `--ink-2` on a `--line-strong` border. The chip sits directly above its pane's chart, so a blue `[2]` argued with the blue calendar under it and a pink `[3]` with the pink role bar: two colour keys in one visual field. The kind key is untouched everywhere it was not competing.
+
+**Reduction 2 was not applied.** Muting the year scale to two anchors (`k3-muted-years.png`) made the page no quieter, because the date columns were already the quietest coloured thing on it, and it cost the reading that makes a 2018 talk look older than a 2026 one. The four-anchor scale stays.
+
 ### Glow: two things
 
 `--glow-cursor` (`0 0 6px rgba(217,164,65,.35)`) on the cursor, blinking off with the block; `--glow-pane` (`0 0 0 1px rgba(217,164,65,.25)`) beside the amber border of `.pane.is-active` and `.pane.is-zoom`. One `box-shadow` layer each, low opacity, both amber because both mark state. Nothing else glows, and no `text-shadow` anywhere.
@@ -304,10 +340,12 @@ Lowest year pair: 2013 on `--surface-2` at 7.53:1.
 | Surface | Rule |
 |---|---|
 | Pane border | `--line` at rest; `--accent` plus `--glow-pane` while active or zoomed. Never a kind hue |
-| Pane title | `--ink`. The key chip beside it is the pane's kind hue (text and 1px border) |
+| Pane title | `--ink`. The key chip beside it is `--ink-2` on a `--line-strong` border, neutral since K3 reduction 1 |
+| Topic legend | chip label `--ink-2` and `--ink` on hover, count `--ink-3`, the mark in its topic hue, a pressed chip washed with its hue at 22 % inside an amber border |
+| Charts | marks, cells and ticks in their topic hue; filled shapes through `.chart-fill`; the scrub hairline and the focus ring amber; axis labels and hints `--ink-3` |
 | Statusbar keys | `--surface-2` ground, `--ink` text at rest; on hover and `aria-current` a solid chip in the pane's kind hue with `--bg` text; `/` and `?` use amber |
 | List rows | title `--ink`, note `--ink-3`, aside `--ink-2`; `.row__date[data-year]` in the year token; `.badge--ok` green; `.row.is-hit` filled with `--kind-dim` |
-| Now pane | labels `--ink-2`, values `--ink`, year spans in the year token, the role LED `--kind-now` |
+| Now pane | labels `--ink-2`, values `--ink`, year spans in the year token, one LED per fact in that fact's topic hue and shape, the uptime LED `--ok` |
 | Terminal | lines `--ink`; `--ok` green, `--dim` `--ink-2`, `--err` red, `--warn` amber; `.seg--*` prefixes in their kind hue, URLs lilac, dates year-tinted, progress bar blue, "done" green |
 | Palette | badge and `mark` in the kind hue, selected row solid kind hue with `--bg` text, dates year-tinted, the `/` glyph amber |
 | Cursor | amber block with `--glow-cursor`, hollow amber outline while unfocused |
@@ -320,6 +358,7 @@ Rules:
 - `--accent` is a state colour. It is allowed on: `:focus-visible` outline, link hover, nav hover and `aria-current`, the active statusbar key, the block cursor, a button border on hover, the active or zoomed pane border, the scrubber thumb, warn lines and the "as of" banner. It is not allowed on headings, rules, borders at rest, icons, backgrounds, or any text that is not a state change.
 - A kind hue is allowed only on a chip, badge, prefix, printed URL, constellation node or tag chip, always beside its text twin, never on a border at rest or a background above 14 % alpha.
 - A year token is allowed only on a date column reached through `data-year`.
+- A topic hue is allowed only on a mark, an LED, a calendar cell, a career tick, a legend chip or a `.chart-fill`, always beside a shape and a text label, never on text.
 - Use `--ink-3` only at 12px and up. It passes 4.5:1 but it is the floor.
 
 ## Typography
@@ -518,21 +557,41 @@ Definition rows for the now pane: a label column in `--ink-2` at 12px and a valu
 </dl>
 ```
 
-### Links pane
+### Links row
 
-`.pane--links` is a one-row pane: from 768px the title sits on the left with a rule to its right and the body runs beside it; below 768px it is an ordinary pane. `.links` is a wrapping row of anchors; `.links__host` is the path part of each handle in `--ink-3`. `data-link` names the command the terminal derives from each anchor.
+Phase 3 replaced the links pane with one line inside the console frame, directly above the status bar: a `[4] links` label then the eight links inline. No pane border, no surface fill, no tall cell; a top rule in `--line-strong` only, so it reads as the last line of the console rather than as a sixth box. At 768px and up the row never wraps and the host half of a long handle truncates; below 768px it becomes a two-column grid of 44px targets. The `id` did not change, so key `4`, `#links`, the status bar item and the palette entry all still focus it, and `shortcuts.js` counts `.linksrow` as a keyboard surface beside `.pane`.
+
+`.links` is still the shared list of anchors; `.links__host` is the path part of each handle in `--ink-3`. `data-link` names the command the terminal derives from each anchor, and the palette indexes one entry per anchor.
 
 ```html
-<section class="pane pane--links" id="links" tabindex="-1" aria-labelledby="links-title">
-  <h2 class="pane__title" id="links-title"><span class="pane__key">4</span>links</h2>
-  <div class="pane__body">
-    <ul class="links">
-      <li><a href="https://github.com/payals" data-link="github">github<span class="links__host">/payals</span></a></li>
-      <li><a href="/feed.xml" data-link="rss">rss</a></li>
-    </ul>
-  </div>
-</section>
+<div class="linksrow" id="links" tabindex="-1" aria-labelledby="links-label" data-kind="link">
+  <span class="linksrow__label" id="links-label"><kbd class="linksrow__key">4</kbd>links</span>
+  <ul class="links" data-links>
+    <li><a href="https://github.com/payals" data-link="github">github<span class="links__host">/payals</span></a></li>
+    <li><a href="/reading/" data-link="reading">reading<span class="links__host">/books</span></a></li>
+    <li><a href="/feed.xml" data-link="rss">rss</a></li>
+  </ul>
+</div>
 ```
+
+### Topic legend and charts
+
+The legend bar sits between the topbar and the console, full width, its height reserved by `--legendbar-h`. One chip per topic that has at least one record, each carrying a mark, the topic name and the count. It is server-rendered from `data/topics.json` with real counts, so it reads with JavaScript off.
+
+A chart is a reserved block at the top of a pane body, above the record list that pane exists for. `.chart` is `display: none` until the `js` class says a module will fill it, so the page without JavaScript is exactly the phase-2 page. `.chart__plot` is `--chart-h` tall (88px at 1024px and up, 76px between 768 and 1023, 60px below), never content-driven, so filling it later moves nothing.
+
+```html
+<div class="chart" data-chart="talks">
+  <div class="chart__plot" data-tl></div>
+  <p class="chart__hint" data-tl-hint><span class="chart__hint-lg">hover the strip to scrub a year.</span><span class="chart__hint-sm">tap a mark for its record.</span></p>
+</div>
+```
+
+The topic filter is pure CSS: `topics.js` sets `body[data-topic-filter="<id>"]` and `features.css` dims non-matching marks to `--dim-mark` (0.28) and non-matching rows and now facts to `--dim-row` (0.55), restoring full ink on hover and focus. The topbar, the legend, the status bar, the terminal and the links row are never dimmed. Dimming a row container, not a text colour, is what keeps every dimmed string at its own contrast ratio.
+
+### Phone disclosures
+
+Below 768px the tail of `talks`, `writing` and `cv`, and the terminal scrollback, sit inside native `<details class="disclose" data-mobile-more="...">` elements. They are inert on desktop and with JavaScript off (the summary hidden, the body always shown) and closed from first paint on a phone with the `js` class, so nothing collapses after load. `mobile.js` opens one only when the topic filter, the year scrubber or a chart hit lands inside it.
 
 ### Disclosure
 
@@ -580,11 +639,13 @@ The full cv inside the cv pane is `data/cv.md` rendered with its leading h1 drop
 <footer class="footer">&copy; Payal Singh · <a href="...">source</a> · CC-BY · <a href="/feed.xml">rss</a></footer>
 ```
 
-Utilities: `.muted` (`--ink-2`), `.faint` (`--ink-3`), `.ok`, `.err`, `.mono`, `.sr-only`.
+Utilities: `.muted` (`--ink-2`), `.faint` (`--ink-3`), `.ok`, `.err`, `.mono`, `.sr-only`, `.wide-only` / `.narrow-only`.
+
+`.wide-only` and `.narrow-only` are a pair: one element ships a sentence at two lengths and the breakpoint at 768px picks which is displayed. They exist because a clipped hint drops its last clause without saying so, and a phone column is not wide enough for every sentence the wide layout carries. Both spans are in the DOM at every width, so crossing the breakpoint never changes the markup, and the accessible name is whichever one is displayed. Used by the terminal pane's hint and by the cv summary line, where the phone reads `13.7 years, 12 talks, 8 posts, 5 speaking` and every wider viewport reads the whole sentence; the `aria-label` on the summary is always the full sentence. The chart hints use the older `.chart__hint-lg` / `.chart__hint-sm` pair, which does the same thing inside a chart block.
 
 ### Console features
 
-The eight phase-2 features are one folded stylesheet, `assets/css/features.css`, linked on the landing only, after `tokens.css` and `console.css`. It is the concatenation of the per-feature sheets in cascade order (zoom, reader, palette, clicks, bootlog, scrubber, topstats, constellation): the order matters because topstats reserves the second topbar row that the scrubber sits in, and constellation sizes the terminal body every other sheet leaves alone. The landing head therefore links three stylesheets and every other page links two.
+The sixteen feature sheets are one folded stylesheet, `assets/css/features.css`, linked on the landing only, after `tokens.css` and `console.css`. It is the concatenation of the per-feature sheets in cascade order: phase 2 first (zoom, reader, palette, clicks, bootlog, scrubber, topstats, constellation), then phase 3 (charts, links-row, topics, chart-talks, chart-writing, chart-cv, terminal, mobile). The order matters because topstats reserves the second topbar row that the scrubber sits in, constellation sizes the terminal body every other sheet leaves alone, the shared chart shell comes before the four charts that specialise it, and the phone layout comes last so it can override any of them at its breakpoint without `!important`. The landing head therefore links three stylesheets and every other page links two.
 
 ```html
 <nav class="zoomtabs" data-zoomtabs><button class="zoomtabs__tab"><kbd class="zoomtabs__key">1</kbd>talks</button></nav>
@@ -602,7 +663,7 @@ The eight phase-2 features are one folded stylesheet, `assets/css/features.css`,
 |---|---|
 | `zoomtabs` | One row above the zoomed pane, `--surface` ground, one `.zoomtabs__tab` per collapsed pane with its `.zoomtabs__key` chip in the pane's kind hue plus an `esc grid` chip in the command amber. Shown only while `.console.is-zoomed`. |
 | `reader` | 1px `--line` frame inside the zoomed writing pane, a `post` badge in `--kind-post`, the year-tinted date, and a `less`-style status line at the foot: the slug (truncates first), the position in `--ink` with tabular numerals, and the key hint in `--ink-3` (hidden below 480px). Below 1024px the status line sticks above the statusbar. |
-| `palette-result` | Kind badge `.r__type[data-kind]` in the kind hue with a 1px border of the same hue, title in `--ink` with matched characters marked in the kind hue, date year-tinted, venue or subtitle in `--ink-2`. The selected row (`aria-selected="true"`) is a solid kind-hue ground with `--bg` text; the pane row behind the dialog takes a 14% tint of the same hue. |
+| `palette-result` | Kind badge `.r__type[data-kind]` in the kind hue with a 1px border of the same hue, title in `--ink` with matched characters marked in the kind hue, date year-tinted, venue or subtitle in `--ink-2`. The selected row (`aria-selected="true"`) is a solid kind-hue ground with `--bg` text; the pane row behind the dialog takes a 14% tint of the same hue. The seventh kind, `topic` (phase 3), has no kind hue of its own: `.palette__r[data-kind="topic"]` resolves `--kind` to the row's own `--topic`, so the badge is the topic hue and the palette gains no colour dimension the topic key had not already paid for. Each topic row carries its shape glyph before the title, so a topic is a shape, a hue and a word there as everywhere else. Enter runs `filter <id>` through the terminal registry, so `topics.js` stays the only owner of the filter state, the hash and the announcement, and focus lands on the matching legend chip rather than the prompt. |
 | `keytray` | Fixed above the statusbar, `--surface` on `--line`, `--z-keytray` 30. Position fixed, so opening it never moves the page. Its last item is a `.btn.btn--small` "single-key shortcuts: on/off" toggle, injected by `palette.js` (`assets/js/shortcuts.js`'s `setShortcutsEnabled`); `--ink-2` while on, `--warn` text and border while off. |
 | `toast` | One statusbar-height row fixed at the bottom of the viewport, shown when a clicked fact ran a command the visitor cannot see; clears itself after 4s. |
 | `scrubber` | `as of` label in `--ink-2`, a 5rem range (7rem from 1024px) with a 2px `--line-strong` track and a 12px `--accent` thumb, and a year-tinted `output`. While a past year is selected the topbar shows the `as of <year>` banner in amber with a `back to now` button. |

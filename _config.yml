@@ -12,6 +12,12 @@ source_url: https://github.com/payals/payals.github.io
 # github-pages would otherwise inject jekyll-theme-primer (assets/css/style.css).
 theme: null
 
+# BUDGET (phase3.md arbitration table): assets/css/features.scss compiles to
+# assets/css/features.css. Compressed output is what keeps the landing
+# transfer under the 150KB gzipped cap.
+sass:
+  style: compressed
+
 # Read data/*.json directly so site.data and the public /data/*.json URLs share one file.
 data_dir: data
 

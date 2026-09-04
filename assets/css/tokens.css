@@ -85,6 +85,63 @@
   --year-2025:    #a2c0f1;
   --year-2026:    #8ab4f8;   /* daylight, equals --kind-post */
 
+  /* ---- Topic key (K3): six topics from data/topics.json --------------
+     A second key, orthogonal to the kind key above. Kind says what a
+     thing is (talk, post, role); topic says what it is about. Topic hues
+     are painted only on chart marks, now LEDs, calendar cells, career
+     ticks, legend chips and the small mark beside a list row. Never on
+     body text, headings, borders at rest or a background. Every topic
+     also has a shape (circle, square, diamond, hexagon, triangle, ring)
+     and a text label, so colour never carries the meaning alone.
+
+     Hues come from the data-portrait prototype, which validated them on
+     a cool base (#0b0d10). This base is warm, so every value was
+     recomputed against --bg, --surface and --surface-2; two changed.
+     --topic-platform moved from #d55181 (4.33:1 on --surface-2, under
+     the floor) to #d85d8a, and --topic-other from the prototype's cool
+     grey #7a8590 to this site's own --ink-3, which reads neutral beside
+     warm ink. check-contrast.py holds all six to the 4.5:1 text floor
+     on all three surfaces and asserts the --ink-3 identity.
+
+     No yellow and no orange, so amber stays unmistakably the one state
+     colour. */
+  --topic-postgres:    #3987e5;   /* circle:   the engine, its performance, its internals */
+  --topic-reliability: #199e70;   /* square:   backups, disaster recovery, data integrity */
+  --topic-security:    #e66767;   /* diamond:  access control, hardening, securing data */
+  --topic-platform:    #d85d8a;   /* hexagon:  provisioning, automation, configuration */
+  --topic-ai:          #9085e9;   /* triangle: model-driven systems, agents, control planes */
+  --topic-other:       #8e857b;   /* ring:     on record but outside the five. Equals --ink-3. */
+
+  /* Filter dimming (T2). The mark opacity is low because a mark carries
+     no text; the row opacity is high because a row does, and its text
+     must stay at or above 4.5:1 while dimmed. 0.76 is the alpha at which
+     --ink-2 (the row's own secondary ink) still holds 4.5:1 on --surface,
+     which is the only surface a dimmed row ever sits on (hover and
+     focus-within are excluded from dimming, so --surface-2 never applies
+     here). --ink itself clears the floor by a wide margin at 0.76; only
+     --ink-3 does not (it composites to about 3.3:1 to 3.5:1), so
+     features.css swaps --ink-3 to --ink-2 inside a dimmed row rather than
+     re-inking every token to full --ink. check-contrast.py asserts both
+     the swap rule and the composite. Hover and focus restore full ink. */
+  --dim-mark: 0.28;
+  --dim-row:  0.76;
+
+  /* Area fills: a chart object with real area (a cv role segment) is the
+     topic hue at this weight, not a solid, so no chart ever outranks the
+     amber state colour. Marks under about 16px stay solid. */
+  --chart-fill: 22%;
+
+  /* Chart plot heights (§4 of the phase-3 plan). The record list under a
+     chart is what the pane is for, so the plot is a token, never a
+     hard-coded height: charts size their lanes and cells to fit it. */
+  --chart-h:    88px;   /* >=1024px */
+  --chart-h-md: 76px;   /* 768 to 1023px */
+  --chart-h-sm: 60px;   /* <768px, inside MB6's 96px block cap */
+
+  /* Topic legend bar, between the topbar and the console. The console
+     row gives up exactly this height, so nothing else moved. */
+  --legendbar-h: 2rem;   /* 32px */
+
   /* ---- Glow: exactly two things, one layer each, low opacity ---------
      The cursor and the active or zoomed pane border. Nothing else. */
   --glow-cursor:  0 0 6px rgba(217, 164, 65, 0.35);
@@ -160,6 +217,7 @@
   --z-topbar:    10;
   --z-statusbar: 20;
   --z-keytray:   30;
+  --z-tip:       40;
   --z-palette:   50;
   --z-skip:      100;
 }

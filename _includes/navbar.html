@@ -13,10 +13,12 @@
   </p>
   <div class="scrubber" data-scrubber hidden>
     <label class="scrubber__label" for="year-scrubber">as of</label>
+    <span class="scrubber__end" aria-hidden="true">2013</span>
     <input class="scrubber__input" id="year-scrubber" type="range" min="2013" max="2026" step="1" value="2026" list="year-ticks" data-scrubber-input aria-describedby="year-scrubber-help">
     <datalist id="year-ticks"><option value="2013"></option><option value="2018"></option><option value="2022"></option><option value="2026"></option></datalist>
-    <output class="scrubber__out" for="year-scrubber" data-scrubber-out>2026</output>
-    <span class="sr-only" id="year-scrubber-help">Panes show the record as of the chosen year. 2026 is now.</span>
+    <span class="scrubber__end" aria-hidden="true">now</span>
+    <output class="scrubber__out" for="year-scrubber" data-scrubber-out>now</output>
+    <span class="sr-only" id="year-scrubber-help">Panes show the record as of the chosen year. The rightmost position is now and shows everything.</span>
   </div>
   <p class="topbar__asof" data-asof role="status" aria-live="polite" hidden><span data-asof-text></span> <button class="btn btn--small" type="button" data-asof-reset>back to now</button></p>
   <button class="search-btn" type="button" data-open-palette aria-keyshortcuts="/ Meta+K Control+K" hidden><kbd class="kbd">/</kbd><span class="search-btn__label">search everything</span></button>

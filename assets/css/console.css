@@ -122,6 +122,20 @@ a:hover {
   border: 0;
 }
 
+/* One sentence, two lengths. A phone column is not wide enough for every
+   hint the wide layout carries, and a clipped hint loses its last clause
+   silently. These two utilities let one element ship both, so the narrow
+   reading is a written sentence rather than an ellipsis. Both are in the
+   DOM at every width, so crossing the breakpoint never changes the markup
+   and the accessible name is whichever one is displayed. */
+.wide-only { display: inline; }
+.narrow-only { display: none; }
+
+@media (max-width: 767px) {
+  .wide-only { display: none; }
+  .narrow-only { display: inline; }
+}
+
 /* -------------------------------------------------------------
    3. Topbar
    ------------------------------------------------------------- */
@@ -283,9 +297,18 @@ a:hover {
   border-top: 1px solid var(--line-strong);
 }
 
-/* Key chip: the pane's number in its kind hue with a 1px border of the
-   same hue, the same shape as the statusbar key it answers to. A chip,
-   not a heading; the pane name beside it stays --ink. */
+/* Key chip: the pane's number, the same shape as the statusbar key it
+   answers to. A chip, not a heading; the pane name beside it stays --ink.
+
+   K3 (phase 3): the chip lost its kind hue. Phase 2 painted it in the
+   pane's kind colour, which worked while the pane bodies were neutral.
+   Phase 3 puts a topic-coloured chart at the top of three of those
+   bodies, and in the architect's combined render the blue [2] argued
+   with the blue calendar directly under it and the pink [3] with the
+   pink role bar: two colour keys, one visual field. This is reduction 1
+   from the phase-3 brief's order. The kind key is untouched everywhere
+   it was not competing: the statusbar keys, the palette badges, the
+   terminal prefixes, the row tint and the constellation nodes. */
 .pane__key {
   order: 0;
   display: inline-block;
@@ -295,13 +318,20 @@ a:hover {
   font-weight: 600;
   line-height: var(--leading-tight); /* 15px plus the border fits the 17.5px title line */
   text-align: center;
-  color: var(--kind, var(--ink-2));
-  border: 1px solid var(--kind, var(--line-strong));
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
 }
 
 .pane__meta {
   order: 3;
+  /* The terminal's hint is the longest of these ("boot log is the career
+     log. type help"), and a nowrap span with no shrink pushed a 320px
+     viewport to 376px wide. It truncates instead. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--text-xs);
   font-weight: 400;
   color: var(--ink-3);
@@ -330,6 +360,13 @@ a:hover {
   }
   .pane--span { grid-column: 1 / -1; }
   .pane--tall { grid-row: span 2; }
+  /* The links row is a full-width line wherever the console has more than
+     one column, not only at the 1024 and 1280 breakpoints below. Left in
+     one column between 768 and 1023px it was 378px wide at 768 and every
+     link truncated to a glyph or two. Auto placement puts it after the cv
+     pane and before the terminal, which is the stacking order the phone
+     and the wide layouts both use. */
+  .shell--landing .linksrow { grid-column: 1 / -1; }
 }
 
 @media (min-width: 1024px) {
@@ -371,6 +408,16 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  /* The reset belongs on the component, not on one item: a statusbar item is
+     an <a> for a pane and a <button> for search and for the timeline, and a
+     button that keeps the user-agent chrome renders --ink-2 on the platform
+     ButtonFace grey at 2.01:1 and one point of font size larger than the
+     links beside it. */
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
   color: var(--ink-2);
   text-decoration: none;
   white-space: nowrap;
@@ -400,6 +447,12 @@ a:hover {
   color: var(--bg);
 }
 
+/* The wrap break for the phone bar. It is a flex item with no box until the
+   phone media query below turns it into a full-width zero-height line. */
+.statusbar__break {
+  display: none;
+}
+
 .statusbar__hint {
   display: none;
   margin-left: auto;
@@ -407,11 +460,18 @@ a:hover {
   white-space: nowrap;
 }
 
-@media (min-width: 768px) {
-  .statusbar__hint { display: inline; }
-}
-
+/* L5: the hint is the one thing in the bar that is a sentence rather than a
+   label, and palette.js grows it to "keys work while the prompt is not
+   focused · / to search" (397px). Eight items end at x=580, so the hint
+   needs 1005px of bar before its last word clears the edge; below that it
+   was cut mid-sentence and the bar leaned on its own overflow-x to hide the
+   rest. It appears from 1024px, the same width at which the bar stops being
+   sticky and the console goes wide, and at that width it ends at 1012 in a
+   1024px bar. Under it the `?` item and the which-key tray say the same
+   thing on demand. */
 @media (min-width: 1024px) {
+  .statusbar__hint { display: inline; }
+
   .statusbar {
     position: static;
   }
@@ -967,7 +1027,10 @@ a:hover {
   .shell--landing {
     height: 100vh;
     height: 100dvh;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* topbar, topic legend, console, statusbar. Phase 3 inserted the legend
+       row; the console row is still the only flexible one, so the height
+       arithmetic everywhere else is unchanged. */
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
   .shell--landing .console {
     height: auto;
@@ -979,7 +1042,7 @@ a:hover {
     text-overflow: clip;
   }
   .shell--landing .pane--terminal { grid-row: 3; }
-  .shell--landing .pane--links    { grid-column: 1 / -1; grid-row: 4; }
+  .shell--landing .linksrow       { grid-column: 1 / -1; grid-row: 4; }
 }
 
 /* Three columns from 1280px: the terminal is a full-height right column,
@@ -990,29 +1053,12 @@ a:hover {
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
   }
   .shell--landing .pane--terminal { grid-column: 3; grid-row: 1 / span 2; }
-  .shell--landing .pane--links    { grid-column: 1 / -1; grid-row: 3; }
+  .shell--landing .linksrow       { grid-column: 1 / -1; grid-row: 3; }
 }
 
-/* One-row pane: title and body on the same line. */
-@media (min-width: 768px) {
-  .pane--links {
-    flex-direction: row;
-    align-items: center;
-  }
-  .pane--links .pane__title {
-    flex: 0 0 auto;
-    border-bottom: 0;
-    border-right: 1px solid var(--line);
-    align-self: stretch;
-  }
-  .pane--links .pane__title::after { display: none; }
-  .pane--links .pane__body {
-    overflow: visible;
-    padding-top: var(--space-2);
-    padding-bottom: var(--space-2);
-  }
-}
-
+/* The links pane became the links row in phase 3; its layout lives in
+   features/links-row.css. The list itself is still shared with any page
+   that wants a row of links. */
 .links {
   display: flex;
   flex-wrap: wrap;
@@ -1115,17 +1161,81 @@ a:hover {
    the page when it gains focus. */
 .prompt--mirrored .prompt__input { font-size: 16px; }
 
+/* The phone log disclosure (MB3) wraps the scrollback. From 1024px, where
+   the terminal pane has a definite height and the log scrolls inside it,
+   the disclosure takes the flex role the scrollback used to have and passes
+   the space through, so the prompt stays at the bottom of the pane. Below
+   1024px the pane grows with its content as it did in phase 2, and a
+   flex-basis of 0 there would collapse the log to nothing, so the plumbing
+   is scoped. features/mobile.css owns the open and closed states. */
+@media (min-width: 1024px) {
+  .pane--terminal .pane__body > .disclose--log,
+  .pane--terminal .disclose--log > .disclose__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* A <details> puts a ::details-content box between the element and its
+     children, so the flex chain from the pane down to the scrollback runs
+     through it. Without this the scrollback takes its content height and
+     paints over the constellation, the prompt and the top strip. */
+  .pane--terminal .disclose--log::details-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+}
+
+/* SB1: the slider is labelled 2013 at the left and now at the right, so the
+   rightmost position reads as the live state rather than as a year. */
+.scrubber__end {
+  font-size: var(--text-2xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
 /* Links inside the scrollback keep the row colour so output stays one tone. */
 .scrollback__line a { color: inherit; }
 .scrollback__line a:hover { color: var(--accent); }
 
 .scrollback__line--pre { overflow-wrap: normal; overflow-x: auto; }
 
-/* Six statusbar items fit a 390px viewport with tighter gaps. */
+/* L5: the bar carries eight items since phase 3 added `4 links` and
+   `t timeline`, and they measure 475px on one line, so no phone width holds
+   them with their words intact. Below 768px the bar wraps instead: the five
+   pane items, then search, timeline and help. The break is the explicit
+   .statusbar__break line rather than natural wrapping, so where the bar
+   divides is a decision in the stylesheet rather than a consequence of the
+   longest label.
+
+   This block owns only where the bar breaks. features.css section 10 owns
+   how big the rows in it are: it raises every item to MB7's 44px target and
+   restates --statusbar-h as the true outer height that follows from that
+   (89px for two rows, 133px at 320px where `4 links` needs a third). The
+   values below are the fallback for console.css on its own, and features.css
+   overrides all three; the token has to stay right in both files because the
+   which-key tray, the reader status line, the scroll padding and the toast
+   all measure the bar from outside through it. */
 @media (max-width: 767px) {
+  :root {
+    /* Fallback only. features.css section 10 supersedes this with 89px once
+       the rows are 44px tall; 52px is two 18px rows, 8px between, 4px above
+       and below, which is what the bar measures without that file. */
+    --statusbar-h: 3.25rem;
+  }
   .statusbar {
-    gap: var(--space-2);
-    padding: 0 var(--space-2);
+    flex-wrap: wrap;
+    align-content: center;
+    gap: var(--space-1) var(--space-2);
+    padding: var(--space-1) var(--space-2);
+  }
+  .statusbar__break {
+    display: block;
+    flex: 0 0 100%;
+    height: 0;
   }
 }
 

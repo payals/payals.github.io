@@ -14,6 +14,7 @@
  */
 
 import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
+import { firstHashPart } from './chart-util.js';
 
 const KEY_TO_PANE = { 0: 'now', 1: 'talks', 2: 'writing', 3: 'cv', 4: 'links' };
 const PANE_IDS = new Set(['about', 'now', 'talks', 'writing', 'cv', 'links', 'terminal']);
@@ -67,7 +68,7 @@ export function setupPanes({ term, reducedMotion, onHelp }) {
 
   // Track which pane holds focus so the statusbar key reflects it.
   document.addEventListener('focusin', (e) => {
-    const pane = e.target.closest('.pane, .topbar');
+    const pane = e.target.closest('.pane, .linksrow, .topbar');
     if (pane && pane.id) setCurrent(pane.id);
   });
 
@@ -83,8 +84,10 @@ export function setupPanes({ term, reducedMotion, onHelp }) {
   // Fragment navigation: the browser scrolls; this focuses so the ring shows.
   // main.js owns the hashchange listener and calls this last in its chain
   // (zoom, scrubber, then panes). Returns true when the id was a pane.
+  // The hash can carry more than one segment since phase 3 (#2018&topic=ai),
+  // so this reads the leading one, which is exactly what phase 2 wrote.
   function applyHash() {
-    const id = decodeURIComponent(location.hash.slice(1));
+    const id = firstHashPart();
     if (!PANE_IDS.has(id)) return false;
     return focusPane(id);
   }

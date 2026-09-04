@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "note": "Hand-authored topic map for the landing charts and the topic filter (phase 3). It adds no facts: every entry points at a record that already exists in data/talks.json or _posts, and the reason names the title keyword, the record detail, or the front-matter tags the topic was read from. Nothing here changes talks.json, the posts, or any date. Six topics, fixed order, each with a shape so colour never carries the meaning alone.",
+  "topics": [
+    { "id": "postgres",    "label": "postgres",    "shape": "circle",   "token": "--topic-postgres",    "note": "Postgres itself: the engine, its performance, its internals." },
+    { "id": "reliability", "label": "reliability", "shape": "square",   "token": "--topic-reliability", "note": "Backups, disaster recovery, data integrity, staying up." },
+    { "id": "security",    "label": "security",    "shape": "diamond",  "token": "--topic-security",    "note": "Access control, hardening, securing data." },
+    { "id": "platform",    "label": "platform",    "shape": "hexagon",  "token": "--topic-platform",    "note": "Provisioning, automation, configuration management, the platform around the database." },
+    { "id": "ai",          "label": "ai",          "shape": "triangle", "token": "--topic-ai",          "note": "Model-driven systems, agents, Postgres as a control plane." },
+    { "id": "other",       "label": "other",       "shape": "ring",     "token": "--topic-other",       "note": "On record but outside the five: nothing is forced into a topic it does not fit." }
+  ],
+
+  "tags": {
+    "postgres": "postgres",
+    "data-integrity": "postgres",
+    "security": "security",
+    "reliability": "reliability",
+    "linux": "reliability",
+    "systems": "platform",
+    "agents": "ai",
+    "ai": "ai",
+    "meta": "other"
+  },
+
+  "tag_precedence": ["ai", "postgres", "security", "reliability", "systems", "linux", "data-integrity", "agents", "meta"],
+
+  "tag_precedence_note": "Fallback only, for a future post with no entry in `posts` below: walk this list in order and take the first tag the post carries, then read its topic out of `tags`. Every post that exists today has an explicit entry, so this table is never consulted at build time yet.",
+
+  "talks": {
+    "postgressummit-us-2026-control-plane": { "topic": "ai", "reason": "title keyword: 'Reliable AI Workflows'" },
+    "scale-23x-ai-control-plane": { "topic": "ai", "reason": "title keyword: 'AI Control Plane', 'RAG + MCP'" },
+    "postgres-conference-2019-performance-tuning": { "topic": "postgres", "reason": "title keyword: 'Postgres Performance tuning'" },
+    "pgcon-2018-securing-postgresql": { "topic": "security", "reason": "title keyword: 'Securing Your Data'" },
+    "postgresconf-us-2018-securing-postgresql": { "topic": "security", "reason": "title keyword: 'Securing Your Data'" },
+    "scale-16x-pandas": { "topic": "other", "reason": "title keyword: 'Pandas'; data analysis, not one of the five" },
+    "scale-16x-securing-postgresql": { "topic": "security", "reason": "title keyword: 'Securing Your Data'" },
+    "pgconf-philly-2017-securing-postgres": { "topic": "security", "reason": "title keyword: 'Securing Your Data'" },
+    "pgcon-2017-ha-aws-ec2": { "topic": "platform", "reason": "title keyword: 'Provisioning and Automating'" },
+    "pgconf-us-2017-ha-aws-ec2": { "topic": "platform", "reason": "title keyword: 'Provisioning and Automating'" },
+    "scale-15x-postgres-backups": { "topic": "reliability", "reason": "title keyword: 'Backups and Disaster Recovery'" },
+    "pgconf-us-2015-postgres-backups": { "topic": "reliability", "reason": "title keyword: 'backups and recovery'" },
+    "earlier-nyc-postgresql-conference": { "topic": "reliability", "reason": "lead detail: 'Backups and disaster recovery'" },
+    "cposc-automation-talk": { "topic": "platform", "reason": "lead detail: 'Automation using configuration-management tools'" },
+    "nyc-philadelphia-meetups": { "topic": "other", "reason": "lead detail: titles not recovered, so no topic is claimed" }
+  },
+
+  "posts": {
+    "new-home-for-my-musings": { "topic": "other", "reason": "tags: meta" },
+    "postgres-war-stories-1-the-bugs-that-arent-postgres": { "topic": "postgres", "reason": "tags: postgres, reliability, linux; postgres leads" },
+    "postgres-war-stories-2-silent-corruption": { "topic": "postgres", "reason": "tags: postgres, reliability, data-integrity; postgres leads" },
+    "loops-i-can-trust": { "topic": "ai", "reason": "tags: ai, agents, reliability, systems; ai leads" },
+    "the-agent-that-forged-its-own-grade": { "topic": "ai", "reason": "tags: ai, agents, reliability, security; ai leads" },
+    "six-months-up-the-ladder": { "topic": "ai", "reason": "tags: ai, agents, systems; ai leads" },
+    "the-agent-is-not-the-system": { "topic": "ai", "reason": "tags: ai, agents, reliability, systems, postgres; ai leads" },
+    "my-fleet-fixed-three-faults-while-i-slept": { "topic": "ai", "reason": "tags: ai, agents, reliability, systems; ai leads" }
+  },
+
+  "facts": {
+    "role": { "topic": "platform", "reason": "data/cv.md, current role: managed PostgreSQL platforms, data access governance, operational automation" },
+    "shipping": { "topic": "platform", "reason": "data/now.json shipping: 'self-hosted apps and data infra'" },
+    "reading": { "topic": "other", "reason": "a book; outside the five topics" },
+    "location": { "topic": "other", "reason": "a place; outside the five topics" }
+  },
+
+  "facts_note": "LED topics for the now pane's fixed facts. The speaking fact takes the topic of the upcoming talk in `talks`, and the latest post fact takes the topic of that post in `posts`, so neither is repeated here."
+}

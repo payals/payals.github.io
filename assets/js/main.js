@@ -4,9 +4,24 @@
  * terminal, the boot log, pane navigation, and the phase-2 modules. Module
  * boundaries and the order below are fixed in scratchpad/phase2/PLAN.md.
  *
- * Wiring order: terminal -> panes -> reader -> zoom -> palette -> clicks ->
- * topstats -> scrubber -> constellation -> boot log. Hash handling runs the
- * chain zoom -> scrubber -> panes; the first module that returns true wins.
+ * Wiring order: terminal -> panes -> topics -> reader -> zoom -> palette ->
+ * clicks -> topstats -> chart-cv -> chart-talks -> chart-writing -> mobile ->
+ * scrubber -> constellation -> boot log.
+ *
+ * Four orderings are load bearing, and phase-3 workers must not change them:
+ *
+ *   1. topics before palette. The palette indexes the topic entries.
+ *   2. chart-cv before chart-talks. The talks hairline mirrors into the cv
+ *      lanes through the onScrub callback passed in below, so the two chart
+ *      modules never import each other.
+ *   3. mobile before scrubber. mobile.js subscribes to console:asof and
+ *      console:topic, and both can fire from the first applyHash().
+ *   4. every chart before scrubber. The scrubber dims chart marks beyond the
+ *      scrubbed year and needs them to exist.
+ *
+ * Hash handling runs the chain topics -> zoom -> scrubber -> panes. topics
+ * composes rather than consuming (it always returns false), so a year and a
+ * topic can be in the hash at once: #2018&topic=security.
  */
 
 import { Terminal } from './terminal.js';
@@ -17,6 +32,11 @@ import { setupZoom } from './zoom.js';
 import { setupPalette } from './palette.js';
 import { setupClicks } from './clicks.js';
 import { setupTopstats } from './topstats.js';
+import { setupTopics } from './topics.js';
+import { setupChartTalks } from './chart-talks.js';
+import { setupChartWriting } from './chart-writing.js';
+import { setupChartCv } from './chart-cv.js';
+import { setupMobile } from './mobile.js';
 import { setupScrubber } from './scrubber.js';
 import { setupConstellation } from './constellation.js';
 import { runBootLog, replayBootLog } from './bootlog.js';
@@ -41,6 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const timeline = readJson('timeline-data', []);
   const talks = readJson('talks-data', []);
   const posts = readJson('posts-data', []);
+  // The topic key (phase 3): the six topic definitions in their fixed order
+  // plus id-to-topic maps for talks, posts and the now facts. Same records as
+  // data/topics.json. The rendered panes already carry data-topic on every
+  // row, so nothing recomputes a topic from tags at runtime.
+  const topics = readJson('topics-data', { topics: [], talks: {}, posts: {}, facts: {} });
 
   const registry = buildCommands({ tagline: tagline ? tagline.textContent.replace(/\s+/g, ' ').trim() : 'Payal Singh' });
   const term = new Terminal({
@@ -78,6 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   });
 
+  // Topics owns the legend, the filter and the topic hash segment. It is
+  // created before the palette because the palette indexes its entries, and
+  // before every chart because a chart mark is dimmed by the same attribute.
+  const topics2 = setupTopics({ term, registry, reducedMotion });
+
   const reader = setupReader({ term, reducedMotion, posts });
   // The constellation is created last (below); zoom tells it to refit after
   // the grid changes, because its wrapper is display:none while the terminal
@@ -96,13 +126,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const clicks = setupClicks({ term, panes, reducedMotion });
   const topstats = setupTopstats({ term, talks, timeline, reducedMotion });
+
+  // Charts. cv first: its scrubTo is what the talks hairline mirrors into.
+  const chartCv = setupChartCv({ term, talks, posts, topics, reducedMotion });
+  const chartTalks = setupChartTalks({
+    term,
+    talks,
+    topics,
+    reducedMotion,
+    onScrub(date) { chartCv.scrubTo(date); },
+  });
+  const chartWriting = setupChartWriting({ term, posts, topics, reducedMotion });
+
+  // Mobile listens on the bus, so it subscribes before the scrubber can emit.
+  const mobile = setupMobile({ term, panes, palette, reducedMotion });
+
   const scrubber = setupScrubber({ term, timeline, reducedMotion });
   constellation = setupConstellation({ term, posts, talks, reducedMotion });
 
-  // Hash chain: zoom (#cv, #writing/<slug>) -> scrubber (#2018) -> panes
-  // (#about, #links, #terminal, and any pane id the others left alone).
+  // Hash chain: topics (#...&topic=security, composes and never consumes) ->
+  // zoom (#cv, #writing/<slug>) -> scrubber (#2018) -> panes (#about, #links,
+  // #terminal, and any pane id the others left alone).
   function applyHash() {
     if (!location.hash) return;
+    topics2.applyHash();
     if (zoom.applyHash()) return;
     if (scrubber.applyHash()) return;
     panes.applyHash();
@@ -111,7 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     window.terminal = term;
-    window.console2 = { panes, zoom, reader, palette, clicks, topstats, scrubber, constellation };
+    window.console2 = {
+      panes, zoom, reader, palette, clicks, topstats, scrubber, constellation,
+      topics: topics2, chartTalks, chartWriting, chartCv, mobile,
+    };
   }
 
   // Any key or click before the log finishes prints the rest at once.

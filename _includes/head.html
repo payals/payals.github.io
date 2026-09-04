@@ -7,9 +7,18 @@
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/console.css">
   {%- if page.url == '/' %}
-  {%- comment -%} Phase-2 feature styles, landing only: the eight per-feature sheets
-  folded into one file in cascade order, so the head links three stylesheets. {%- endcomment %}
+  {%- comment -%} Feature styles, landing only: the sixteen per-feature sheets
+  the phase-2 and phase-3 workers owned, folded into one file in cascade order,
+  so the head links three stylesheets and the landing costs three CSS requests
+  rather than eleven. Phase 2 first, then the shared chart shell, the four
+  charts and the legend, and the phone layout last so it can override any of
+  them at its breakpoint without !important. {%- endcomment %}
   <link rel="stylesheet" href="/assets/css/features.css">
+  {%- comment -%} The `js` class, set before the body parses so nothing has to
+  react to it later. It is what lets a chart block reserve its height only
+  when a module will fill it, and what lets the phone disclosures render
+  closed without a flash. One line, no request, no library. {%- endcomment %}
+  <script>document.documentElement.classList.add('js');</script>
   {%- comment -%} The boot log's ready handoff is an absolute deadline measured from
   navigation start (assets/js/bootlog.js), so every round trip spent loading modules
   eats the 800ms budget. Without these hints the graph is three sequential round
@@ -31,6 +40,12 @@
   <link rel="modulepreload" href="/assets/js/scrubber.js">
   <link rel="modulepreload" href="/assets/js/constellation.js">
   <link rel="modulepreload" href="/assets/js/bootlog.js">
+  <link rel="modulepreload" href="/assets/js/chart-util.js">
+  <link rel="modulepreload" href="/assets/js/topics.js">
+  <link rel="modulepreload" href="/assets/js/chart-talks.js">
+  <link rel="modulepreload" href="/assets/js/chart-writing.js">
+  <link rel="modulepreload" href="/assets/js/chart-cv.js">
+  <link rel="modulepreload" href="/assets/js/mobile.js">
   {%- endif %}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="32x32">

@@ -1,0 +1,3577 @@
+---
+---
+/**
+ * features.scss: the phase-2 and phase-3 feature styles, landing only, in
+ * cascade order.
+ *
+ * BUDGET (phase3.md arbitration table): renamed from features.css to
+ * features.scss with this empty front matter block so Jekyll's Sass
+ * converter picks it up; `sass: style: compressed` in _config.yml emits it
+ * minified. GitHub Pages supports jekyll-sass-converter out of the box, so
+ * this needs no plugin and no build step of its own. The file is plain CSS
+ * inside (no Sass syntax is used), so nothing about the cascade or the
+ * selectors below changed: Jekyll just strips this front matter, runs the
+ * rest through the Sass compressor, and writes the result to
+ * /assets/css/features.css, the same URL _includes/head.html already
+ * links, so no other file has to change.
+ *
+ * Concatenated from the sixteen per-feature sheets the parallel workers
+ * owned, so the landing head links three stylesheets: tokens, console,
+ * features. Phase 2 first (zoom, reader, palette, clicks, bootlog, scrubber,
+ * topstats, constellation), then phase 3 (charts, links-row, topics,
+ * chart-talks, chart-writing, chart-cv, terminal, mobile).
+ *
+ * The order is the order the sheets were linked in and is load bearing:
+ * topstats reserves the topbar row that scrubber places into, constellation
+ * sizes the terminal body that every other sheet leaves alone, the shared
+ * chart shell comes before the four charts that specialise it, and the phone
+ * layout comes last so it can override any of them at its breakpoint without
+ * !important.
+ *
+ * Tokens only. No sheet here redefines a console.css class except where the
+ * comment above the rule says why.
+ */
+
+/* =================================================================== zoom */
+
+/* =============================================================
+   features/zoom.css: pane zoom (Z1 to Z6) for assets/js/zoom.js.
+   Requires tokens.css and console.css. Tokens only. The zoomed pane's
+   amber border and glow come from console.css (.pane.is-zoom); nothing
+   here glows. Worker A.
+
+   State: .console.is-zoomed and .pane.is-zoom. Below 768px the panes
+   already stack, so the state only expands the pane's content and the
+   grid is untouched. From 768px every other pane collapses into the
+   tab strip [data-zoomtabs]; from 1280px the terminal keeps its column.
+   ============================================================= */
+
+/* -------------------------------------------------------------
+   Tab strip: [n] name per collapsed pane, an esc chip, a hint.
+   ------------------------------------------------------------- */
+.zoomtabs {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.zoomtabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--dur-hover) var(--ease),
+              border-color var(--dur-hover) var(--ease);
+}
+
+.zoomtabs__tab:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+/* The key chip takes the pane's kind hue through --kind, which
+   console.css resolves from data-pane (or data-kind on the esc chip). */
+.zoomtabs__key {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  font-family: var(--font-mono);
+  font-size: inherit;
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  text-align: center;
+  color: var(--kind, var(--ink-2));
+  border: 1px solid var(--kind, var(--line-strong));
+  border-radius: var(--radius-sm);
+}
+
+.zoomtabs__hint {
+  display: none;
+  margin-left: auto;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------
+   Grid while zoomed (768px and up)
+   ------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .console.is-zoomed,
+  .shell--landing .console.is-zoomed {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .console.is-zoomed > .pane:not(.is-zoom) { display: none; }
+
+  .console.is-zoomed > .zoomtabs {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .console.is-zoomed > .pane.is-zoom {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .zoomtabs__hint { display: inline; }
+
+  /* The zoomed body reads at a measure: side padding grows so the content
+     column stays at or under 96ch while the scrollbar keeps the pane edge. */
+  .pane.is-zoom .pane__body {
+    padding-left: max(var(--pane-pad), calc((100% - 96ch) / 2));
+    padding-right: max(var(--pane-pad), calc((100% - 96ch) / 2));
+  }
+}
+
+/* From 1280px the terminal is always visible, so it keeps its column and
+   drops out of the tab strip. */
+@media (min-width: 1280px) {
+  .shell--landing .console.is-zoomed > .pane--terminal {
+    display: flex;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .console.is-zoomed > .zoomtabs,
+  .console.is-zoomed > .pane.is-zoom {
+    grid-column: 1 / 3;
+  }
+
+  .zoomtabs__tab[data-pane="terminal"] { display: none; }
+}
+
+/* Z6: the pane settles in under 200ms. tokens.css zeroes this under
+   prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .pane.is-zoom {
+    animation: zoom-settle 160ms var(--ease-out);
+  }
+}
+
+@keyframes zoom-settle {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* -------------------------------------------------------------
+   Zoomed talks: one list grouped by year, upcoming first
+   ------------------------------------------------------------- */
+.zoomtalks__group + .zoomtalks__group { margin-top: var(--space-4); }
+
+.zoomtalks .pane__section { margin-top: 0; }
+
+.zoomtalks > .meta { margin-top: var(--space-4); }
+
+/* -------------------------------------------------------------
+   Print only the cv (Z2). zoom.js sets body.is-printing-cv around
+   window.print() and copies the site author's name onto the cv block
+   so the heading that index.html drops from cv.md comes back on paper.
+   ------------------------------------------------------------- */
+@media print {
+  body.is-printing-cv {
+    background: #fff;
+    color: #000;
+  }
+
+  body.is-printing-cv .shell > :not(.console),
+  body.is-printing-cv .console > :not(#cv),
+  body.is-printing-cv #cv > :not(.pane__body),
+  body.is-printing-cv #cv .pane__body > :not([data-more]),
+  body.is-printing-cv #cv [data-more] > summary,
+  body.is-printing-cv .palette,
+  body.is-printing-cv .keytray,
+  body.is-printing-cv .skip-link {
+    display: none !important;
+  }
+
+  body.is-printing-cv .shell,
+  body.is-printing-cv .console,
+  body.is-printing-cv #cv,
+  body.is-printing-cv #cv .pane__body,
+  body.is-printing-cv #cv [data-more] {
+    display: block;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    border: 0;
+    box-shadow: none;
+    /* The zoom focused the pane, so its focus ring would print as an amber
+       frame around the whole sheet. */
+    outline: 0;
+    overflow: visible;
+  }
+
+  body.is-printing-cv [data-cv-full] {
+    max-width: none;
+    color: #000;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  body.is-printing-cv [data-cv-full]::before {
+    content: attr(data-print-name);
+    display: block;
+    margin: 0 0 6pt;
+    font-size: 18pt;
+    font-weight: 600;
+  }
+
+  body.is-printing-cv [data-cv-full] *,
+  body.is-printing-cv [data-cv-full] a {
+    color: #000;
+    background: none;
+  }
+
+  body.is-printing-cv [data-cv-full] a { text-decoration: none; }
+
+  body.is-printing-cv [data-cv-full] a[href^="http"]::after {
+    content: " " attr(href);
+    font-size: 0.9em;
+  }
+
+  body.is-printing-cv [data-cv-full] h3,
+  body.is-printing-cv [data-cv-full] h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  body.is-printing-cv [data-cv-full] hr {
+    border-top-color: #000;
+  }
+}
+
+/* =================================================================== reader */
+
+/* =============================================================
+   features/reader.css: the less-style post reader (R1, R2) for
+   assets/js/reader.js. Requires tokens.css and console.css. Tokens
+   only; nothing here glows. Worker A.
+
+   Markup (built by reader.js inside #writing [data-reader]):
+     .reader__bar     post badge, writing/<slug>, open on blog, back
+     .reader__scroll  head (title, subtitle, meta) + .prose + .reader__end
+     .reader__status  "<slug> line x of y NN%" and the key hint
+   From 1024px .reader__scroll scrolls inside the pane and the status
+   line sits under it; below that the page scrolls and the status line
+   sticks just above the statusbar.
+   ============================================================= */
+
+.reader {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.reader:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* Bar: kind badge, file name, persistent blog link, back button. */
+.reader__bar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+/* The post badge takes the post kind hue through --kind (the writing pane
+   carries data-kind="post"); a badge is one of the places a hue may sit. */
+.reader__badge {
+  color: var(--kind, var(--ink-2));
+  border-color: var(--kind, var(--line-strong));
+}
+
+.reader__file {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader__blog {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.reader__back {
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--text-xs);
+}
+
+.reader__note {
+  margin: var(--space-3) 0;
+}
+
+/* Scroll area: page scroll below 1024px, an inner scroller from 1024px. */
+.reader__scroll {
+  min-width: 0;
+  padding: var(--space-3) 0;
+}
+
+.reader__head,
+.reader__prose,
+.reader__end {
+  max-width: var(--measure);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reader__head { margin-bottom: var(--space-4); }
+
+.reader__title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.reader__sub {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-prose);
+  color: var(--ink-2);
+}
+
+.reader__meta { margin: 0; }
+
+.reader__meta time { font-variant-numeric: tabular-nums; }
+
+.reader__end {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.reader__end .btn {
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--text-xs);
+}
+
+/* Status line, less style. */
+.reader__status {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.reader__slug {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader__pos {
+  flex: 0 0 auto;
+  color: var(--ink);
+}
+
+.reader__keys {
+  margin-left: auto;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The key hint has no room beside the position on a phone. */
+@media (max-width: 479px) {
+  .reader__keys { display: none; }
+}
+
+@media (max-width: 1023px) {
+  .reader__status {
+    position: sticky;
+    bottom: var(--statusbar-h);
+    padding-bottom: var(--space-1);
+    background: var(--surface);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* While a post is open the pane body stops scrolling and the reader's
+     own scroller takes the height, so the bar and status line stay put. */
+  #writing.is-reading .pane__body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #writing.is-reading .reader {
+    flex: 1 1 auto;
+  }
+
+  .reader__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-right: var(--space-2);
+  }
+}
+
+/* =================================================================== palette */
+
+/* features/palette.css: the fuzzy palette (assets/js/palette.js), its
+   which-key tray and the search openers. Tokens only. The selected result
+   is the one place a kind hue becomes a ground (solid hue, --bg text, every
+   pair checked by scripts/check-contrast.py); badges and matched characters
+   take the hue as text; the group label and the dates use the year token
+   through the [data-year] rule in console.css. No glow, no shadow. */
+
+/* ---- overlay and box ---------------------------------------------- */
+.palette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-palette);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh var(--space-3) var(--space-3);
+  background: rgba(16, 14, 12, 0.6);
+}
+
+.palette__box {
+  display: flex;
+  flex-direction: column;
+  width: min(46rem, 100%);
+  max-height: 80vh;
+  max-height: 80dvh;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transform-origin: top center;
+  animation: palette-in var(--dur-panel) var(--ease-out) 1;
+}
+
+@keyframes palette-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- head: / glyph, combobox, live count --------------------------- */
+.palette__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.palette__glyph {
+  color: var(--kind-cmd);
+  font-weight: 600;
+}
+
+.palette__input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS zooming the page when the field gains focus */
+  caret-color: var(--accent);
+  outline: none;
+}
+
+.palette__input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+
+.palette__count {
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- results: kind groups and option rows -------------------------- */
+.palette__results {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.palette__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.palette__group + .palette__r { margin-top: 0; }
+
+.palette__groupname { text-transform: lowercase; }
+
+.palette__badge {
+  display: inline-block;
+  min-width: 3.2em;
+  padding: 0 0.3em;
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--kind, var(--ink-2));
+  border: 1px solid var(--kind, var(--line-strong));
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.palette__r {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.palette__r .palette__badge { align-self: center; }
+
+/* A topic result (T3) reads its own hue rather than a seventh kind hue,
+   so the palette gains no colour dimension the K3 budget did not already
+   pay for; the group header has no topic, so it falls back to neutral ink.
+   The shape glyph before the title is what keeps topic identity from
+   being colour alone inside the palette. */
+.palette__r[data-kind="topic"] { --kind: var(--topic, var(--ink-2)); }
+.palette__title .mark { margin-right: var(--space-1); }
+
+.palette__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette__title mark {
+  background: none;
+  color: var(--kind, var(--ink));
+  font-weight: 600;
+}
+
+.palette__meta {
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.palette__sub {
+  grid-column: 2 / -1;
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette__r:hover { background: var(--surface-2); }
+
+/* The current match: the whole row takes its kind hue as ground. */
+.palette__r[aria-selected="true"] {
+  background: var(--kind, var(--accent));
+  color: var(--bg);
+}
+
+.palette__r[aria-selected="true"] .palette__badge {
+  color: var(--bg);
+  border-color: var(--bg);
+}
+
+.palette__r[aria-selected="true"] .palette__title mark {
+  color: var(--bg);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
+}
+
+.palette__r[aria-selected="true"] .palette__meta,
+.palette__r[aria-selected="true"] .palette__sub {
+  color: var(--bg);
+}
+
+.palette__empty {
+  padding: var(--space-4) var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.palette__empty code { color: var(--ink); }
+
+/* ---- foot ---------------------------------------------------------- */
+.palette__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+
+/* Full-cv lines lit by a palette result (the .row and .facts dd rules live
+   in console.css; the prose lines inside the disclosure need their own). */
+[data-cv-full] .is-hit {
+  background: var(--kind-dim, var(--accent-dim));
+  border-radius: var(--radius-sm);
+}
+
+/* ---- openers ------------------------------------------------------- */
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-hover) var(--ease), border-color var(--dur-hover) var(--ease);
+}
+
+.search-btn:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.search-btn .kbd { color: var(--kind-cmd); }
+
+@media (max-width: 1439.98px) {
+  /* The statusbar's / search item carries search at every width; the topbar
+     button only appears where it fits beside the tagline without wrapping the
+     nav or the tagline after first paint (measured: it shifts at 768, 1024
+     and 1280). */
+  .search-btn { display: none; }
+}
+
+.statusbar__search {
+  font: inherit;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 479px) {
+  /* Seven items in 390px: the search item keeps its / key (a little
+     narrower) and its aria-label; the word goes. */
+  .statusbar__search-label { display: none; }
+  .statusbar__search .statusbar__key { padding: 0 0.2em; }
+}
+
+/* ---- which-key tray -------------------------------------------------
+   Sits on the statusbar's top edge, above the panes, so opening it moves
+   nothing. Closed by the next key or click. */
+.keytray {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--statusbar-h);
+  z-index: var(--z-keytray);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.keytray__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keytray__list li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.keytray .kbd { color: var(--kind-cmd); }
+
+/* The keys on/off control (WCAG 2.1.4's "turn off" option), injected by
+   palette.js as the tray's last item: a real button, reachable by Tab and
+   click without any single-character shortcut of its own. */
+.keytray__toggle { margin-left: auto; }
+.keytray__toggle .btn { color: var(--ink-2); }
+.keytray__toggle .btn[aria-pressed="false"] { color: var(--warn); border-color: var(--warn); }
+
+/* ---- small screens ------------------------------------------------- */
+@media (max-width: 767px) {
+  .palette { padding: var(--space-2); }
+  .palette__box { max-height: 88vh; max-height: 88dvh; }
+  .palette__r { grid-template-columns: max-content minmax(0, 1fr); }
+  .palette__meta { display: none; }
+  .palette__sub { grid-column: 2; }
+}
+
+/* =================================================================== clicks */
+
+/* features/clicks.css: click writes the command (assets/js/clicks.js).
+   A fact that carries data-cmd is clickable; hover uses the hovered-row
+   surface step, never a hue. The toast is a one-row overlay on the
+   statusbar that says what ran when the terminal is off screen. */
+
+.row[data-cmd],
+.facts dd[data-cmd],
+[data-cv-headline][data-cmd],
+.meta[data-cmd] {
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease);
+}
+
+.row[data-cmd]:hover,
+.facts dd[data-cmd]:hover,
+[data-cv-headline][data-cmd]:hover,
+.meta[data-cmd]:hover {
+  background: var(--surface-2);
+}
+
+/* Toast: fixed to the viewport bottom, which is where the statusbar sits in
+   both layouts (sticky below 1024px, the last shell row above). */
+.statusbar__toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--z-statusbar) + 1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--statusbar-h);
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.statusbar__toast-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusbar__toast-link {
+  flex: 0 0 auto;
+  color: var(--ink-2);
+}
+
+/* =================================================================== bootlog */
+
+/* features/bootlog.css: the career boot log (assets/js/bootlog.js).
+   The log reuses the scrollback line and segment rules from console.css
+   (.seg--year with data-year for the date column, .seg--ok/--info/--warn
+   for the level word, .seg--talk/--post/--cv/--now for the kind prefix,
+   .seg--bar for the progress bar, .seg--dim for the detail). Tokens only;
+   nothing here paints a hue or a glow. */
+
+/* The progress bar is ten block glyphs that must stay on one line; its
+   cells are aria-hidden and the plain "done" beside it is what a screen
+   reader hears. */
+.bootlog__bar {
+  white-space: nowrap;
+  font-variant-ligatures: none;
+}
+
+/* =================================================================== scrubber */
+
+/* features/scrubber.css: the year scrubber and the "as of" banner
+   (assets/js/scrubber.js). Tokens only. The thumb is amber because a
+   control's position is state; the track is a decorative line; the year
+   readout takes the year token through .scrubber__out[data-year] in
+   console.css. No transitions, so reduced motion needs nothing here. */
+
+/* Topbar placement. Below 768px the scrubber sits on the id row (the
+   telemetry is hidden there); from 768px it closes the telemetry row, which
+   is the second topbar row (topstats.css gives that row its basis). The
+   banner is its own full-width row under both. */
+.scrubber {
+  order: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .scrubber {
+    order: 5;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+.scrubber__label {
+  color: var(--ink-2);
+}
+
+.scrubber__input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 5rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .scrubber__input { width: 7rem; }
+}
+
+.scrubber__input::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.scrubber__input::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.scrubber__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+}
+
+.scrubber__input::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+}
+
+.scrubber__input:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: 0;
+  border-radius: var(--radius-sm);
+}
+
+.scrubber__out {
+  min-width: 4ch;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* "as of <year>" banner: a full-width topbar row while a past year is
+   selected. Amber text because it is a state the visitor put the page in. */
+.topbar__asof {
+  order: 6;
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--warn);
+}
+
+.btn--small {
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+/* Rows later than the selected year. A class, not the hidden attribute, so
+   the writing pane's data-rest rows and the zoom module keep their own. */
+.row.scrubber-hidden { display: none !important; }
+
+/* The one-line "then" fact in the now pane. scrubber.js already trims a
+   talk's detail to its venue or first sentence so this fits one line on
+   any sourced record; the truncation below is a safety net at 390px for
+   whatever content still runs long. */
+.then {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-console);
+}
+
+@media (max-width: 390px) {
+  /* The safety net used to be one clipped line, which at 390px cut the venue
+     off the then-fact ("... Securing Your Data On Pos"). The line only exists
+     while the timeline is scrubbed, so wrapping it costs the resting landing
+     nothing and keeps the whole fact readable; `anywhere` is what stops a
+     long unbroken token from widening the page instead. */
+  .then {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+}
+
+.then__label {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  margin-right: var(--space-1);
+}
+
+.then__date[data-year] {
+  color: var(--year, var(--ink-3));
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =================================================================== topstats */
+
+/* features/topstats.css: topbar telemetry and the visitor top strip
+   (assets/js/topstats.js). Tokens only. The role LED colour is set in
+   console.css (--kind-now); everything else here is --ink-2 labels and
+   --ink values with no hue and no glow. */
+
+/* ---- Topbar telemetry row -------------------------------------------
+   From 768px the three facts form the second topbar row together with the
+   scrubber (scrubber.css puts the scrubber at the row's right end): the
+   flex basis leaves room for the scrubber (161px below 1024px, 193px from
+   1024px, plus the column gap) and nothing more, so the row can never be
+   pulled up beside the tagline. From 768px to 1023px the uptime fact is
+   not shown so the two facts that matter fit the 528px beside the
+   scrubber on any platform's mono face; the cv pane carries the same
+   dates. Below 768px the row is not shown; the now pane carries the facts.
+
+   The landing topbar reserves this row's height (18px line plus the 4px
+   row gap) from 768px, and the second tagline line that 1024 to 1279px
+   already wraps to, so revealing the row after first paint moves nothing
+   (Q1). Without JS the band under the tagline stays empty. Lines pack
+   from the top so the id row does not move when the second row lands. */
+.topbar__stats {
+  display: none;
+  order: 4;
+  /* Phase 3 (SB1) put `2013` and `now` labels on the ends of the slider,
+     which widened it; the reservation grew with it so the telemetry row
+     and the slider still share one line and the topbar stays 70px. */
+  flex: 1 1 calc(100% - 15rem);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  .topbar__stats { display: flex; }
+  .shell--landing .topbar {
+    min-height: calc(var(--topbar-h) + 1.375rem);
+    align-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .topbar__stat[data-stat="uptime"] { display: none; }
+}
+
+@media (min-width: 1024px) {
+  /* 18rem, not 15rem: the phase-3 slider is 255px wide with its `2013`
+     and `now` end labels, plus the 24px column gap, and .scrubber's
+     margin-left:auto means it only shares the line when that much free
+     space is left. At 15rem it wrapped and the topbar grew from 70px to
+     92px, which came straight out of every pane body. */
+  .topbar__stats { flex-basis: calc(100% - 18rem); }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .shell--landing .topbar {
+    min-height: calc(var(--topbar-h) + 1.375rem + 1.3125rem);
+  }
+}
+
+.topbar__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  white-space: nowrap;
+}
+
+.topbar__stat + .topbar__stat::before {
+  content: "\00b7";
+  margin-right: var(--space-1);
+  color: var(--ink-3);
+}
+
+/* The LED: a dot the size of a lowercase letter. Colour from console.css. */
+.topbar__led {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+}
+
+/* ---- Visitor top strip -----------------------------------------------
+   Last child of the terminal body. At 1024px and up it is open by default
+   and reads as one line, "top  1440x900 · up 12s · 2 panes · 0 cmds · 3
+   keys", with the note under it, at the statusbar's 11px so it fits the
+   411px terminal column at 1280px. Below 1024px the title is a disclosure
+   button and the fields sit under it at 12px. The dt labels are visually
+   hidden at every size because each value names itself; screen readers
+   still get them. */
+.top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink-2);
+}
+
+.top__title {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+  line-height: inherit;
+}
+
+.top__toggle {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.top__toggle::before {
+  content: "\25b8";
+  display: inline-block;
+  width: 1.2em;
+  color: var(--ink-3);
+}
+
+.top__toggle[aria-expanded="true"]::before {
+  content: "\25be";
+}
+
+.top__toggle:hover {
+  color: var(--ink);
+}
+
+.top__body {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  min-width: 0;
+}
+
+.top__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.top__fields dt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.top__fields dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.top__fields dd:not(:first-of-type)::before {
+  content: "\00b7";
+  margin-right: var(--space-2);
+  color: var(--ink-3);
+}
+
+.top__note {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--ink-3);
+}
+
+@media (min-width: 1024px) {
+  .top {
+    font-size: var(--text-2xs);
+  }
+  .top__body {
+    flex: 1 1 auto;
+    display: contents;
+  }
+  .top__fields {
+    flex: 1 1 auto;
+  }
+  /* 11px is under the --ink-3 floor, so the note steps up to --ink-2. */
+  .top__note {
+    color: var(--ink-2);
+  }
+}
+
+/* =================================================================== constellation */
+
+/* features/constellation.css: the signature canvas (assets/js/constellation.js).
+   Tokens only. The canvas paints two kind hues (talk circles, post squares)
+   and neutral rings; no glow, no gradient, no background hue. */
+
+/* Terminal body: while the constellation is shown, the scrollback keeps its
+   content height and the wrapper takes the idle space; when the wrapper is
+   hidden (no JS, under 120px, below 768px) the scrollback fills the pane
+   as in phase 1 and the prompt stays at the bottom in both cases. Browsers
+   without :has() split the space between the two, which still works. */
+.pane--terminal .pane__body:has(> .constellation:not([hidden])) > .disclose--log {
+  flex: 0 1 auto;
+}
+
+.constellation {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .constellation { display: block; }
+}
+
+/* From 768px to 1023px the terminal pane grows with its content, so the
+   wrapper is a fixed block above the prompt instead of a flex filler. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .constellation {
+    flex: 0 0 auto;
+    height: 10rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* Desktop reserves the canvas as a fixed block so it is on screen at first
+     paint and never resizes: the career log scrolls inside the scrollback
+     above it instead of squeezing it line by line, which is what produced the
+     only measurable layout shift on the landing (Q1). */
+  .constellation {
+    flex: 0 0 auto;
+    height: 14rem;
+  }
+
+  .pane--terminal .pane__body:has(> .constellation:not([hidden])) > .disclose--log {
+    flex: 1 1 0;
+  }
+}
+
+.constellation__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.constellation__canvas.is-hot { cursor: pointer; }
+
+/* Hovered title: --ink on --surface beside the node. The kind prefix and
+   the year inside it use the shared .seg--* rules from console.css. */
+.constellation__tip {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  max-width: calc(100% - var(--space-2));
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* ============================================================= charts */
+
+/* =============================================================
+   features/charts.css: the shared chart shell for phase 3.
+   Owned by the ARCHITECT. Frozen for the feature workers: no worker
+   edits this file. It holds only what more than one chart needs, so
+   the four chart sheets never duplicate a rule or drift apart.
+
+   What lives here
+     1. .chart          the reserved chart block inside a pane body
+     2. .mark           the six topic shapes, one class per shape
+     3. topic dimming   the T2 filter, done entirely in CSS
+     4. scrubber dimming the SB4 "beyond the scrubbed year" state
+     5. .tip            the one shared tooltip element
+     6. .hitrow         the row a mark points at
+
+   Requires tokens.css and console.css. Tokens only, no raw hex.
+   ============================================================= */
+
+/* -------------------------------------------------------------
+   1. The chart block.
+
+   Charts are progressive enhancement: without JavaScript there is no
+   chart and the pane reads exactly as it did in phase 2, so .chart is
+   display:none until the `js` class on <html> says a module will fill
+   it (the one-line inline script in _includes/head.html). With JS the
+   block is laid out at its final height from first paint, so filling
+   it later moves nothing (Q1 CLS, MB14).
+   ------------------------------------------------------------- */
+.chart { display: none; }
+
+.js .chart {
+  display: block;
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+/* The plot area. Height is reserved, never content-driven. */
+.chart__plot {
+  position: relative;
+  height: var(--chart-h);
+  min-width: 0;
+}
+
+/* One line of guidance under a plot on a phone, where the short sentence
+   fits; up to two at 768px and above, where the long one does not. The
+   wide hint says both what hovering does and what a hollow mark means, and
+   at a 438px pane that is 656px of text: one clipped line dropped the
+   second clause outright. Two lines cost 17px of the pane body, which the
+   record list under the chart pays for by scrolling 17px sooner, and cost
+   the page nothing because the pane body already scrolls internally. */
+.chart__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-2xs);
+  line-height: var(--leading-console);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 768px) {
+  .chart__hint {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+}
+
+/* The cv summary line (CV1). One --text-xs line under the lanes. */
+.chart__sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.chart__sum strong {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .chart__plot { height: var(--chart-h-md); }
+}
+
+/* Two hints per chart: the phone one is a short sentence about tapping,
+   the wide one names the hover and focus behaviour that only exists there.
+   One line either way, so a chart block is 60 + 17 + 13 = 90px on a phone,
+   under MB6's 96px cap, and never truncates what it says. */
+.chart__hint-sm { display: none; }
+
+@media (max-width: 767px) {
+  .chart__plot { height: var(--chart-h-sm); }
+  .chart__hint-lg { display: none; }
+  .chart__hint-sm { display: inline; }
+}
+
+/* -------------------------------------------------------------
+   2. Topic marks: colour plus shape, always both.
+
+   Any element with data-topic resolves --topic to its hue, so a mark,
+   an LED, a calendar cell, a career tick and a legend chip all read
+   one variable. The shape class is what carries the meaning for a
+   visitor who cannot separate the hues.
+   ------------------------------------------------------------- */
+[data-topic="postgres"]    { --topic: var(--topic-postgres); }
+[data-topic="reliability"] { --topic: var(--topic-reliability); }
+[data-topic="security"]    { --topic: var(--topic-security); }
+[data-topic="platform"]    { --topic: var(--topic-platform); }
+[data-topic="ai"]          { --topic: var(--topic-ai); }
+[data-topic="other"]       { --topic: var(--topic-other); }
+
+.mark {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 0.6em;
+  height: 0.6em;
+  vertical-align: 0.05em;
+  background: var(--topic, var(--ink-3));
+  border-radius: 50%;
+}
+
+.mark--circle   { border-radius: 50%; }
+.mark--square   { border-radius: 1px; }
+.mark--diamond  { border-radius: 1px; transform: rotate(45deg) scale(0.85); }
+.mark--triangle { border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.mark--hexagon  { border-radius: 0; clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); }
+.mark--ring     { background: transparent; box-shadow: inset 0 0 0 2px var(--topic, var(--ink-3)); }
+
+/* A row's topic mark sits in the date column, before the date. */
+.row__mark { margin-right: var(--space-1); }
+
+/* N2: the now pane's LEDs. The same colour and shape as any other mark,
+   sized to sit in the label column beside the fact name. */
+.led {
+  width: 9px;
+  height: 9px;
+  margin-right: var(--space-1);
+}
+
+.led--ok { --topic: var(--ok); }
+
+/* N1: the career uptime line above the facts. */
+.uptime {
+  display: flex;
+  align-items: center;
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--line-strong);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.uptime strong {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The now pane's label column carries the LED, so it is a flex row. */
+.facts dt {
+  display: flex;
+  align-items: center;
+  align-self: start;
+}
+
+/* Area fills (K3). A mark smaller than about 16px may be solid; anything
+   with real area may not. A solid --topic-postgres bar 380px wide across
+   the cv pane was, in the architect's combined-colour render, the loudest
+   object on the page by a distance, louder than the amber state colour it
+   must never outrank. So a filled shape carries the hue at 22% with a solid
+   2px leading edge and an --ink label: the topic still reads, the area does
+   not shout, and the label keeps its own contrast on the pane surface. Used
+   by the cv role segments and by any future filled chart shape. */
+.chart-fill {
+  background: color-mix(in srgb, var(--topic, var(--ink-3)) var(--chart-fill), transparent);
+  border-left: 2px solid var(--topic, var(--ink-3));
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------
+   3. Topic filter (T2). One attribute on <body> drives every pane.
+
+   topics.js sets body[data-topic-filter]; nothing else is needed. The
+   dim is opacity on the mark or on the row container, never a text
+   colour, so a dimmed row's text keeps the ratio it had and a link
+   inside it returns to full ink on hover and focus. The terminal, the
+   topbar, the legend and the status bar are never dimmed.
+   ------------------------------------------------------------- */
+.chart-mark,
+.row[data-topic],
+.facts dd[data-topic] {
+  transition: opacity var(--dur-hover) var(--ease);
+}
+
+/* :where(), not :is(). :is() takes the specificity of its most specific
+   argument, so `:is(.chart-mark, .row, .facts dd)` scored a class higher
+   than the mark rule below it and every chart mark dimmed to --dim-row
+   instead of --dim-mark. :where() contributes nothing, so the two rules
+   sit at the same weight and source order decides, which is what the
+   cascade here was written to rely on. */
+body[data-topic-filter="postgres"]    :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="postgres"]),
+body[data-topic-filter="reliability"] :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="reliability"]),
+body[data-topic-filter="security"]    :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="security"]),
+body[data-topic-filter="platform"]    :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="platform"]),
+body[data-topic-filter="ai"]          :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="ai"]),
+body[data-topic-filter="other"]       :where(.chart-mark, .row, .facts dd)[data-topic]:not([data-topic="other"]) {
+  opacity: var(--dim-row);
+}
+
+/* Marks dim harder than rows: a mark has no text to keep readable. */
+body[data-topic-filter="postgres"]    .chart-mark[data-topic]:not([data-topic="postgres"]),
+body[data-topic-filter="reliability"] .chart-mark[data-topic]:not([data-topic="reliability"]),
+body[data-topic-filter="security"]    .chart-mark[data-topic]:not([data-topic="security"]),
+body[data-topic-filter="platform"]    .chart-mark[data-topic]:not([data-topic="platform"]),
+body[data-topic-filter="ai"]          .chart-mark[data-topic]:not([data-topic="ai"]),
+body[data-topic-filter="other"]       .chart-mark[data-topic]:not([data-topic="other"]) {
+  opacity: var(--dim-mark);
+}
+
+/* A dimmed row's link comes back to full ink when it is hovered or
+   focused, so nothing a visitor is actually reading stays dimmed. */
+body[data-topic-filter] .row:hover,
+body[data-topic-filter] .row:focus-within,
+body[data-topic-filter] .facts dd:hover,
+body[data-topic-filter] .facts dd:focus-within {
+  opacity: 1;
+}
+
+/* Never dim these, whatever the filter says. */
+body[data-topic-filter] .topbar,
+body[data-topic-filter] .legendbar,
+body[data-topic-filter] .statusbar,
+body[data-topic-filter] .pane--terminal,
+body[data-topic-filter] .linksrow {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------
+   4. Scrubbed-past state (SB4). scrubber.js toggles .is-after on any
+   .chart-mark whose data-year is later than the scrubbed year. Rows
+   keep phase 2's .scrubber-hidden; marks dim instead of disappearing
+   so the shape of the record stays legible.
+   ------------------------------------------------------------- */
+.chart-mark.is-after { opacity: var(--dim-mark); }
+
+/* -------------------------------------------------------------
+   5. Tooltip. One element, appended to <body> by chart-util.js, shared
+   by every chart. Visual only: aria-hidden, and every trigger carries
+   the same text in its own aria-label, so nothing depends on it.
+   ------------------------------------------------------------- */
+.tip {
+  position: fixed;
+  z-index: var(--z-tip);
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--topic, var(--accent));
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.tip__title { margin: 0; color: var(--ink); }
+.tip__meta  { margin: var(--space-1) 0 0; color: var(--ink-2); }
+.tip__kv    { margin: var(--space-1) 0 0; color: var(--ink-3); }
+
+/* -------------------------------------------------------------
+   6. The row a mark points at. Amber, because being pointed at is a
+   state, not a kind: it matches the focus ring and the scrub hairline.
+   ------------------------------------------------------------- */
+.row--hit {
+  background: var(--accent-dim);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* -------------------------------------------------------------
+   7. Focus for chart controls. Marks and cells are native buttons with
+   no chrome of their own, so the ring is drawn on the shape.
+   ------------------------------------------------------------- */
+.chart-mark {
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.chart-mark:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-mark,
+  .row[data-topic],
+  .facts dd[data-topic] { transition: none; }
+}
+
+/* ========================================================== links-row */
+
+/* =============================================================
+   features/links-row.css: the links row (LK1, LK2).
+   Owned by the ARCHITECT and finished. No worker edits this file.
+
+   The links pane became one line inside the console frame directly
+   above the status bar: a `[4] links` label, then the eight links
+   inline. No pane border, no surface fill, no tall cell; a top rule
+   only, so it reads as the last line of the console rather than as a
+   sixth box. Key `4`, `#links`, the status bar item and the palette
+   entry all still focus it (#links is unchanged, only the element
+   around it is).
+   ============================================================= */
+
+.linksrow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) var(--pane-pad) 0;
+  border-top: 1px solid var(--line-strong);
+}
+
+.linksrow:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius);
+}
+
+/* The label answers the `4` in the status bar, so it is the same chip
+   shape as a pane title's key. */
+.linksrow__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  color: var(--ink);
+}
+
+.linksrow__key {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  text-align: center;
+  /* Same chip as .pane__key, which K3 reduction 1 took the kind hue off.
+     The two are never allowed to differ. */
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+/* At 768px and up the row never wraps: the eight links sit on one
+   line and the row scrolls nothing. Below 768px it wraps into the
+   two-column grid MB11 asks for. */
+.linksrow .links {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* While a pane is zoomed the console is a two-row grid (features.css). The
+   links row keeps its place as the last line above the status bar, so the
+   zoomed grid gains one auto row for it. */
+@media (min-width: 768px) {
+  .shell--landing .console.is-zoomed {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .shell--landing .console.is-zoomed > .linksrow {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+@media (min-width: 768px) {
+  .linksrow .links {
+    flex-wrap: nowrap;
+    gap: var(--space-4);
+    overflow: hidden;
+  }
+  .linksrow .links li { min-width: 0; }
+  /* The name never truncates, only the handle. As a flex line the anchor's
+     first child is the anonymous text run of the name, which cannot shrink
+     below its own word, and the handle beside it is the item that gives way
+     and takes the ellipsis. Truncating by anchor instead took `email` to
+     `emai` and `rss` to `rs` at 1024, because a flex line shrinks the widest
+     item hardest and those two are the narrowest. */
+  .linksrow .links a {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .linksrow .links__host {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Eight name/handle pairs are 1,003px of type; with the label and the seven
+   gutters the row needs 1,188px, which it first has at 1280. Below that the
+   handle is clipped out of sight rather than truncated, exactly as the phone
+   block does it, so the accessible name is still "github/payals" while the
+   eye reads "github". Truncating instead of hiding shrinks a flex line by
+   item width, so the two links with no handle at all lost the most in
+   proportion and printed "emai" and "rs" at 1024. */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .linksrow .links__host {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* Arbitration, 2026-09-04 (phase3.md "Arbitration after the first
+   phase-3 run", conflict 1): LK1 (at most two lines below 768px) and MB11
+   (a two-column grid of full-width 44px targets) cannot both be met on a
+   phone — eight links in two lines at 390px cannot also be 44px-tall
+   full-width cells. MB11 wins on phones. LK1's two-line cap now applies
+   only from 768px up (the `min-width: 768px` block above). Below 768px:
+   the label sits on its own line, then a two-column grid of cells at
+   least 44px tall, and the handle is shown in full and wraps inside its
+   own cell instead of being clipped or truncated — the accessible name
+   and the visible text are the same string again. */
+@media (max-width: 767px) {
+  .linksrow {
+    display: block;
+    padding: var(--space-2) var(--pane-pad);
+  }
+  .linksrow__label { margin-bottom: var(--space-2); }
+
+  .linksrow .links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+  /* MB7: at least 44px tall, 8px between adjacent cells (the grid gap).
+     The name and the handle both show, the handle on its own line inside
+     the cell when it does not fit beside the name, so a cell grows past
+     44px rather than clipping anything. */
+  .linksrow .links a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 44px;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-align: center;
+    /* console.css's base `.links a { white-space: nowrap }` (it serves other
+       link lists too) outranks nothing here on specificity, but this rule
+       never used to set white-space at all, so nowrap simply carried
+       through unopposed and pushed "/in/payalsingh" 12px past a 320px
+       viewport. overflow-wrap alone cannot create a break opportunity
+       inside a nowrap box; the wrap has to be turned back on explicitly. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .linksrow .links__host {
+    display: block;
+    min-width: 0;
+    white-space: normal;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+}
+
+/* At 320px, the narrowest width this site supports, a 4px gutter is what
+   gives so two columns of a 296px line stay comfortably clear of the
+   96px handles ("/in/payalsingh", "/@reliable-by-design") wrapping inside
+   their own cell rather than the grid itself needing to narrow. */
+@media (max-width: 359px) {
+  .shell--landing .linksrow { padding-inline: var(--space-1); }
+  .linksrow .links { gap: var(--space-1); }
+}
+
+/* ============================================================= topics */
+
+/* =============================================================
+   features/topics.css: the topic legend bar (T1) and the filter's
+   visible state.
+
+   OWNER: worker T (topics.js). The ARCHITECT wrote the static
+   presentation below so the bar renders correctly at first paint,
+   from Liquid, with JavaScript off. T owns this file from now on and
+   adds to it. Do not delete what is here without saying why in your
+   report.
+
+   Shared row and chart-mark dimming lives in features/charts.css §3 and
+   is driven by body[data-topic-filter]. This sheet completes the same
+   state for the now LEDs and per-row reading-time bars, which are not
+   chart controls. topics.js still sets one attribute and nothing else.
+
+   Requires tokens.css, console.css and features/charts.css.
+   ============================================================= */
+
+/* The bar sits between the topbar and the console, full width, one
+   line at >=1024px. Its height is reserved by --legendbar-h so the
+   console below it never moves after first paint (Q1, MB14). */
+.legendbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: var(--legendbar-h);
+  padding: 0 var(--space-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+
+.legendbar__label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* A chip is a mark (colour plus shape), a name and a count. Three
+   encodings, so the colour is never doing the work alone. */
+.legend__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.1em 0.55em 0.1em 0.4em;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-console);
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.legend__btn:hover {
+  color: var(--ink);
+  border-color: var(--topic);
+}
+
+/* Pressed is a state, so the chip takes the amber ring that every
+   other state on this site takes, plus a wash of its own hue so the
+   visitor can see which topic is lit without reading the label. */
+.legend__btn[aria-pressed="true"] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--topic) var(--chart-fill), transparent);
+  border-color: var(--accent);
+}
+
+.legend__count {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend__btn[aria-pressed="true"] .legend__count { color: var(--ink-2); }
+
+/* The hint is the far-right half of the bar: what pressing a chip
+   does at rest, what is showing while a filter is on. Wide screens
+   only; there is no room for it on a phone and the chips say enough. */
+.legendbar__hint {
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .legendbar__hint { display: block; }
+}
+
+/* MB6: at most two lines on a phone, and MB7's 44px touch targets. The
+   `topics` label goes; the chips are the label. */
+@media (max-width: 767px) {
+  .legendbar {
+    flex-wrap: wrap;
+    padding: var(--space-1) var(--space-2);
+  }
+  .legendbar__label { display: none; }
+  .legend__btn {
+    min-height: 44px;
+    padding: 0 var(--space-2);
+  }
+}
+
+/* Below 360px the six chips take three rows when they are free to wrap:
+   "reliability" alone is 123px of a 304px line, so a greedy wrap packs
+   two, then three, then one. A fixed three-column grid is what holds MB6's
+   two-line ceiling at 320px. The padding and the inner gap come down with
+   it so the longest label still fits its column; nothing is hidden and no
+   chip loses its count. The 44px target survives: a column is 97px wide
+   and every chip keeps min-height 44px. */
+@media (max-width: 359px) {
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1) 6px;
+    width: 100%;
+  }
+  .legend__btn {
+    justify-content: center;
+    gap: 0.3em;
+    padding: 0 3px;
+  }
+}
+
+/* T2 completion for topic marks that are not chart controls. The shared
+   chart sheet dims chart marks and row containers; now LEDs live beside
+   their dd rather than inside it, and reading-time bars are marks inside a
+   dimmed row, so each also needs its own mark-strength state. */
+.facts .led[data-topic],
+.row__mark[data-topic],
+.reading-bar[data-topic] {
+  transition: opacity var(--dur-hover) var(--ease);
+}
+
+body[data-topic-filter="postgres"]    .facts .led[data-topic]:not([data-topic="postgres"]),
+body[data-topic-filter="reliability"] .facts .led[data-topic]:not([data-topic="reliability"]),
+body[data-topic-filter="security"]    .facts .led[data-topic]:not([data-topic="security"]),
+body[data-topic-filter="platform"]    .facts .led[data-topic]:not([data-topic="platform"]),
+body[data-topic-filter="ai"]          .facts .led[data-topic]:not([data-topic="ai"]),
+body[data-topic-filter="other"]       .facts .led[data-topic]:not([data-topic="other"]) {
+  opacity: var(--dim-mark);
+}
+
+/* These marks sit inside a row that is already at --dim-row. Their local
+   0.368421 opacity composes with 0.76 to an effective 0.28 (0.28 / 0.76),
+   matching every standalone chart mark instead of multiplying 0.28 by the
+   row dim. */
+body[data-topic-filter="postgres"]    :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="postgres"]),
+body[data-topic-filter="reliability"] :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="reliability"]),
+body[data-topic-filter="security"]    :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="security"]),
+body[data-topic-filter="platform"]    :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="platform"]),
+body[data-topic-filter="ai"]          :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="ai"]),
+body[data-topic-filter="other"]       :is(.row__mark, .reading-bar)[data-topic]:not([data-topic="other"]) {
+  opacity: 0.368421;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .facts .led[data-topic],
+  .row__mark[data-topic],
+  .reading-bar[data-topic] { transition: none; }
+}
+
+/* T2, the text floor of the dimmed state.
+
+   The dim is opacity on the row container, and opacity composites the whole
+   group toward the pane surface, so every colour inside a dimmed row loses
+   ratio with it. --dim-row is 0.76 (tokens.css), the alpha at which --ink-2
+   itself still holds 4.5:1 on --surface, the only surface a dimmed row ever
+   sits on (hover and focus-within are excluded from dimming, so
+   --surface-2 never applies here). At 0.76, --ink clears the floor with a
+   wide margin (about 8.7:1) and every kind or year hue a row can carry
+   clears it too; only --ink-3 does not (it composites to about 3.3:1 to
+   3.5:1, since it was already the quietest text token before the dim).
+
+   The resolution: the row keeps 0.76 and swaps --ink-3 for --ink-2 inside
+   itself. Custom properties inherit, so setting --ink-3 to --ink-2's value
+   on the row or the fact carries into every descendant that reads
+   var(--ink-3) — the date column at rest, a note, a hint — while --ink,
+   the year scale and the kind key are untouched because they already hold
+   the floor. The topic itself is still drawn, in the row's own mark, which
+   never reads --ink-3 and keeps its hue regardless; every text tint comes
+   back to its own value the moment the row is hovered, focused, pointed at
+   by the palette, or the filter is cleared. scripts/check-contrast.py
+   asserts the swap and the composite, and reads this rule back out of this
+   file so the composite can never outlive the rule it describes. Keep the
+   `--ink-3: var(--ink-2)` declaration: that is what it finds. */
+body[data-topic-filter="postgres"] :where(.row, .facts dd)[data-topic]:not([data-topic="postgres"]):not(.is-hit):not(:hover):not(:focus-within),
+body[data-topic-filter="reliability"] :where(.row, .facts dd)[data-topic]:not([data-topic="reliability"]):not(.is-hit):not(:hover):not(:focus-within),
+body[data-topic-filter="security"] :where(.row, .facts dd)[data-topic]:not([data-topic="security"]):not(.is-hit):not(:hover):not(:focus-within),
+body[data-topic-filter="platform"] :where(.row, .facts dd)[data-topic]:not([data-topic="platform"]):not(.is-hit):not(:hover):not(:focus-within),
+body[data-topic-filter="ai"] :where(.row, .facts dd)[data-topic]:not([data-topic="ai"]):not(.is-hit):not(:hover):not(:focus-within),
+body[data-topic-filter="other"] :where(.row, .facts dd)[data-topic]:not([data-topic="other"]):not(.is-hit):not(:hover):not(:focus-within) {
+  --ink-3: var(--ink-2);
+}
+
+/* A row the palette is pointing at is the row being read, so it is never
+   dimmed, exactly as hover and focus are not. */
+body[data-topic-filter] .row[data-topic].is-hit,
+body[data-topic-filter] .facts dd[data-topic].is-hit {
+  opacity: 1;
+}
+
+/* ======================================================== chart-talks */
+
+/* =============================================================
+   features/chart-talks.css: the talks timeline strip (TL1, TL2).
+
+   OWNER: worker TL (assets/js/chart-talks.js). Everything shared already
+   exists in features/charts.css (.chart, .chart__plot,
+   .chart__hint, .mark, .chart-mark, .tip, .row--hit, the topic filter
+   and the scrubbed-past dim). Use those; add only what the strip
+   itself needs.
+
+   Rules that apply here
+     - The plot height is var(--chart-h) and its two responsive
+       siblings. Never hard-code a height: lay the lanes out inside
+       whatever the token says.
+     - Topic hues on marks and lead spans only, never on text.
+     - Amber is the only state colour: the scrub hairline, the focus
+       ring, the hit row.
+     - Reduced motion removes transitions; every control still works.
+
+   Requires tokens.css, console.css, features/charts.css.
+   ============================================================= */
+
+.talks-timeline {
+  --talks-axis-h: 1.5rem;
+  position: relative;
+  height: 100%;
+  margin: 0 0.375rem;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.talks-timeline__track {
+  position: absolute;
+  inset: 0 0 var(--talks-axis-h);
+}
+
+.talks-timeline__axis {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--talks-axis-h);
+}
+
+.talks-timeline__baseline {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-top: 1px solid var(--line-strong);
+  pointer-events: none;
+}
+
+.talks-timeline__tick {
+  position: absolute;
+  bottom: -3px;
+  width: 1px;
+  height: 7px;
+  background: var(--line-strong);
+  pointer-events: none;
+}
+
+.talks-timeline__year {
+  position: absolute;
+  bottom: 0;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  /* The last label sits at left:100% with no room to its right, so without
+     this it wrapped to one digit a line and stood four lines tall. The cv
+     axis already carried the same declaration. */
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.talks-timeline__year.is-first { transform: none; }
+.talks-timeline__year.is-last { transform: translateX(-100%); }
+
+.talks-timeline__span {
+  position: absolute;
+  top: 3px;
+  height: 0;
+  border-top: 2px dashed var(--topic);
+  opacity: 0.72;
+  pointer-events: none;
+  transition: opacity var(--dur-hover) var(--ease);
+}
+
+.talks-timeline__mark {
+  position: absolute;
+  bottom: -11px;
+  z-index: 1;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  place-items: center;
+  transform: translateY(var(--lane, 0));
+}
+
+.talks-timeline__mark--lead {
+  top: -8px;
+  bottom: auto;
+  transform: none;
+}
+
+.talks-timeline__mark > .mark {
+  width: 11px;
+  height: 11px;
+}
+
+.talks-timeline__mark:hover,
+.talks-timeline__mark:focus-visible,
+.talks-timeline__mark[aria-current="true"],
+.talks-timeline__mark.is-touch-selected {
+  z-index: 3;
+}
+
+.talks-timeline__mark:hover > .mark,
+.talks-timeline__mark[aria-current="true"] > .mark,
+.talks-timeline__mark.is-touch-selected > .mark {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.talks-timeline__scrub {
+  position: absolute;
+  top: 0;
+  bottom: calc(0px - var(--talks-axis-h));
+  z-index: 4;
+  width: 1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.talks-timeline__scrub-label {
+  position: absolute;
+  top: 0;
+  left: 0.375rem;
+  padding: 0 0.35em;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-2xs);
+  line-height: var(--leading-console);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.talks-timeline__scrub--flip .talks-timeline__scrub-label {
+  right: 0.375rem;
+  left: auto;
+}
+
+body[data-topic-filter="postgres"] .talks-timeline__span[data-topic]:not([data-topic="postgres"]),
+body[data-topic-filter="reliability"] .talks-timeline__span[data-topic]:not([data-topic="reliability"]),
+body[data-topic-filter="security"] .talks-timeline__span[data-topic]:not([data-topic="security"]),
+body[data-topic-filter="platform"] .talks-timeline__span[data-topic]:not([data-topic="platform"]),
+body[data-topic-filter="ai"] .talks-timeline__span[data-topic]:not([data-topic="ai"]),
+body[data-topic-filter="other"] .talks-timeline__span[data-topic]:not([data-topic="other"]) {
+  opacity: var(--dim-mark);
+}
+
+@media (max-width: 767px) {
+  .talks-timeline { --talks-axis-h: 1.35rem; }
+
+  .talks-timeline__mark {
+    bottom: -22px;
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+  }
+
+  .talks-timeline__mark--lead {
+    top: -19px;
+    bottom: auto;
+  }
+
+  .talks-timeline__mark > .mark {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talks-timeline__span { transition: none; }
+}
+
+/* ====================================================== chart-writing */
+
+/* features/chart-writing.css: the writing calendar (W1) and the reading-time
+   bars (W2), for assets/js/chart-writing.js. Worker W.
+
+   Geometry contract with the JavaScript, so nothing here is hard-coded twice:
+
+     .cal__viewport   the clip box. Its height is the plot token
+                      (--chart-h / -md / -sm) and --cal-pad is the halo it
+                      keeps free on every side, so a selected cell's amber
+                      ring, its hover scale and a count badge all stay
+                      inside the reserved plot and never paint over the
+                      hint line under it.
+     .cal__grid       one column per week, one row per weekday, plus a
+                      month-label row on top. chart-writing.js measures the
+                      plot and writes --cal-cell; it reads --cal-month-row,
+                      --cal-gap and the viewport padding to do it, so the
+                      cell size follows the token at every width and is
+                      never assumed.
+
+   Colour: the topic hue lands on the cell mark only, mixed toward
+   --surface-2 by --cal-heat, which is the reading-length step. Three steps,
+   named in words in the legend beside the grid, so a shade is never the
+   only carrier of meaning. Amber stays state: the selected cell only. */
+
+/* The key sits next to the grid it explains rather than at the far edge of
+   the plot. The first column caps at the grid's own width and gives way
+   when the plot is narrower than the calendar, which is what puts the
+   viewport into its horizontal scroll. */
+.cal__layout {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) max-content;
+  justify-content: start;
+  align-items: center;
+  gap: var(--space-3);
+  height: 100%;
+  min-width: 0;
+}
+
+.cal__viewport {
+  --cal-pad: 3px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  padding: var(--cal-pad);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.cal__grid {
+  --cal-month-row: 11px;
+  --cal-gap: 1px;
+  --cal-cell: 9px;
+  display: grid;
+  grid-template-columns: 3ch repeat(var(--cal-weeks), var(--cal-cell));
+  grid-template-rows: var(--cal-month-row) repeat(7, var(--cal-cell));
+  gap: var(--cal-gap);
+  align-items: center;
+  min-width: max-content;
+}
+
+.cal__month,
+.cal__weekday {
+  align-self: center;
+  font-size: var(--text-2xs);
+  line-height: 1;
+  color: var(--ink-3);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.cal__month { align-self: start; }
+
+.cal__weekday {
+  padding-right: var(--space-1);
+  text-align: right;
+}
+
+/* A day with no post: the surface, one shade above the pane. A day still to
+   come: the same fill at 45 %, so the grid keeps its shape to the end of
+   the month while reading quieter than a day that has already passed. */
+.cal__cell {
+  display: block;
+  place-self: center;
+  width: var(--cal-cell);
+  height: var(--cal-cell);
+  padding: 0;
+  background: var(--surface-2);
+  border: 0;
+  border-radius: 1px;
+}
+
+.cal__cell--future {
+  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+}
+
+.cal__cell--post {
+  position: relative;
+  overflow: visible;
+  transition: transform var(--dur-hover) var(--ease);
+}
+
+.cal__cell--post[data-length="short"],
+.cal__legend-swatch[data-length="short"]  { --cal-heat: 42%; }
+.cal__cell--post[data-length="medium"],
+.cal__legend-swatch[data-length="medium"] { --cal-heat: 68%; }
+.cal__cell--post[data-length="long"],
+.cal__legend-swatch[data-length="long"]   { --cal-heat: 100%; }
+
+/* The mark keeps its topic shape at cell size. The diamond is scaled to
+   1/sqrt(2) so a rotated square still fits inside its own cell. */
+.cal__topic-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--topic) var(--cal-heat), var(--surface-2));
+}
+
+.cal__topic-mark.mark--diamond { transform: rotate(45deg) scale(0.7); }
+
+.cal__topic-mark.mark--ring {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--topic) var(--cal-heat), var(--surface-2));
+}
+
+.cal__cell--post:hover,
+.cal__cell--post:focus-visible,
+.cal__cell--post[aria-current="true"] {
+  z-index: 2;
+  transform: scale(1.25);
+}
+
+.cal__cell--post[aria-current="true"] {
+  box-shadow: 0 0 0 1px var(--surface), 0 0 0 2px var(--accent);
+}
+
+/* Two posts on one day. It sits off the cell's top-right corner rather than
+   over it, so the topic shape underneath stays readable, and it hangs up
+   and to the right rather than down, so it never reaches past the last
+   weekday row into the hint line. */
+.cal__count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  min-width: 11px;
+  height: 11px;
+  padding: 0 1px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cal__legend {
+  display: grid;
+  grid-template-columns: max-content;
+  align-content: center;
+  gap: 1px;
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.cal__legend-title { color: var(--ink-3); }
+
+.cal__legend-item {
+  display: grid;
+  grid-template-columns: 8px max-content;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.cal__legend-swatch {
+  --topic: var(--ink-2);
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: color-mix(in srgb, var(--topic) var(--cal-heat), var(--surface-2));
+  border-radius: 1px;
+}
+
+/* W2: the reading-time bar. The "N min" text beside it says the number, so
+   the bar is decorative and aria-hidden. Its full-scale width is a token
+   because the bar takes room from the title in the same flex row: measured
+   at 390px, a 4rem scale wraps two more title lines and adds 42px to the
+   page, a 1rem scale adds none, so the phone value is the one that costs
+   the landing nothing. */
+#writing .row__aside[data-minutes] {
+  --reading-bar-w: 4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.reading-bar {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: max(2px, calc(var(--reading-ratio) * var(--reading-bar-w)));
+  height: 4px;
+  background: var(--topic);
+  border-radius: 1px;
+}
+
+@media (max-width: 1023px) {
+  #writing .row__aside[data-minutes] { --reading-bar-w: 3rem; }
+}
+
+/* Phones: the plot is --chart-h-sm, so the month row and the halo give up
+   what they can and the cells take the rest. A cell is then smaller than a
+   thumb, so the hit area is a transparent box centred on it. */
+@media (max-width: 767px) {
+  .cal__layout { gap: var(--space-2); }
+  .cal__viewport { --cal-pad: 1px; }
+  .cal__grid { --cal-month-row: 9px; }
+  /* The label keeps its size and centres on a shorter row, so the two
+     pixels the row gives up go to the cells rather than to the type. */
+  .cal__month { align-self: center; }
+  /* The key is four rows (the word "length" and three named shades) and at
+     the 13px phone floor its 1.3 leading measured 70.6px inside a plot the
+     token pins to 60px, so it spilled 10.6px onto the hint line under the
+     chart and drew "long" through "cell for". Tightening the key's own
+     leading to 1.1 with no row gap fits all four rows in 57.2px without
+     shrinking the type below the floor and without dropping a label. The
+     leading is the thing that gives way because width is not free here:
+     the key column is 59px wide and the calendar measures 188.1px of grid
+     inside a 190.1px viewport at 390px, so any width the key takes to save
+     a row puts the whole chart into a horizontal scroll it does not have
+     today. */
+  .cal__legend {
+    gap: 0;
+    line-height: 1.1;
+  }
+  #writing .row__aside[data-minutes] { --reading-bar-w: 1rem; }
+}
+
+@media (max-width: 359px) {
+  .cal__grid { grid-template-columns: 2.5ch repeat(var(--cal-weeks), var(--cal-cell)); }
+}
+
+@media (pointer: coarse) {
+  .cal__cell--post::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal__cell--post { transition: none; }
+  .cal__cell--post:hover,
+  .cal__cell--post:focus-visible,
+  .cal__cell--post[aria-current="true"] { transform: none; }
+}
+
+/* =========================================================== chart-cv */
+
+/* =============================================================
+   features/chart-cv.css: the cv lanes, now LEDs and uptime line.
+
+   The shared chart shell, topic shapes, filter, tooltip and hit state
+   live in features/charts.css. This sheet only lays three lanes into the
+   token-sized plot and styles their role segments, ticks and scrub line.
+   ============================================================= */
+
+.career {
+  --career-axis-h: 1rem;
+  --career-lane-gap: 2px;
+  --career-lane-h: 20px;
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(3, var(--career-lane-h)) var(--career-axis-h);
+  row-gap: var(--career-lane-gap);
+  min-width: 0;
+  min-height: 0;
+  user-select: none;
+}
+
+.career__lane {
+  display: grid;
+  grid-template-columns: 5.5ch minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 0;
+}
+
+.career__label {
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.career__bar,
+.career__ticks {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.career__seg {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  z-index: 1;
+  min-width: 2px;
+  overflow: visible;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.career__seg.chart-fill {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--topic, var(--ink-3)) var(--chart-fill), transparent);
+  border-left: 2px solid var(--topic, var(--ink-3));
+}
+
+.career__seg:hover,
+.career__seg[aria-current="true"],
+.career__seg.is-touch-selected {
+  z-index: 3;
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.career__seglabel {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  padding: 0 0.35rem;
+  color: var(--ink);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: var(--career-lane-h);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.career__future {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.career__tick {
+  --career-tick-offset: 0px;
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: calc(var(--career-tick-offset) + 45%);
+  margin-left: -1px;
+  border-left: 1px solid var(--topic);
+  cursor: default;
+  pointer-events: none;
+}
+
+.career__tick--lead {
+  border-left-style: dashed;
+  opacity: 0.78;
+}
+
+.career__tick-mark {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+}
+
+.career__axis {
+  position: relative;
+  height: var(--career-axis-h);
+  margin-left: calc(5.5ch + var(--space-2));
+  min-width: 0;
+}
+
+.career__year {
+  position: absolute;
+  top: 1px;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.career__year.is-first { transform: none; }
+.career__year.is-last { transform: translateX(-100%); }
+
+.career__scrub {
+  position: absolute;
+  top: 0;
+  bottom: var(--career-axis-h);
+  z-index: 4;
+  width: 1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+/* A role can be only a few months wide: the Lore span is 7px by 19px on a
+   1440px console. Keep its geometry exact and grow only the invisible
+   pointer target. The generated box still belongs to the native button, so
+   the chart is never visually widened. 24px everywhere is WCAG 2.2's target
+   floor, which a mouse needs on a 7px bar as much as a thumb does; a coarse
+   pointer gets the full 44px of MB7. */
+.career__seg::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(24px, 100%);
+  height: 24px;
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 767px) {
+  .career__lane {
+    grid-template-columns: 5.5ch minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .career__axis {
+    margin-left: calc(5.5ch + var(--space-1));
+  }
+
+  .career__seglabel { display: none; }
+
+  /* Keep the required summary intact without making the 60px plot plus
+     its summary exceed MB6's 96px chart cap. The line scrolls inside the
+     chart instead of widening the page or wrapping into a second row. */
+  #cv .chart__sum {
+    flex-wrap: nowrap;
+    gap: 0 var(--space-2);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .career__seg,
+  .career__tick { transition: none; }
+}
+
+/* =========================================================== terminal */
+
+/* =============================================================
+   features/terminal.css: the two-column career log and the scrubber
+   refinements (TB1 to TB3, SB1 to SB4).
+
+   OWNER: worker TS (assets/js/bootlog.js, assets/js/scrubber.js).
+   The scrollback, prompt, cursor, year tokens and kind tokens come from
+   console.css and features.css. This sheet adds only the two-column log,
+   historical dim state and the as-of status line.
+
+   Rules that apply here
+     - The date column takes year temperature through [data-year]; the
+       kind column takes the kind hue through [data-kind]. Nothing else
+       in the log is coloured.
+     - Amber is the only state colour, including the as-of banner.
+     - Reduced motion removes transitions; the log renders its final
+       state immediately.
+
+   Requires tokens.css, console.css, features.css.
+   ============================================================= */
+
+/* Date | kind | message. The third grid cell owns wrapping, so continuation
+   lines align under the message instead of returning to the date column. */
+.bootlog__entry {
+  display: grid;
+  grid-template-columns: 8ch 4ch minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.bootlog__date {
+  color: var(--year, var(--ink-3));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bootlog__kind {
+  color: var(--kind, var(--ink-2));
+  white-space: nowrap;
+}
+
+.bootlog__message {
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.bootlog__detail {
+  color: var(--ink-3);
+}
+
+.bootlog__message a {
+  color: inherit;
+  text-decoration-color: var(--line-strong);
+}
+
+.bootlog__message a:hover,
+.bootlog__message a:focus-visible {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+/* A historical view keeps the whole career shape on screen. Later lines
+   use tertiary ink rather than opacity, preserving the 4.5:1 text floor. */
+.bootlog__entry.is-after .bootlog__date,
+.bootlog__entry.is-after .bootlog__kind,
+.bootlog__entry.is-after .bootlog__message,
+.bootlog__entry.is-after .bootlog__detail,
+.bootlog__entry.is-after .bootlog__message a {
+  color: var(--ink-3);
+}
+
+.bootlog__summary {
+  margin-top: var(--space-1);
+}
+
+/* The range already has a visible right-edge label reading "now". Keep the
+   live output's slot reserved so the topbar does not reflow, but avoid a
+   duplicate "now now" at the sentinel; aria-valuetext still exposes it. */
+.scrubber__out[data-year="2026"] {
+  visibility: hidden;
+}
+
+@media (max-width: 479px) {
+  .bootlog__entry {
+    grid-template-columns: 7ch 4ch minmax(0, 1fr);
+    column-gap: var(--space-1);
+  }
+}
+
+/* SB2's "as of" line. scrubber.js moves the hidden server-rendered banner
+   out of the topbar and appends it to the status bar, where it is an
+   ordinary flex child sitting beside the bar's own keys.
+
+   It is deliberately not an overlay. An absolute line across the bar hid
+   the five pane keys, the `/` search button, the `t` timeline button, the
+   `?` help item and the C2 toast for as long as a past year showed, which
+   a plain #2018 deep link is enough to reach, and on a phone those keys
+   are the only thumb path to search and help (MB7).
+
+   `flex: 1 1 30rem` is what keeps the 1440 by 900 fit: at 1440 and 1280
+   there is more than 30rem of bar left after the items and the line shares
+   their row, so the bar keeps its one-row height; where there is not, the
+   bar wraps and the line takes a row of its own rather than covering
+   anything. The resting hint is the one thing that gives way, because it
+   is the only child of the bar that repeats what the `?` tray says. */
+.statusbar__asof {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 30rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--warn);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.statusbar.has-asof:has(.statusbar__asof:not([hidden])) {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+.statusbar.has-asof:has(.statusbar__asof:not([hidden])) .statusbar__hint {
+  display: none;
+}
+
+.statusbar__asof [data-asof-text] {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.statusbar__asof [data-asof-text]::-webkit-scrollbar {
+  display: none;
+}
+
+.statusbar__asof [data-asof-reset] {
+  flex: 0 0 auto;
+}
+
+/* ============================================================= mobile */
+
+/* =============================================================
+   features/mobile.css: the phone layout (MB1 to MB15).
+
+   OWNER: worker MB (assets/js/mobile.js). The ARCHITECT wrote §1
+   below, the disclosure base, because index.html ships four native
+   <details> elements and they must be inert on desktop and with
+   JavaScript off from first paint. MB owns everything after the
+   marker line and may add to §1 only by appending, never by deleting
+   a rule without saying why in its report.
+
+   Load order: this sheet is last, so it can override any feature
+   sheet at the phone breakpoint without !important.
+
+   Requires tokens.css, console.css, features/charts.css.
+   ============================================================= */
+
+/* -------------------------------------------------------------
+   1. The disclosure base (ARCHITECT).
+
+   index.html wraps the tail of talks, writing and cv, and the whole
+   terminal scrollback, in
+
+     <details class="disclose" data-mobile-more="talks">
+       <summary class="disclose__summary" hidden>show 12 more</summary>
+       <div class="disclose__body"> ... </div>
+     </details>
+
+   Three states have to be right:
+
+     a. No JavaScript, any width. The summary stays hidden and the
+        body must show even though the <details> is closed. Modern
+        engines take ::details-content; older ones fall back to the
+        display rule on the body. Nothing collapses, nothing is lost.
+
+     b. JavaScript, 768px and up. Same as (a): a disclosure is a phone
+        affordance and must not exist on a desktop pane.
+
+     c. JavaScript, below 768px. The summary appears and a closed body
+        is hidden from first paint, so nothing collapses after load
+        and MB5/MB14 cost no layout shift. mobile.js never sets or
+        clears `open` on load; it only opens a disclosure when the
+        topic filter, the year scrubber or a chart hit lands inside
+        one (console:topic, console:asof, console:hit).
+   ------------------------------------------------------------- */
+
+.disclose { display: block; }
+
+/* State (a) and (b): the disclosure is inert. */
+.disclose > .disclose__summary { display: none; }
+.disclose > .disclose__body { display: block; }
+.disclose::details-content { content-visibility: visible; block-size: auto; }
+.disclose > .disclose__summary::-webkit-details-marker { display: none; }
+.disclose > .disclose__summary::marker { content: ""; }
+
+@media (max-width: 767px) {
+  /* State (c): only with the js class, so the no-script page keeps (a). */
+  .js .disclose:not([open])::details-content {
+    content-visibility: hidden;
+    block-size: 0;
+  }
+
+  .js .disclose:not([open]) > .disclose__body { display: none; }
+
+  .js .disclose > .disclose__summary[hidden] { display: none; }
+
+  .js .disclose > .disclose__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    margin-top: var(--space-2);
+    padding: 0 var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .js .disclose > .disclose__summary:hover { color: var(--ink); }
+
+  /* MB3: the terminal keeps a peek of the log when closed rather than
+     hiding it, and becomes a capped internal scroller when open. */
+  .js .disclose--log:not([open])::details-content {
+    content-visibility: visible;
+    block-size: auto;
+  }
+
+  .js .disclose--log:not([open]) > .disclose__body {
+    display: block;
+    max-height: calc(3 * 1.5em);
+    overflow: hidden;
+  }
+
+  .js .disclose--log[open] > .disclose__body {
+    max-height: 60dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ============================================================= */
+/* Worker MB writes below this line. MB2 to MB15.                */
+/* ============================================================= */
+
+/* =====================================================================
+   features/mobile.css, section 2 and below. Worker MB (phone layout,
+   MB2 to MB15). Section 1 above is the architect's disclosure base and
+   is unchanged: it is what makes the four native <details> inert on
+   desktop and with JavaScript off, and closed from first paint on a
+   phone, so nothing collapses after load.
+
+   Everything below is inside `@media (max-width: 767px)` and touches
+   nothing at any other width. This stylesheet loads last, so a rule
+   here at equal specificity wins over console.css and features.css
+   without `!important`.
+   ===================================================================== */
+
+/* The phone zoom control (MB7) is built by mobile.js at every width so
+   the DOM does not change when the viewport crosses 768px; it is shown
+   only on a phone, where the digits and `z` have no thumb path. */
+.pane__zoom { display: none; }
+
+@media (max-width: 767px) {
+
+  /* ---------------------------------------------------------------
+     2. Density (MB5). The landing has to fit 2400px at 390x844 with
+     every disclosure closed, and it measured 2747px before this
+     block. Nothing here removes a record: the console gutter, the
+     pane padding and the row padding each give up a few pixels, and
+     the two long titles that ran to three lines are clamped to two
+     (MB10 asks for that on talk titles).
+     --------------------------------------------------------------- */
+  .console {
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .pane__body { padding: var(--space-2); }
+
+  .rows > .row {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    row-gap: 2px;
+  }
+
+  /* MB10: a talk title clamps to two lines and the venue keeps its own
+     line under it. The full title is still the link's accessible name,
+     is printed in full by `cat talks/<id>`, and is what the palette
+     searches, so nothing is lost, only folded. */
+  .row__title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .row__aside { line-height: 1.35; }
+
+  #cv .pane__body > p {
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  #cv .row p { line-height: 1.4; }
+
+  .chart__hint {
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  /* The cv chart carries a summary line instead of a hint, and at 13px it
+     put the block one pixel over MB6's 96px cap. */
+  .chart__sum {
+    margin-top: var(--space-1);
+    line-height: 1.3;
+  }
+
+  /* ---------------------------------------------------------------
+     3. Type for a narrow column (MB10). Body is 15px here and nothing
+     with text in the console, the legend, the status bar or the topbar
+     scrubber is below 13px.
+
+     The floor is set once, on the two tokens the small type is built
+     from: --text-xs (12px) and --text-2xs (11px) are both redefined as
+     13px inside .console, .legendbar, .statusbar and .scrubber. A list
+     of class names would have to be kept in step with every chart label
+     a later change adds (the first pass missed .uptime__text,
+     .talks-timeline__year, the five .cal__* labels, .badge, .career__*
+     and .pane__key; a second pass missed .statusbar__item,
+     .statusbar__key, .scrubber__end, .scrubber__label and .scrubber__out,
+     because the status bar and the scrubber sit in the topbar, outside
+     .console and .legendbar, and a token redefinition scoped to those two
+     subtrees does not reach a sibling). A token redefinition cannot miss
+     a class inside its own scope, so the scope itself has to be right;
+     it now covers every element that carries --text-xs or --text-2xs
+     anywhere in the phone chrome. Nothing outside those four subtrees
+     moves, so the topbar telemetry keeps its reserved height (MB14).
+
+     This costs page height, and MB5's 2,400px budget does not survive
+     it together with MB7's 44px status bar and MB11's two-column links
+     row. The measured number is in the report as an open issue rather
+     than paid for by putting type back under the floor.
+     --------------------------------------------------------------- */
+  body { font-size: 0.9375rem; }   /* 15px */
+
+  .console,
+  .legendbar,
+  .statusbar,
+  .scrubber {
+    --text-xs: 0.8125rem;    /* 13px */
+    --text-2xs: 0.8125rem;   /* 13px */
+  }
+
+  /* MB10: the topbar tagline is body copy, not console metadata, so it
+     takes the 15px body floor directly rather than the console's 13px
+     token. Below 768px .topbar__tagline otherwise falls back to the
+     unscoped --text-xs (12px), since the topbar sits outside .console. */
+  .topbar__tagline { font-size: 0.9375rem; }   /* 15px */
+
+  /* MB6, and a direct consequence of the floor above. The legend wraps
+     greedily, and at 13px the chips measure 108, 131, 108, 108, 61 and
+     84px, so from 360px to 389px "security" no longer fits beside
+     "postgres" and "reliability" and the six chips take three rows where
+     twelve-pixel chips took two. The three-column grid that already holds
+     the two-line ceiling below 360px holds it here as well. Measured with
+     it: two rows at 320, 360, 375, 385 and 390. */
+  @media (min-width: 360px) and (max-width: 389px) {
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-1) 6px;
+      width: 100%;
+    }
+    .legend__btn {
+      justify-content: center;
+      gap: 0.3em;
+      padding: 0 3px;
+    }
+  }
+
+  .row__date,
+  .row__aside,
+  .row__note,
+  .facts dt,
+  .pane__meta,
+  .chart__hint,
+  .chart__sum,
+  .legendbar__hint {
+    font-size: 0.8125rem;   /* 13px */
+  }
+
+  /* Section 1 sets this one at .js specificity, so the 13px floor has to
+     match it rather than lose to it. */
+  .js .disclose > .disclose__summary { font-size: 0.8125rem; }
+
+  /* MB10: the now pane stacks its label over its value, so a fact
+     value gets the full column width instead of 235px of it. */
+  .facts { display: block; }
+  .facts dt {
+    margin: 0;
+    padding-top: 0;
+    line-height: 1.3;
+  }
+  .facts dd { margin: 0 0 var(--space-2); }
+  .facts > dd:last-of-type { margin-bottom: 0; }
+
+  /* ---------------------------------------------------------------
+     4. The disclosure summaries (MB2). The count comes from Liquid and
+     is already right; mobile.js swaps it for "show fewer" while the
+     disclosure is open and puts it back on close.
+     --------------------------------------------------------------- */
+  .js .disclose > .disclose__summary {
+    justify-content: space-between;
+    margin-top: var(--space-1);
+    color: var(--ink-2);
+  }
+
+  .js .disclose > .disclose__summary:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
+  }
+
+  .disclose__chevron {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    color: var(--ink-3);
+  }
+
+  /* ---------------------------------------------------------------
+     5. The terminal at rest (MB3, MB12). Closed, the scrollback itself
+     is capped at three lines and scrolled to its newest line, so the
+     peek is the tail of the log rather than its head. Open, it is a
+     60dvh internal scroller. Either way the log prints inside the cap
+     and never scrolls the page.
+
+     console.css caps .scrollback at 60vh below 768px and floors it at
+     seven lines below 1024px; both are restated here in dvh (MB9) and
+     released for the closed state.
+     --------------------------------------------------------------- */
+  .js .disclose--log:not([open]) > .disclose__body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .js .disclose--log:not([open]) .scrollback {
+    min-height: 0;
+    max-height: calc(3 * 1.5em);
+    overflow-y: auto;
+  }
+
+  .js .disclose--log[open] > .disclose__body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .js .disclose--log[open] .scrollback {
+    min-height: 0;
+    max-height: 60dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Without JavaScript there is no log at all, so the peek cap must not
+     apply to the noscript line. */
+  html:not(.js) .scrollback { max-height: none; }
+
+  /* ---------------------------------------------------------------
+     6. Sticky pane titles (MB15). The whole page scrolls on a phone,
+     so the title of the pane you are inside stays at the top of the
+     viewport. It sits under the statusbar's z-index, so the two never
+     overlap, and it carries the pane surface so rows do not show
+     through it.
+     --------------------------------------------------------------- */
+  .pane__title {
+    position: sticky;
+    top: 0;
+    z-index: calc(var(--z-statusbar) - 1);
+    padding: 6px var(--space-2);
+    background: var(--surface);
+  }
+
+  /* ---------------------------------------------------------------
+     7. The thumb path for zoom (MB7). Every key has a tap target: the
+     digits and search and help are in the statusbar, and `z` is this
+     control. It is 44px of touch target but only the title's own 30px
+     of layout, so the sticky title does not grow.
+     --------------------------------------------------------------- */
+  /* The control is absolutely placed and its box is reserved by the
+     title's padding at every moment, so building it after boot moves
+     nothing (MB14) and its 44px touch height never grows the sticky
+     title. The reservation is on the four zoomable panes only; the
+     terminal has no zoom and keeps its full title width. */
+  #now .pane__title,
+  #talks .pane__title,
+  #writing .pane__title,
+  #cv .pane__title {
+    /* No `position` here on purpose: section 6 makes every pane title
+       `sticky`, which is already a containing block for the absolutely
+       placed control below. Setting `relative` would win on specificity
+       and take the sticky behaviour away (MB15). */
+    padding-right: calc(48px + var(--space-2) + var(--space-2));
+  }
+
+  .pane__zoom {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    min-height: 44px;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  /* The touch target is 44px tall; the box you can see is the 22px one
+     that fits the title rule. The border lives on this pseudo-element so
+     the target can be bigger than the chrome without straddling the
+     pane's top edge. */
+  .pane__zoom::before {
+    content: "";
+    position: absolute;
+    inset: 11px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .pane__zoom[aria-pressed="true"] { color: var(--ink); }
+  .pane__zoom[aria-pressed="true"]::before { border-color: var(--accent); }
+
+  .pane__zoom:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
+  }
+
+
+
+  /* ---------------------------------------------------------------
+     8. The links row (MB11). Superseded: this section used to override
+     the architect's four-column block with a two-column grid whose host
+     half truncated with an ellipsis. Arbitration (phase3.md, "Arbitration
+     after the first phase-3 run", conflict 1) settled LK1 vs MB11 in
+     MB11's favour with a different shape again — the label on its own
+     line above a two-column grid, and the handle shown in full, wrapping
+     inside its own cell rather than truncating — which is now written
+     once, above section 3 in this file, alongside the rest of the links
+     row's phone rules. A same-specificity `.linksrow`/`.linksrow__label`/
+     `.linksrow .links a`/`.linksrow .links__host` block down here would
+     win the cascade on source order for whatever it still declared, so
+     leaving an empty section rather than a second set of rules is what
+     keeps one definition in one place.
+     --------------------------------------------------------------- */
+
+  /* ---------------------------------------------------------------
+     9. The palette as a bottom sheet (MB8). It rises from the bottom
+     edge so the results sit above the on-screen keyboard, the input is
+     already 16px (features.css) so iOS does not zoom, and mobile.js
+     adds the close button and the swipe-down.
+     --------------------------------------------------------------- */
+  .palette {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .palette__box {
+    width: 100%;
+    max-height: 86dvh;
+    border-width: 1px 0 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transform-origin: bottom center;
+  }
+
+  .palette__grip {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: var(--space-2) auto 0;
+    background: var(--line-strong);
+    border-radius: 2px;
+    /* A drag that starts on the grip is the close gesture, not a scroll.
+       Without this the browser claims the touch for the sheet's own
+       scroller and fires pointercancel, and the swipe never completes. */
+    touch-action: none;
+  }
+
+  /* The head is the sheet's drag handle: the grip is only 4px tall, so a
+     thumb that starts the close gesture lands on the head or the input
+     inside it. Nothing in the head scrolls, and without this the browser
+     takes the touch over as a scroll after about 60px and fires
+     pointercancel, which is exactly the distance the gesture needs. */
+  .palette__head {
+    position: relative;
+    touch-action: none;
+  }
+
+  .palette__close {
+    position: relative;
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+    margin-block: -10px;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  /* Same rule as the pane zoom control: 44px of target, a smaller box to
+     look at, so the chrome does not straddle the head's rule. */
+  .palette__close::before {
+    content: "";
+    position: absolute;
+    inset: 11px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .palette__close:focus-visible {
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .palette__box { animation: sheet-in var(--dur-panel) var(--ease-out) 1; }
+  }
+
+  /* ---------------------------------------------------------------
+     9b. Reserved height for the topbar scrubber row (MB14). Below
+     768px the year scrubber wraps onto its own topbar line, and it
+     ships `hidden` so it never appears without JavaScript. Revealing
+     it after the boot log pushed the tagline, the legend and the whole
+     console down 22px: one layout shift of 0.064 at 390x844 with 4x
+     CPU and Slow 4G, measured, over MB14's 0.05.
+
+     console.css resets `[hidden]` with `display: none !important`, so
+     the row cannot be reserved on the control itself. It is reserved on
+     the element the scrubber wraps in front of instead: while the
+     control is still hidden the nav carries the scrubber's own line
+     height plus the topbar row gap as a top margin, and `:has()` drops
+     that margin the moment the control is revealed, so the nav, the
+     tagline, the legend and the console all keep their place. Scoped to
+     `.js`, so a page without JavaScript, where the scrubber never
+     appears, has no empty band either. From 768px topstats.css already
+     reserves the row the scrubber shares, so this is a phone-only gap.
+     --------------------------------------------------------------- */
+  .js .topbar:has(.scrubber[hidden]) .topbar__nav {
+    margin-top: calc(18px + var(--space-1));
+  }
+
+  /* ---------------------------------------------------------------
+     10. Phone chrome (MB7, MB9). The status bar clears the home
+     indicator, every item in it is a 44px target, and nothing may
+     scroll sideways at 320px.
+
+     The bar carried eight items on one 36px line: 475px of content in a
+     390px viewport, so `t timeline` was cut mid-word and `? help` sat
+     entirely off screen behind console.css's `overflow-x: auto`, and
+     every item was an 18px-tall hit region.
+
+     console.css owns where the bar breaks: `.statusbar__break` puts the
+     five pane items on one row and search, timeline and help on the next.
+     This block owns the size of what sits in those rows. Eight targets at
+     MB7's 44px with its 8px gutter are 408px before padding, so the one
+     line the bar used to be cannot hold them at any phone width; two rows
+     of 44px can, from 325px up.
+
+     --statusbar-h is restated here rather than the height being written
+     on .statusbar, because the which-key tray, the toast and the page's
+     scroll padding all measure the bar from outside through that token.
+     Its value is the true outer height: two 44px rows plus the 1px top
+     rule, with no vertical padding (console.css's 4px was sized for 18px
+     rows and would make the token a lie by exactly that much).
+     --------------------------------------------------------------- */
+  :root { --statusbar-h: 89px; }
+
+  .statusbar {
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 0 var(--space-2);
+    overflow-x: visible;
+    padding: 0 var(--space-2) env(safe-area-inset-bottom, 0px);
+    min-height: calc(var(--statusbar-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .statusbar__item {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* features.css drops the word "search" below 480px because the bar was
+     one line and had no room for it. On two lines it fits, and a lone `/`
+     is the one item in the bar that does not say what it does. */
+  .statusbar__search-label { display: inline; }
+  .statusbar__search .statusbar__key { padding: 0 0.4em; }
+
+  /* Two rows hold the eight items from 325px up. At 320px, the narrowest
+     width this site supports, the five pane items are 61 + 75 + 90 + 54 +
+     61 = 341px of target before any gutter against 304px of line, so
+     `4 links` takes a third row of its own. Measured with the token
+     released: 320px three rows, 325px through 767px two. The token follows
+     so the which-key tray, the toast and the scroll padding sit on top of
+     the bar there rather than 44px inside it. */
+  @media (max-width: 324px) {
+    :root { --statusbar-h: 133px; }
+  }
+
+  .linksrow,
+  .pane__body { overflow-wrap: anywhere; }
+
+  /* ---------------------------------------------------------------
+     11. Charts on a phone (MB6, MB13). The plot height is already the
+     --chart-h-sm token and each block measures under MB6's 96px cap.
+     Tap selection belongs to the chart modules (chart-talks.js,
+     chart-writing.js, chart-cv.js), each of which already styles its
+     own selected mark, so there is no second selected class here: one
+     owner for the state, one owner for its look.
+     --------------------------------------------------------------- */
+
+  /* MB9: the talks hint is 337px of text and the writing hint 318px, so
+     below a 378px viewport the one-line rule is wider than the column and
+     features.css clips it: "tap a mark. hollow marks are archi..." was all
+     that was left at 320px. It wraps at those widths instead. Measured
+     overflow with the single line forced on: 375px over by 4, 360px by 19,
+     320px by 59; 378px and up, zero. 390x844, the viewport MB5, MB6 and
+     MB14 are measured at, keeps its single line, so no chart block grows
+     there; below 378px a wrapped hint puts the talks and writing blocks at
+     104.8px against MB6's 96px cap, which is in the report as the trade
+     against MB9's readable hint. */
+  @media (max-width: 377px) {
+    .chart__hint {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+  }
+
+  .chart__sum,
+  .chart__hint { min-width: 0; }
+
+  .chart__sum > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(12%); opacity: 0.6; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Reduced motion: the sheet arrives with no transform and every control
+   still works. tokens.css zeroes the durations; this removes the frame
+   the animation would otherwise start from. */
+@media (prefers-reduced-motion: reduce) {
+  .palette__box { animation: none; }
+}
+
+/* -------------------------------------------------------------
+   12. The as-of line on a phone (MB7, SB2).
+
+   The bar already wraps here: the five pane keys are row one and search,
+   timeline and help are row two. The as-of line takes a row of its own
+   under them rather than sharing one, because sharing would squeeze the
+   tools row and those three are the phone's only thumb path to a pane, to
+   search and to help. `back to now` inside the line measured 97 by 20, a
+   real control under the 44px thumb floor, so it is padded to 44 here.
+   ------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* `has-asof` is set once at boot, so it cannot be the hook: the line
+     itself is what comes and goes, through its hidden attribute. This
+     restates section 10's height so a later change to one cannot leave
+     the scrubbed bar shorter than the resting one. */
+  .statusbar.has-asof:has(.statusbar__asof:not([hidden])) {
+    min-height: calc(var(--statusbar-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .statusbar__asof {
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+
+  .statusbar__asof [data-asof-reset] {
+    min-height: 44px;
+    padding-inline: var(--space-2);
+  }
+}
+
+/* -------------------------------------------------------------
+   13. Density, round two (MB5).
+
+   The landing at 390x844 with every disclosure closed measured 2,586px
+   against MB5's 2,400px cap, and section 8's two-column links row adds
+   70px more. Nothing here removes a record, a control or a word: the
+   height comes out of leading and out of the padding between things.
+
+   The two rules that set the size of the page are MB10's floors (body
+   15px, nothing with text under 13px) and MB7's 44px targets. Neither
+   is touched. What gives is the space around the type: the console
+   gutter, the pane title and body padding, the space between a row and
+   the next, the chart's bottom margin, and the leading on the four
+   multi-line blocks (a fact value, a row title, the cv summary
+   paragraph and a role note), which drop from 1.5 to 1.3 or 1.35. At
+   15px that is three pixels a line, and there are about sixty lines
+   inside the console.
+
+   Measured after this block, verbatim, in the report.
+   ------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .legendbar { padding-block: var(--space-1); }
+
+  .console {
+    gap: var(--space-1);
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+  }
+
+  .pane__title { padding-block: 3px; }
+
+  .pane__body { padding: var(--space-1) var(--space-2); }
+
+  .rows > .row {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    row-gap: 1px;
+  }
+
+  /* The summary is the last thing in three pane bodies and the body's own
+     padding is the space under it, so its top margin was doubling as a
+     gap that is already there. */
+  .js .disclose > .disclose__summary { margin-top: 0; }
+
+  .chart__hint,
+  .chart__sum { margin-top: 1px; }
+
+  /* Two lines of a clamped title at 1.3 rather than 1.5. The clamp in
+     section 2 counts lines, not pixels, so the title still shows two. */
+  .row__title { line-height: 1.3; }
+
+  .facts dt { line-height: 1.2; }
+
+  .facts dd {
+    line-height: 1.35;
+    margin-bottom: 2px;
+  }
+
+  /* The leading is set on the paragraph, not only on the text span inside
+     it: the LED is an inline mark, so the paragraph's own strut was
+     setting the height of the first line box and the block measured 48px
+     around 39px of text. */
+  .uptime {
+    margin-top: 0;
+    margin-bottom: var(--space-1);
+    line-height: 1.3;
+  }
+
+  #cv .pane__body > p {
+    margin-top: var(--space-1);
+    margin-bottom: var(--space-1);
+    line-height: 1.35;
+  }
+
+  #cv .row p { line-height: 1.3; }
+
+  .chart { margin-bottom: var(--space-1); }
+}
+
+/* -------------------------------------------------------------
+   14. Touch targets inside the charts (MB6, MB7, MB13, and the
+   arbitration table's "MB7 and MB6 vs 6px calendar cells and 5px cv
+   segments" row, binding over the earlier text).
+
+   A writing calendar day is 6 by 6px and the Lore role segment is 5.5 by
+   9px, because both sizes are the data's, not a choice, and the closest
+   pair of calendar cell centres is 7px apart. A first pass tried to grow
+   both to MB7's full 44px on phones, which is geometrically impossible
+   for the calendar (a 44px-wide box centred on one cell reaches past its
+   neighbour and takes its tap) and was never the right ask for either:
+   the arbitration settled it by naming chart cells and segments secondary
+   controls, held to WCAG 2.5.8's 24px minimum rather than MB7's 44px,
+   because the same record is always one tap away from the row list below
+   the chart. That 24px box is `.cal__cell--post::before`'s existing
+   `pointer: coarse` rule and `.career__seg::after`'s own unconditional
+   rule above — both apply on a phone without anything phone-specific
+   here. Talks marks are unaffected and stay 44px (they are spaced far
+   enough apart that a 44px box does not reach a neighbour). */
+@media (max-width: 767px) {
+  /* The talks and posts tick lanes are decorative: their containers carry
+     aria-hidden and chart-cv.js binds nothing to a tick. They sit directly
+     under the roles lane and would otherwise take the lower half of the
+     role segment's own hit box. Nothing is lost by letting a tap fall
+     through them to the segment underneath. */
+  .career__lane:has(.career__ticks) { pointer-events: none; }
+}

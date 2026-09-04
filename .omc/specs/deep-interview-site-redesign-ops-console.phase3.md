@@ -83,6 +83,20 @@ Assessment: the first screen at 390x844 is right (name, positioning, role, upcom
 - MB14. Reserved heights for topbar telemetry, legend, and charts so nothing above the fold moves after first paint on a throttled connection (CLS at or under 0.05 at 390x844 with 4x CPU and Slow 4G).
 - MB15. Pane titles are sticky at the top of the viewport while their pane scrolls under them, so the visitor always knows which pane they are in; the sticky title does not overlap the status bar.
 
+## Arbitration after the first phase-3 run (2026-09-04)
+
+Three phone criteria contradicted each other and the parallel fix rounds fought. Decisions, binding over the earlier text:
+
+| Conflict | Decision |
+|---|---|
+| LK1 (links in at most two lines below 768px) vs MB11 (two-column grid of full-width targets) | MB11 wins on phones: `[4] links` label on its own line, then a two-column grid of 44px-tall cells; handles shown in full, wrapping inside the cell rather than truncating. LK1's two-line cap applies from 768px up only. |
+| MB5 (landing at most 2,400px at 390x844) vs MB10 (body 15 to 16px, metadata at least 13px) | MB10 wins. MB5 becomes at most 2,600px with all disclosures closed. Never clamp or hide cv text to hit a height. |
+| MB7 and MB6 (44px targets) vs 6px calendar cells and 5px cv segments | Chart cells and segments are secondary controls: they get a 24px hit area on phones (WCAG 2.5.8 minimum) and the same action is always reachable through the row list; talks marks stay 44px; every primary control (status bar items, links, legend chips, zoom buttons, summaries, topbar nav, row links) is 44px. |
+| MB13 two taps | One tap state machine only: charts own their tap logic; mobile.js must not install a capture-phase click handler on chart marks. |
+| Phone status bar with seven items | Wraps to two rows below 420px; every item at least 44px tall; nothing clipped at 320px. |
+| T2 dimming | Dim marks to 0.28 but never let text fall under 4.5:1: dim rows to 0.76 (the alpha at which `--ink-2` holds 4.5:1 on `--surface`) and swap `--ink-3` text inside dimmed rows to `--ink-2`; `scripts/check-contrast.py` gains a check for the dimmed state. |
+| BUDGET | Keep the 150KB gzipped cap. Serve `assets/css/features.css` as Jekyll-compressed Sass (`features.scss` with empty front matter and `sass: style: compressed` in `_config.yml`), which GitHub Pages supports; a fourth stylesheet is allowed if it is phone-only via `media="(max-width: 767px)"`. |
+
 ## Delegation
 
 Payal on 2026-09-03: use dynamic workflows and delegate subtasks to Codex (codex plugin) or other models best suited; Fable is the manager and the responsible party for final verification. Implementation workers for charts, filter, terminal and scrubber go to Codex through `codex:codex-rescue` (foreground `task --write`); architecture, integration, adversarial verification and code review stay on Claude; a Codex `adversarial-review` of the working tree runs before commit as the second-family check; the session owner (Fable) does the final verification pass and commits.

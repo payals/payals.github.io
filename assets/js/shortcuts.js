@@ -9,7 +9,10 @@
  * Two independent guards apply to every one of those keys:
  *
  *  - isShortcutTarget(el): true only when the keydown target is the
- *    document body itself, or a non-interactive element inside a `.pane`.
+ *    document body itself, or a non-interactive element inside a `.pane`
+ *    or the phase-3 `.linksrow` (the links pane became one line above the
+ *    status bar, so the surface that answers keys has to include it).
+
  *    A link, button, input, textarea, select, summary or contenteditable
  *    element -- anywhere, not just form fields -- never has its own keys
  *    stolen by a global shortcut, and nothing outside the body/pane surface
@@ -88,5 +91,5 @@ export function isShortcutTarget(el) {
   if (typeof el.closest !== 'function') return false;
   if (el.closest(INTERACTIVE_SELECTOR)) return false;
   if (el === document.body) return true;
-  return Boolean(el.closest('.pane'));
+  return Boolean(el.closest('.pane, .linksrow'));
 }

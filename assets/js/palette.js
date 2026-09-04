@@ -38,8 +38,8 @@ import { registerPhase2Commands } from './commands.js';
 import { isShortcutTarget, shortcutsEnabled, setShortcutsEnabled, onShortcutsChange } from './shortcuts.js';
 
 const MAX_RESULTS = 30;
-const KIND_LABEL = { now: 'now', talk: 'talk', post: 'post', cv: 'cv', link: 'link', cmd: 'cmd', pane: 'pane' };
-const KIND_PLURAL = { now: 'now facts', talk: 'talks', post: 'posts', cv: 'cv lines', link: 'links', cmd: 'commands', pane: 'panes' };
+const KIND_LABEL = { now: 'now', talk: 'talk', post: 'post', cv: 'cv', link: 'link', cmd: 'cmd', pane: 'pane', topic: 'topic' };
+const KIND_PLURAL = { now: 'now facts', talk: 'talks', post: 'posts', cv: 'cv lines', link: 'links', cmd: 'commands', pane: 'panes', topic: 'topics' };
 const KIND_WORDS = {
   talk: ['talk', 'talks', 'speaking', 'speak', 'spoke', 'conference', 'conferences', 'session', 'sessions', 'presentation'],
   post: ['post', 'posts', 'writing', 'blog', 'article', 'articles', 'essay', 'essays', 'wrote'],
@@ -47,12 +47,13 @@ const KIND_WORDS = {
   link: ['link', 'links', 'profile', 'profiles'],
   cmd: ['command', 'commands', 'cmd', 'run'],
   now: ['now', 'currently', 'today'],
+  topic: ['topic', 'topics', 'filter', 'filters'],
 };
 const FILLER = new Set(['about', 'on', 'in', 'from', 'the', 'a', 'an', 'show', 'me', 'all', 'of', 'for', 'with', 'what', 'which', 'any', 'list', 'find', 'search', 'her', 'your', 'she', 'you', 'is', 'are', 'did', 'does', 'do', 'to', 'and', 'at']);
 const PANE_OF_KIND = { now: 'now', talk: 'talks', post: 'writing', cv: 'cv', link: 'links', cmd: 'terminal' };
-const BROWSE_ORDER = ['now', 'talk', 'post', 'cv', 'link', 'pane', 'cmd'];
+const BROWSE_ORDER = ['now', 'talk', 'post', 'cv', 'topic', 'link', 'pane', 'cmd'];
 const BROWSE_PER_KIND = 4;
-const DEFAULT_RANK = { now: 60, talk: 50, post: 50, cv: 30, link: 20, cmd: 15, pane: 10 };
+const DEFAULT_RANK = { now: 60, talk: 50, post: 50, cv: 30, topic: 25, link: 20, cmd: 15, pane: 10 };
 
 export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks }) {
   const root = document.querySelector('[data-palette]');
@@ -171,8 +172,12 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
           lastMouse = { x: ev.clientX, y: ev.clientY };
           if (sel !== i) { sel = i; select(); }
         });
+        if (r.e.topic) li.dataset.topic = r.e.topic;
         li.append(h('span', { class: 'palette__badge', text: KIND_LABEL[kind] }));
         const title = h('span', { class: 'palette__title' });
+        // A topic entry carries its shape as well as its hue and its word,
+        // so the three encodings of K3a hold inside the palette too.
+        if (r.e.shape) title.append(h('span', { class: `mark mark--${r.e.shape}`, 'data-topic': r.e.topic, 'aria-hidden': 'true' }));
         title.append(markTitle(r.e.title, r.pos));
         li.append(title);
         const meta = h('span', { class: 'palette__meta', text: r.e.meta || '' });
@@ -269,6 +274,9 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
       case 'link':
         follow(e.href);
         return;
+      case 'topic':
+        applyTopic(e);
+        return;
       default:
         return;
     }
@@ -296,6 +304,19 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
     el.classList.add('is-hit');
     el.scrollIntoView({ block: 'center', behavior: 'auto' });
     setTimeout(() => el.classList.remove('is-hit'), 2500);
+  }
+
+  /**
+   * A topic entry (T3): run the same `filter <id>` the terminal runs, so
+   * topics.js stays the only owner of the filter state, the hash and the
+   * announcement. Focus lands on the matching legend chip rather than the
+   * prompt, because the answer is the page lighting up, not a printed line,
+   * and a phone must not get the keyboard here (MB12).
+   */
+  function applyTopic(e) {
+    term.run(`filter ${e.topic}`);
+    const chip = document.querySelector(`[data-legend-btn="${e.topic}"]`);
+    if (chip) chip.focus();
   }
 
   function follow(href) {
@@ -627,6 +648,32 @@ function buildIndex({ term, posts, talks }) {
     add({ kind: 'link', id: `link:${name}`, el: a.closest('li') || a, title: text(a), sub: a.href.replace(/^mailto:/, ''), meta: 'link', kw: `link links profile open ${name} ${extra}`, href: a.href, print: name });
   }
   add({ kind: 'link', id: 'link:blog', title: 'all posts', sub: '/blog/', meta: 'link', kw: 'link blog writing posts index archive', href: '/blog/', print: 'blog' });
+
+  // Topics (T3). One entry per legend chip, which is the server-rendered
+  // list of topics that actually have records; `off` is deliberately not an
+  // entry, because esc and `filter off` already clear and a palette full of
+  // "off" rows would rank against the six that matter.
+  if (term.registry.filter && typeof term.registry.filter.complete === 'function') {
+    const known = new Set(term.registry.filter.complete('').filter((id) => id !== 'off'));
+    for (const btn of document.querySelectorAll('[data-legend-btn]')) {
+      const id = btn.dataset.legendBtn;
+      if (!known.has(id)) continue;
+      const shapeClass = [...(btn.querySelector('.mark') || { classList: [] }).classList].find((c) => c.startsWith('mark--'));
+      const count = text(btn.querySelector('.legend__count'));
+      add({
+        kind: 'topic',
+        id: `topic:${id}`,
+        el: btn,
+        topic: id,
+        shape: shapeClass ? shapeClass.slice(6) : 'ring',
+        title: `filter ${id}`,
+        sub: (btn.getAttribute('aria-label') || '').split('.')[0].replace(`${id}: `, ''),
+        meta: count ? `${count} records` : 'topic',
+        kw: `topic topics filter dim highlight ${id}`,
+        print: `filter ${id}`,
+      });
+    }
+  }
 
   // Pane jumps.
   for (const id of ['now', 'talks', 'writing', 'cv']) {
