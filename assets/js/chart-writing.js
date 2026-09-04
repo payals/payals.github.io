@@ -8,6 +8,7 @@ import {
   roving,
   showTip,
   topicLabel,
+  touchPrimer,
 } from './chart-util.js';
 
 /**
@@ -50,6 +51,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
     hit() { return false; },
     refresh() {},
     cells() { return []; },
+    applyAsOf() {},
   };
   if (!pane || !plot) return noop;
 
@@ -155,8 +157,12 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
 
   /* MB13: on a touch screen the first tap on a cell selects it and shows
      the tooltip, the second tap opens the row, so nothing here is
-     hover-only. A mouse click opens the row on the first press. */
-  let touchPrimed = null;
+     hover-only. A mouse click opens the row on the first press. The
+     primed state is shared with the talks and cv charts (SB5): an
+     unrelated tap outside the calendar, a cancelled touch or a
+     phone/desktop breakpoint change drops it, so a later tap that happens
+     to land back on the same cell reads as a fresh first tap. */
+  const primer = touchPrimer({ root: plot, onClear(cell) { cell.removeAttribute('aria-current'); } });
   let pendingTouch = null;
   let pendingTouchActivates = false;
   /* A day with two posts steps through them: each activation of the same
@@ -204,7 +210,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
           return;
         }
         pendingTouch = cell;
-        pendingTouchActivates = touchPrimed === cell;
+        pendingTouchActivates = primer.get() === cell;
       });
       cell.addEventListener('pointercancel', () => {
         pendingTouch = null;
@@ -216,15 +222,14 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
           pendingTouch = null;
           pendingTouchActivates = false;
           if (!activate) {
-            touchPrimed = cell;
-            for (const other of cellNodes) other.removeAttribute('aria-current');
+            primer.set(cell);
             cell.setAttribute('aria-current', 'true');
             showTip(cell, tipLines(), topic);
             event.preventDefault();
             return;
           }
         }
-        touchPrimed = null;
+        primer.clear();
         activateCell(cell);
       });
 
@@ -238,7 +243,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
     grid.appendChild(cell);
   }
 
-  roving(cellNodes);
+  const rover = roving(cellNodes);
 
   const maxMinutes = Math.max(...records.map((post) => post.minutes), 1);
   for (const post of records) addReadingBar(post, maxMinutes);
@@ -285,6 +290,27 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
   }
 
   /**
+   * SB6: as of a scrubbed year, a cell past the cutoff points at a row the
+   * scrubber has hidden. Dim it (the existing .is-after treatment) and
+   * take it out of the roving set so Tab, the arrows and Home/End all skip
+   * it -- hitRow() itself also refuses a scrubber-hidden row, so a stray
+   * mouse click on a dimmed cell still does nothing. `year` null (or any
+   * non-finite value) resets every cell to live.
+   */
+  function applyAsOf(year) {
+    const cutoff = Number.isFinite(year) ? year : null;
+    for (const cell of cellNodes) {
+      const after = cutoff != null && Number(cell.dataset.year) > cutoff;
+      cell.classList.toggle('is-after', after);
+      rover.setAvailable(cell, !after);
+      if (after) {
+        if (primer.get() === cell) primer.clear();
+        if (document.activeElement === cell) cell.blur();
+      }
+    }
+  }
+
+  /**
    * Size the cells to whatever the plot token is at this width. Every
    * number subtracted here is read back from the stylesheet, so the plot
    * height, the month row, the gaps and the halo the selection ring needs
@@ -309,6 +335,7 @@ export function setupChartWriting({ term, posts, topics, reducedMotion } = {}) {
     hit: activatePost,
     refresh,
     cells() { return cellNodes.slice(); },
+    applyAsOf,
   };
 }
 

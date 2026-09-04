@@ -89,7 +89,6 @@ import {
   bindTip,
   dateOf,
   el,
-  hideTip,
   hitRow,
   mark,
   pad2,
@@ -97,6 +96,7 @@ import {
   roving,
   showTip,
   topicLabel,
+  touchPrimer,
 } from './chart-util.js';
 
 const AXIS_FROM = dateOf('2014-01-01');
@@ -133,6 +133,7 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     hit() { return false; },
     refresh() {},
     marks() { return []; },
+    applyAsOf() {},
   };
   if (!plot) return noop;
 
@@ -191,7 +192,9 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
 
   const markerRecords = [];
   const markerById = new Map();
-  let touchPrimed = null;
+  // MB13/SB5: shared with the writing and cv charts -- an outside tap, a
+  // cancelled touch or a phone/desktop breakpoint change drops the prime.
+  const primer = touchPrimer({ root, onClear(el) { el.classList.remove('is-touch-selected'); } });
   let rover = null;
   let suppressCompatibilityClick = false;
 
@@ -227,10 +230,10 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     bindTip(button, () => lines, spec.topic);
 
     button.addEventListener('pointerdown', (event) => {
-      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') clearTouchSelection();
+      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') primer.clear();
     });
     button.addEventListener('click', () => {
-      clearTouchSelection();
+      primer.clear();
       activate(spec.record.id, button);
     });
 
@@ -254,19 +257,18 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     }
     const item = nearestTouch(event.clientX, event.clientY);
     if (!item) {
-      clearTouchSelection();
+      primer.clear();
       return;
     }
     suppressCompatibilityClick = true;
     event.preventDefault();
     event.stopPropagation();
-    if (touchPrimed === item.el) {
-      clearTouchSelection();
+    if (primer.get() === item.el) {
+      primer.clear();
       activate(item.spec.record.id, item.el);
       return;
     }
-    clearTouchSelection();
-    touchPrimed = item.el;
+    primer.set(item.el);
     item.el.classList.add('is-touch-selected');
     rover.focusAt(markerRecords.indexOf(item));
     showTip(item.el, item.lines, item.spec.topic);
@@ -281,20 +283,6 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     event.preventDefault();
     event.stopPropagation();
   }, { capture: true });
-
-  document.addEventListener('pointerdown', (event) => {
-    if (touchPrimed && !root.contains(event.target)) {
-      clearTouchSelection();
-    }
-  }, { capture: true });
-
-  function clearTouchSelection() {
-    if (touchPrimed) {
-      touchPrimed.classList.remove('is-touch-selected');
-      hideTip(touchPrimed);
-    }
-    touchPrimed = null;
-  }
 
   function nearestTouch(x, y) {
     let best = null;
@@ -350,9 +338,31 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
   function clearScrub() {
     hairline.hidden = true;
     if (typeof onScrub === 'function') onScrub(null);
-    if (touchPrimed) {
-      const item = markerRecords.find((candidate) => candidate.el === touchPrimed);
+    const primedEl = primer.get();
+    if (primedEl) {
+      const item = markerRecords.find((candidate) => candidate.el === primedEl);
       if (item) showTip(item.el, item.lines, item.spec.topic);
+    }
+  }
+
+  /**
+   * SB6: as of a scrubbed year, a mark past the cutoff points at a row the
+   * scrubber has hidden. Dim it (the existing .is-after treatment) and
+   * take it out of the roving set so Tab, the arrows and Home/End all skip
+   * it -- hitRow() itself also refuses a scrubber-hidden row, so a stray
+   * mouse click on a dimmed mark still does nothing. `year` null (or any
+   * non-finite value) resets every mark to live.
+   */
+  function applyAsOf(year) {
+    const cutoff = Number.isFinite(year) ? year : null;
+    for (const item of markerRecords) {
+      const after = cutoff != null && item.spec.year > cutoff;
+      item.el.classList.toggle('is-after', after);
+      rover.setAvailable(item.el, !after);
+      if (after) {
+        if (primer.get() === item.el) primer.clear();
+        if (document.activeElement === item.el) item.el.blur();
+      }
     }
   }
 
@@ -432,6 +442,7 @@ export function setupChartTalks({ term, talks, topics, reducedMotion, onScrub } 
     hit(id) { return activate(String(id)); },
     refresh,
     marks() { return markerRecords.map((item) => item.el); },
+    applyAsOf,
   };
 }
 

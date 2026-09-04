@@ -12,13 +12,13 @@ import {
   bindTip,
   dateOf,
   el,
-  hideTip,
   hitRow,
   iso,
   mark,
   pct,
   showTip,
   topicLabel,
+  touchPrimer,
   yearsBetween,
 } from './chart-util.js';
 
@@ -73,6 +73,7 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
     scrubTo() {},
     hitRole() { return false; },
     refresh() {},
+    applyAsOf() {},
   };
 
   if (!pane || !plot || !rolesTrack || !talksTrack || !postsTrack || !axis || !hairline || !summary || !axisFrom) {
@@ -91,7 +92,15 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
   const roleButtons = new Map();
   const tickSets = [];
   let scrubDate = null;
-  let touchPrimed = null;
+  // MB13/SB5: shared with the writing and talks charts -- an outside tap,
+  // a cancelled touch or a phone/desktop breakpoint change drops the prime.
+  const primer = touchPrimer({
+    root: rolesTrack,
+    onClear(el) {
+      el.classList.remove('is-touch-selected');
+      el.removeAttribute('aria-current');
+    },
+  });
   let pendingTouch = null;
   let pendingTouchActivates = false;
 
@@ -130,11 +139,11 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
     button.addEventListener('pointerdown', (event) => {
       if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
         pendingTouch = null;
-        clearTouchSelection();
+        primer.clear();
         return;
       }
       pendingTouch = button;
-      pendingTouchActivates = touchPrimed === button;
+      pendingTouchActivates = primer.get() === button;
     });
     button.addEventListener('pointercancel', () => {
       pendingTouch = null;
@@ -146,21 +155,20 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
         pendingTouch = null;
         pendingTouchActivates = false;
         if (!activates) {
-          clearTouchSelection();
-          touchPrimed = button;
+          primer.set(button);
           button.classList.add('is-touch-selected');
           button.setAttribute('aria-current', 'true');
           // A touch pointer leaves at the end of the tap, after bindTip's
           // pointerenter. Reassert the selected tooltip on the next frame so
           // the first tap remains an inspect action and the second activates.
           requestAnimationFrame(() => {
-            if (touchPrimed === button) showTip(button, lines, role.topic);
+            if (primer.get() === button) showTip(button, lines, role.topic);
           });
           event.preventDefault();
           return;
         }
       }
-      clearTouchSelection();
+      primer.clear();
       activateRole(role.id, button);
     });
 
@@ -187,13 +195,13 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
   let tipFrame = 0;
   window.addEventListener('scroll', () => {
     const owner = [...roleButtons.values()].find(({ button }) => (
-      button === document.activeElement || button === touchPrimed || button.matches(':hover')
+      button === document.activeElement || button === primer.get() || button.matches(':hover')
     ));
     if (!owner) return;
     cancelAnimationFrame(tipFrame);
     tipFrame = requestAnimationFrame(() => {
       const { button, lines, role } = owner;
-      if (button === document.activeElement || button === touchPrimed || button.matches(':hover')) {
+      if (button === document.activeElement || button === primer.get() || button.matches(':hover')) {
         showTip(button, lines, role.topic);
       }
     });
@@ -212,18 +220,6 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
   tickSets.push(renderTicks(talksTrack, talkRecords));
   tickSets.push(renderTicks(postsTrack, postRecords));
   renderSummary(summary, axisFrom, today, talkRecords, postRecords);
-
-  document.addEventListener('pointerdown', (event) => {
-    if (touchPrimed && !rolesTrack.contains(event.target)) clearTouchSelection();
-  }, { capture: true });
-
-  function clearTouchSelection() {
-    if (!touchPrimed) return;
-    touchPrimed.classList.remove('is-touch-selected');
-    touchPrimed.removeAttribute('aria-current');
-    hideTip(touchPrimed);
-    touchPrimed = null;
-  }
 
   function activateRole(id, button = roleButtons.get(id)?.button || null) {
     const role = roleButtons.get(String(id));
@@ -280,10 +276,49 @@ export function setupChartCv({ term, talks, posts, topics, reducedMotion } = {})
     window.addEventListener('resize', refresh, { passive: true });
   }
 
+  /**
+   * SB6: the generic scrubber treatment (an .is-after opacity class alone)
+   * misrepresents a role that spans the cutoff -- a 2013-to-2026 bar stayed
+   * fully bright and fully wide under a #2018 scrub, claiming the role
+   * continued past the year being viewed. As of `year`, a role's bar ends
+   * at that year's close instead of its real end; a role that starts
+   * entirely after the cutoff is hidden outright (matching its row, which
+   * the plain per-row scrub already hides) and taken out of tab order.
+   * Talk/post ticks keep the plain .is-after dim: a point in time past the
+   * cutoff does not misstate a duration the way an unclipped bar does.
+   * `year` null (or any non-finite value) restores every role to its real
+   * span.
+   */
+  function applyAsOf(year) {
+    const cutoff = Number.isFinite(year) ? year : null;
+    const cutoffEnd = cutoff ? dateOf(`${cutoff}-12-31`) : null;
+    for (const { button, role } of roleButtons.values()) {
+      const startsAfter = Boolean(cutoffEnd && role.from > cutoffEnd);
+      if (startsAfter) {
+        if (primer.get() === button) primer.clear();
+        if (document.activeElement === button) button.blur();
+      }
+      button.hidden = startsAfter;
+      button.tabIndex = startsAfter ? -1 : 0;
+      const to = cutoffEnd && role.to > cutoffEnd ? cutoffEnd : role.to;
+      const left = axisPct(role.from, axisFrom);
+      const width = startsAfter ? 0 : Math.max(0, axisPct(to, axisFrom) - left);
+      button.style.left = `${left}%`;
+      button.style.width = `${width}%`;
+    }
+    for (const ticks of tickSets) {
+      for (const tick of ticks) {
+        tick.el.classList.toggle('is-after', Boolean(cutoff != null && tick.record.year > cutoff));
+      }
+    }
+    refresh();
+  }
+
   return {
     scrubTo,
     hitRole(id) { return activateRole(String(id)); },
     refresh,
+    applyAsOf,
   };
 }
 

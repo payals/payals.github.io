@@ -4,7 +4,7 @@
  *
  * Contract (scratchpad/phase2/PLAN.md, module table):
  *   setupZoom({ term, panes, reader, reducedMotion, onChange }) ->
- *     { zoom(id), restore(), toggle(id), current(), openPost(slug), applyHash() }
+ *     { zoom(id), restore(), toggle(id), current(), openPost(slug, opener?), applyHash() }
  *
  * onChange (optional) is called after every zoom or restore once the DOM
  * has changed; main.js uses it to refit the constellation canvas, whose
@@ -17,11 +17,15 @@
  * with its print and copy controls, talks regrouped by year) and focuses it.
  * The hash mirrors the state (#cv, #talks, #writing, #now, #writing/<slug>)
  * through replaceState so restoring adds no history entries. Composing with
- * the scrubber's own #<year> hash: starting a zoom while the hash is a bare
- * year (scrubber.js's format) remembers it, so it overwrites the hash while
- * zoomed (the same as any other zoom) but restore() puts the year back
- * instead of clearing the hash, so a #2018 deep link survives zooming a pane
- * and returning to the grid.
+ * the scrubber's own year: the leading segment can hold a bare year only
+ * while nothing else owns it. Starting a zoom while the hash is a bare year
+ * migrates it into a `year=` key (setHashPart, shared with scrubber.js's own
+ * mid-scrub writes), so it survives alongside the pane id and any topic=
+ * filter for as long as a pane or post owns the leading segment; restore()
+ * folds that key back into the bare leading segment once the grid does
+ * again. A composite deep link (#cv&year=2018&topic=security) round-trips:
+ * reloading it reproduces exactly what a zoom-in from #2018&topic=security
+ * displays.
  *
  * Triggers: pane title click (toggle), click on a non-interactive area of a
  * pane (zoom), z or Enter on a focused pane, a pane number pressed twice
@@ -43,7 +47,7 @@
  */
 
 import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
-import { firstHashPart, hashParts } from './chart-util.js';
+import { firstHashPart, getHashPart, hashParts, setHashPart } from './chart-util.js';
 
 const ZOOMABLE = ['now', 'talks', 'writing', 'cv'];
 const ORDER = ['now', 'talks', 'writing', 'cv', 'links', 'terminal'];
@@ -64,14 +68,9 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
   const palette = document.querySelector('[data-palette]');
 
   let current = null;
-  // Set by a statusbar click so the hash it writes focuses instead of zooming.
-  let skipNextHashZoom = false;
   let lastDigit = null;
   let lastDigitAt = 0;
   let prefixAt = 0;
-  // The scrubber's #<year> hash, captured the moment a zoom starts from the
-  // unzoomed grid so restore() can put it back instead of clearing the hash.
-  let yearHashBeforeZoom = null;
 
   // Per-pane undo records for the content changes zoom makes.
   let undo = null;
@@ -100,14 +99,28 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
   }
 
   // Phase 3: the hash is `leading&key=value` segments. Zoom owns the leading
-  // segment and must keep every key=value segment (the topic filter) intact,
-  // so zooming a pane never clears a filter.
+  // segment and must keep every key=value segment (the topic filter, and
+  // the scrubber's own `year=` key) intact, so zooming a pane never clears
+  // a filter or drops the scrubbed year.
   function setHash(fragment) {
     const base = location.pathname + location.search;
     const kept = hashParts().filter((p) => p.includes('='));
     const parts = fragment ? [fragment, ...kept] : kept;
     const hash = parts.join('&');
     history.replaceState(null, '', hash ? `${base}#${hash}` : base);
+  }
+
+  /**
+   * The scrubber writes a bare year (#2018) only while nothing owns the
+   * leading segment; once a pane or post takes it, the year moves to its
+   * own `year=` key (scrubber.js does this too, mid-scrub). Migrate a bare
+   * leading year into that key before a fresh zoom claims the leading slot,
+   * so setHash()'s own `kept` picks it up like any other key=value segment
+   * and composite deep links (#cv&year=2018&topic=security) round-trip.
+   */
+  function migrateYearToKey() {
+    const lead = firstHashPart();
+    if (/^20\d\d$/.test(lead)) setHashPart('year', lead);
   }
 
   function zoom(id) {
@@ -120,10 +133,8 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     if (current) {
       if (reader.isOpen()) reader.close({ silent: true });
       unzoomDom();
-    } else if (/^20\d\d$/.test(firstHashPart())) {
-      // Starting fresh from the grid with a scrubber year in the hash: keep
-      // it so restore() can put it back once this zoom session ends.
-      yearHashBeforeZoom = firstHashPart();
+    } else {
+      migrateYearToKey();
     }
 
     const pane = paneEl(id);
@@ -151,8 +162,13 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     const id = current;
     if (reader.isOpen()) reader.close({ silent: true });
     unzoomDom();
-    setHash(yearHashBeforeZoom || '');
-    yearHashBeforeZoom = null;
+    // Fold the `year=` key (if the scrubber wrote or updated one while
+    // zoomed) back into the bare leading segment scrubber.js expects once
+    // nothing owns it -- remove the key first so setHash() does not carry
+    // a stale duplicate alongside the fragment it is about to become.
+    const year = getHashPart('year');
+    if (year) setHashPart('year', null);
+    setHash(year || '');
     panes.focusPane(id);
     notify();
     return true;
@@ -175,9 +191,9 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     return zoom(id);
   }
 
-  function openPost(slug) {
+  function openPost(slug, openerEl = null) {
     if (!zoom('writing')) return Promise.resolve(false);
-    return reader.open(slug).then((result) => {
+    return reader.open(slug, openerEl).then((result) => {
       // Only a real success (=== true, never 'stale' or 'cancelled', which
       // are also truthy) moves the hash to this post.
       if (result === true && current === 'writing') setHash(`writing/${slug}`);
@@ -190,18 +206,8 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
   });
 
   function applyHash() {
-    let raw;
-    try {
-      raw = firstHashPart();
-    } catch (err) {
-      return false;
-    }
+    const raw = firstHashPart();
     if (!raw) return false;
-    if (skipNextHashZoom) {
-      // A statusbar click wrote this hash; let panes.js focus it instead.
-      skipNextHashZoom = false;
-      return false;
-    }
     const post = raw.match(/^writing\/([^/]+)$/);
     if (post) {
       openPost(post[1]);
@@ -420,12 +426,13 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     const pane = e.target.closest('.pane');
     if (!pane || !isZoomable(pane.id)) return;
 
-    // A zoomed writing pane opens its posts in the reader (Z4).
+    // A zoomed writing pane opens its posts in the reader (Z4). The link
+    // itself is the opener the reader restores focus to on close.
     if (pane.id === 'writing' && current === 'writing') {
       const link = e.target.closest('a[data-post]');
       if (link) {
         e.preventDefault();
-        openPost(link.dataset.post);
+        openPost(link.dataset.post, link);
         return;
       }
     }
@@ -441,19 +448,24 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
     if (current !== pane.id) zoom(pane.id);
   });
 
-  // Statusbar pane items. With nothing zoomed the link keeps its native
-  // behaviour: the browser writes the hash, the chain runs, and the pane is
-  // focused as in phase 1. Only the zoom step is skipped for that one hash
-  // change, so a statusbar click never zooms while an external deep link
-  // still does (Z5). While a pane is zoomed the click switches or restores
-  // the zoom instead, which needs preventDefault.
+  // Statusbar pane items. A plain `href="#id"` anchor click lets the
+  // browser replace the *entire* fragment with that one segment, dropping
+  // any topic= and year= keys already there -- so every path here always
+  // preventDefault()s and routes through the same setHash()/migrateYearToKey
+  // machinery zoom() and restore() already use, the one serializer that
+  // knows how to keep those keys. While a pane is zoomed the click switches
+  // or restores the zoom -- that is a deliberate pane-to-pane zoom change.
+  // Unzoomed, though, the statusbar is pure navigation (as phase 2 taught:
+  // pane keys jump once and zoom only on a second press), so a click here
+  // never zooms regardless of the target pane -- it only writes the leading
+  // hash segment (composing with any topic=/year= keys) and focuses it.
   if (statusbar) {
     statusbar.addEventListener('click', (e) => {
       const item = e.target.closest('a[data-pane]');
       if (!item || item.hasAttribute('data-help')) return;
       const id = item.dataset.pane;
+      e.preventDefault();
       if (current) {
-        e.preventDefault();
         if (current !== id) {
           if (isZoomable(id)) zoom(id);
           else {
@@ -465,13 +477,11 @@ export function setupZoom({ term, panes, reader, reducedMotion, onChange }) {
         panes.focusPane(id);
         return;
       }
-      skipNextHashZoom = true;
-      if (firstHashPart() === id) {
-        // Same hash: no hashchange fires, so focus the pane here.
-        skipNextHashZoom = false;
-        e.preventDefault();
-        panes.focusPane(id);
+      if (firstHashPart() !== id) {
+        migrateYearToKey();
+        setHash(id);
       }
+      panes.focusPane(id);
     });
   }
 

@@ -141,17 +141,29 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mobile listens on the bus, so it subscribes before the scrubber can emit.
   const mobile = setupMobile({ term, panes, palette, reducedMotion });
 
-  const scrubber = setupScrubber({ term, timeline, reducedMotion });
+  const scrubber = setupScrubber({
+    term,
+    timeline,
+    reducedMotion,
+    charts: [chartCv, chartTalks, chartWriting],
+  });
   constellation = setupConstellation({ term, posts, talks, reducedMotion });
 
   // Hash chain: topics (#...&topic=security, composes and never consumes) ->
-  // zoom (#cv, #writing/<slug>) -> scrubber (#2018) -> panes (#about, #links,
-  // #terminal, and any pane id the others left alone).
+  // zoom (#cv, #writing/<slug>) -> scrubber (#2018, or a `year=` key once a
+  // pane/post owns the leading segment) -> panes (#about, #links,
+  // #terminal, and any pane id the others left alone). scrubber always
+  // runs, even when zoom already consumed the leading segment, because a
+  // composite deep link (#cv&year=2018&topic=security) carries its year in
+  // a key zoom does not read; only panes.applyHash() is skipped once zoom
+  // has claimed the leading segment, so it never re-focuses what zoom just
+  // focused.
   function applyHash() {
     if (!location.hash) return;
     topics2.applyHash();
-    if (zoom.applyHash()) return;
-    if (scrubber.applyHash()) return;
+    const zoomed = zoom.applyHash();
+    scrubber.applyHash();
+    if (zoomed) return;
     panes.applyHash();
   }
   window.addEventListener('hashchange', applyHash);

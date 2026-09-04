@@ -6,8 +6,14 @@
  * the panes are complete at first paint and change only on user input (the
  * range's input event, the "back to now" button) or a #<year> hash.
  *
- *   setupScrubber({ term, timeline, reducedMotion }) ->
+ *   setupScrubber({ term, timeline, reducedMotion, charts }) ->
  *     { setYear(year), reset(), year(), applyHash() }
+ *
+ * `charts` is the [chartCv, chartTalks, chartWriting] array main.js already
+ * builds them into; each one's own applyAsOf(year) (year, or null for
+ * live) owns how it represents "as of" for its marks, replacing a single
+ * generic per-element class toggle that could not mask a role's bar width
+ * or pull a mark out of a chart's own keyboard roving set.
  *
  * As of a past year: talks, posts and cv roles whose data-year is later than
  * the year are hidden (a class, so the writing pane's data-rest rows and the
@@ -27,12 +33,15 @@
  * snapshot taken at setup.
  *
  * The hash mirrors the year (#2018, replaceState, so no history entries and
- * no hashchange loop) while the hash has no pane/reader owner. A topic-only
- * hash gains the year in front; a zoomed pane's #cv is never overwritten.
- * Nothing animates, so reduced motion needs no branch here.
+ * no hashchange loop) while nothing owns the leading segment. A topic-only
+ * hash gains the year in front; once a pane or post owns the leading
+ * segment (#cv, #writing/slug), the year moves to its own `year=` key
+ * instead, composing the same way topic= does, so scrubbing while zoomed
+ * neither overwrites the pane nor silently drops the year. Nothing
+ * animates, so reduced motion needs no branch here.
  */
 
-import { emit, firstHashPart, hashParts } from './chart-util.js';
+import { emit, firstHashPart, getHashPart, hashParts, setHashPart } from './chart-util.js';
 import { isShortcutTarget, shortcutsEnabled } from './shortcuts.js';
 
 const MIN_YEAR = 2013;
@@ -40,7 +49,7 @@ const MAX_YEAR = 2026;
 const DEBOUNCE_MS = 150;
 const KIND_RANK = { cv: 0, talk: 1, post: 2 };
 
-export function setupScrubber({ term, timeline, reducedMotion }) {
+export function setupScrubber({ term, timeline, reducedMotion, charts = [] }) {
   void reducedMotion;
   const root = document.querySelector('[data-scrubber]');
   const input = root ? root.querySelector('[data-scrubber-input]') : null;
@@ -185,14 +194,17 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       else restoreDate(date, snapshot.dateNodes);
     }
 
-    // SB3/SB4: the career log and chart geometry stay in place. Only their
-    // later records dim, while pane list rows retain phase 2's hide/show
-    // behaviour above.
+    // SB3: the career log stays in place; only its later entries dim.
     for (const line of document.querySelectorAll('.bootlog__entry[data-year]')) {
       line.classList.toggle('is-after', past && Number(line.dataset.year) > y);
     }
-    for (const mark of document.querySelectorAll('.chart-mark[data-year]')) {
-      mark.classList.toggle('is-after', past && Number(mark.dataset.year) > y);
+    // SB6: each chart owns how it represents "as of `y`" for its own marks
+    // -- a plain opacity class alone let a CV role bar that spans the
+    // cutoff stay full width, and let post-cutoff marks and cells stay
+    // reachable by keyboard and click even though their rows are hidden.
+    // applyAsOf(null) means live: every chart resets to its full span.
+    for (const chart of charts) {
+      if (chart && typeof chart.applyAsOf === 'function') chart.applyAsOf(past ? y : null);
     }
 
     const talkCount = countTalks(y, past);
@@ -287,22 +299,63 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
     return current;
   }
 
-  /** #2013 to #2026 in the address bar renders that year. The hash may
-   *  carry a topic segment too (#2018&topic=security), so this reads the
-   *  leading segment only. */
+  /**
+   * #2013 to #2026 in the address bar renders that year, as long as
+   * nothing else owns the leading segment (the hash may carry a topic
+   * segment too: #2018&topic=security). Once a pane or post takes the
+   * leading segment (#cv&topic=security), the year moves to its own
+   * `year=` key instead -- zoom.js writes it there the moment a zoom
+   * starts from a bare-year hash, and schedule() below does the same for
+   * a mid-scrub year change -- so a composite deep link
+   * (#cv&year=2018&topic=security) still restores the year even though
+   * main.js's hash chain lets zoom.applyHash() consume the leading
+   * segment first.
+   *
+   * main.js calls this on every hash change unconditionally (a composite
+   * deep link carries its year in a key zoom.js does not read), so this
+   * function is the sole source of truth for the scrubbed year: it must
+   * always leave `current` matching exactly what the hash says, never
+   * leave a stale year in place just because this particular hash didn't
+   * happen to name a valid one. The leading segment and the `year=` key
+   * are therefore validated independently -- each can be present, absent,
+   * or out of MIN_YEAR..MAX_YEAR range on its own -- and an in-range
+   * leading year wins over the key (matching how zoom.js only ever
+   * migrates a bare leading year into the key, never the reverse) while
+   * an out-of-range leading segment (#2027&year=2018) does not shadow a
+   * still-valid keyed one. Anything left over (empty, missing, or out of
+   * range on both -- including a hash that names no year at all, such as
+   * #writing/<slug>) resets to the live sentinel and normalizes the hash,
+   * so the UI and the as-of banner never linger on a historical year the
+   * URL no longer requests. This never no-ops: every hash change resolves
+   * to a definite year, because main.js runs this on every one of them
+   * regardless of what else the hash names.
+   */
   function applyHash() {
-    const m = /^(20\d\d)$/.exec(firstHashPart());
-    if (!m) return false;
-    const y = parseInt(m[1], 10);
-    if (y < MIN_YEAR || y > MAX_YEAR) return false;
+    const lead = firstHashPart();
+    const leadMatch = /^(20\d\d)$/.exec(lead);
+    const keyRaw = getHashPart('year');
+    const keyMatch = keyRaw ? /^(20\d\d)$/.exec(keyRaw) : null;
+
+    const leadYear = leadMatch ? parseInt(leadMatch[1], 10) : null;
+    const keyYear = keyMatch ? parseInt(keyMatch[1], 10) : null;
+    const leadValid = leadYear !== null && leadYear >= MIN_YEAR && leadYear <= MAX_YEAR;
+    const keyValid = keyYear !== null && keyYear >= MIN_YEAR && keyYear <= MAX_YEAR;
+
+    const y = leadValid ? leadYear : keyValid ? keyYear : MAX_YEAR;
     const applied = setYear(y);
+
+    // Normalize the hash to match what was actually applied: drop a bare
+    // leading year (valid or not) once the result is live, and always
+    // clear the year= key once the result is live -- whichever candidate
+    // was invalid or empty must not linger in the address bar either.
     if (y === MAX_YEAR) {
-      // The numeric maximum is an implementation sentinel, not a historical
-      // view. Normalize stale #2026 links to the live hash while retaining
-      // every composable key=value segment such as the topic filter.
-      const kept = hashParts().filter((part) => part.includes('='));
-      const hash = kept.join('&');
-      history.replaceState(null, '', `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`);
+      if (leadMatch) {
+        const kept = hashParts().filter((part) => part.includes('=') && !part.startsWith('year='));
+        const hash = kept.join('&');
+        history.replaceState(null, '', `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`);
+      } else if (keyRaw != null) {
+        setHashPart('year', null);
+      }
     }
     return applied;
   }
@@ -328,14 +381,21 @@ export function setupScrubber({ term, timeline, reducedMotion }) {
       // clears a filter and a filter never clears a scrub.
       const lead = firstHashPart();
       // A topic-only hash starts with key=value and has no phase-2 leading
-      // segment yet, so the scrubber may prepend its year. A pane/reader
-      // hash such as #cv or #writing/slug remains owned by that feature.
-      if (lead === '' || /^20\d\d$/.test(lead) || lead.includes('=')) {
-        const kept = hashParts().filter((p) => p.includes('='));
+      // segment yet, so the scrubber may prepend its year as the bare
+      // leading segment. A pane/reader hash such as #cv or #writing/slug
+      // remains owned by that feature -- the year goes into its own
+      // `year=` key instead (composing with #cv exactly as topic= does),
+      // so scrubbing while zoomed neither overwrites the pane nor silently
+      // drops the year from the address bar.
+      const leadIsFree = lead === '' || /^20\d\d$/.test(lead) || lead.includes('=');
+      if (leadIsFree) {
+        const kept = hashParts().filter((p) => p.includes('=') && !p.startsWith('year='));
         const parts = past ? [String(y), ...kept] : kept;
         const hash = parts.join('&');
         const url = hash ? `#${hash}` : location.pathname + location.search;
         history.replaceState(null, '', url);
+      } else {
+        setHashPart('year', past ? String(y) : null);
       }
     }, DEBOUNCE_MS);
   }

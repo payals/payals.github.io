@@ -433,8 +433,18 @@ export function setupPalette({ term, zoom, panes, reducedMotion, posts, talks })
       e.stopPropagation();
       if (input.value) { input.value = ''; sel = 0; render(); } else close();
     } else if (e.key === 'Tab') {
+      // The trap: Tab and Shift+Tab must reach every currently focusable
+      // control in the dialog, not just the search input -- mobile.js's
+      // injected close button included -- so this re-queries at press
+      // time rather than assuming a fixed pair of stops.
+      const stops = focusableIn(root);
+      if (!stops.length) { e.preventDefault(); input.focus(); return; }
       e.preventDefault();
-      input.focus();
+      const i = stops.indexOf(document.activeElement);
+      const next = e.shiftKey
+        ? stops[i <= 0 ? stops.length - 1 : i - 1]
+        : stops[i === -1 || i === stops.length - 1 ? 0 : i + 1];
+      next.focus();
     }
   });
 
@@ -767,6 +777,28 @@ function markTitle(title, pos) {
   }
   flush();
   return frag;
+}
+
+/**
+ * Every currently focusable, visible descendant of `container`, in DOM
+ * order. Used to build the phone dialog's Tab trap at press time rather
+ * than assuming a fixed set of stops, so a control mobile.js injects after
+ * setup (the close button) or any future one is caught automatically.
+ */
+function focusableIn(container) {
+  const selector = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'textarea:not([disabled])',
+    'select:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(', ');
+  return [...container.querySelectorAll(selector)].filter((el) => {
+    if (el.hidden) return false;
+    const style = getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  });
 }
 
 function h(tag, attrs = {}) {

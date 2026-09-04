@@ -4,14 +4,23 @@
  *
  * Contract (scratchpad/phase2/PLAN.md, module table):
  *   setupReader({ term, reducedMotion, posts }) ->
- *     { open(slug), close(), isOpen(), current(), onClose(fn) }
+ *     { open(slug, opener?), close(), isOpen(), current(), onClose(fn) }
  *
- * open(slug) fetches the post's own page (same origin), parses it with
- * DOMParser, takes .page__header and main .prose, and renders title, date,
- * body and a persistent "open on blog" link into #writing [data-reader].
- * The list ([data-posts]) and the actions row are hidden while a post is
- * open and come back on close. A status line at the bottom reads
- * "<slug> line x of y NN%" from the real rendered height (aria-live off).
+ * open(slug, opener) fetches the post's own page (same origin), parses it
+ * with DOMParser, takes .page__header and main .prose, and renders title,
+ * date, body and a persistent "open on blog" link into #writing
+ * [data-reader]. The whole writing archive -- all three post lists (the
+ * visible one, the phone-fold batch and the hidden tail, phase 3 split
+ * across a <details> disclosure) plus the all-posts/rss actions row nested
+ * inside it -- is one hideable region while a post is open: everything in
+ * it is unreachable by tab or click, and each piece's own `hidden` state
+ * is snapshotted first and restored exactly on close, not just forced back
+ * to visible. `opener`, when the caller has the actual link that was
+ * activated, is who gets focus back on close; without it (a palette or
+ * `cat writing/<slug>` open, a hash deep link) close() falls back to
+ * searching the whole archive for the post's own link. A status line at
+ * the bottom reads "<slug> line x of y NN%" from the real rendered height
+ * (aria-live off).
  *
  * Cancellation contract: each open() call gets its own AbortController.
  * Opening a second post while the first is still fetching aborts the
@@ -44,15 +53,23 @@ const LINE_FALLBACK_PX = 28;
 
 export function setupReader({ term, reducedMotion, posts }) {
   const region = document.querySelector('#writing [data-reader]');
-  const list = document.querySelector('#writing [data-posts]');
   const pane = region ? region.closest('.pane') : null;
-  const actions = pane ? [...pane.querySelectorAll(':scope > .pane__body > .actions')] : [];
+  const body = pane ? pane.querySelector(':scope > .pane__body') : null;
+  // The whole archive: every top-level post list plus the phone disclosure,
+  // which nests the fold's own tail list and the all-posts/rss actions.
+  // Hiding these two elements hides everything a post's own list, fold or
+  // action link could offer while the reader owns the pane.
+  const archive = body
+    ? [...body.querySelectorAll(':scope > ul.rows[data-posts], :scope > details.disclose[data-mobile-more]')]
+    : [];
   const statusbar = document.querySelector('[data-statusbar]');
   const innerScroll = window.matchMedia('(min-width: 1024px)');
 
   const closeHandlers = new Set();
   const cache = new Map();
   let current = null;
+  let opener = null;
+  let archiveState = null;
   let token = 0;
   // The fetch currently in flight, if any: { controller, reason }. reason is
   // set to 'stale' or 'cancelled' immediately before controller.abort() is
@@ -66,7 +83,7 @@ export function setupReader({ term, reducedMotion, posts }) {
   let ticking = false;
   let resizeObserver = null;
 
-  if (!region || !list || !pane) {
+  if (!region || !pane || !body || archive.length === 0) {
     return {
       open() { return Promise.resolve(false); },
       close() { return false; },
@@ -89,7 +106,7 @@ export function setupReader({ term, reducedMotion, posts }) {
 
   /* ----------------------------------------------------------------- open */
 
-  async function open(slug) {
+  async function open(slug, openerEl = null) {
     const post = posts.find((p) => p.slug === slug);
     if (!post) {
       term.print(`reader: no post named ${slug}`, { className: 'scrollback__line--err' });
@@ -98,7 +115,7 @@ export function setupReader({ term, reducedMotion, posts }) {
     // A new open() supersedes whatever load is still in flight.
     abortInflight('stale');
     const my = ++token;
-    show(post);
+    show(post, openerEl);
     renderShell(post, 'loading');
 
     let html = cache.get(slug);
@@ -138,10 +155,24 @@ export function setupReader({ term, reducedMotion, posts }) {
     return true;
   }
 
-  function show(post) {
+  function show(post, openerEl) {
+    // Snapshot each archive element's own hidden state before forcing it
+    // hidden, and restore that exact state on close rather than assuming
+    // every one of them was visible to begin with. But only on the
+    // closed -> first-open transition: `current` is null exactly then,
+    // since close() is the only thing that resets it. Switching from one
+    // open post to another (palette, deep link, or a click on another
+    // archive link) must keep reading from that original snapshot -- the
+    // archive is already hidden at this point, so re-snapshotting here
+    // would capture [true, true, ...] and "restore" to the reader's own
+    // hidden state on close, stranding the archive unreachable.
+    const wasClosed = current === null;
     current = post.slug;
-    list.hidden = true;
-    for (const el of actions) el.hidden = true;
+    opener = openerEl && document.contains(openerEl) ? openerEl : null;
+    if (wasClosed) {
+      archiveState = archive.map((el) => el.hidden);
+      for (const el of archive) el.hidden = true;
+    }
     pane.classList.add('is-reading');
     region.hidden = false;
   }
@@ -434,26 +465,62 @@ export function setupReader({ term, reducedMotion, posts }) {
   function close(opts = {}) {
     if (!current) return false;
     const slug = current;
+    const openerEl = opener;
     token++;
     abortInflight('cancelled');
     unwatch();
     current = null;
+    opener = null;
     scroller = null;
     proseEl = null;
     statusEl = null;
     region.hidden = true;
     region.replaceChildren();
-    list.hidden = false;
-    for (const el of actions) el.hidden = false;
+    // Restore each archive element to exactly the hidden state it had
+    // before this post opened -- not just forced back to visible -- so
+    // the archive's own state (whatever set it before the reader touched
+    // it) survives a read.
+    archive.forEach((el, i) => { el.hidden = archiveState ? archiveState[i] : false; });
+    archiveState = null;
     pane.classList.remove('is-reading');
     if (!opts.silent) {
-      const row = list.querySelector(`a[data-post="${cssEscape(slug)}"]`);
-      const target = row && getComputedStyle(row).display !== 'none' ? row : pane;
-      target.focus({ preventScroll: true });
+      focusTarget(slug, openerEl).focus({ preventScroll: true });
       if (!innerScroll.matches) pane.scrollIntoView({ behavior, block: 'start' });
     }
     for (const fn of closeHandlers) fn(slug);
     return true;
+  }
+
+  /**
+   * Where focus goes on close: the link that actually opened this post
+   * when it is still reachable, else the same post's link found anywhere
+   * in the (now-restored) archive -- the post can live in any of the
+   * three lists, not just the first -- else the pane itself.
+   */
+  function focusTarget(slug, openerEl) {
+    if (isReachable(openerEl)) return openerEl;
+    const row = body.querySelector(`a[data-post="${cssEscape(slug)}"]`);
+    if (isReachable(row)) return row;
+    return pane;
+  }
+
+  /**
+   * Whether `el` can actually take focus right now: in the document, not
+   * itself or an ancestor `hidden`, not display:none or visibility:hidden.
+   * A link's own computed display never reports "none" just because a
+   * `<details>` it sits inside is closed -- that display:none lives on the
+   * ancestor, not the link -- so checking only the element's own style
+   * (as this used to) passes a link that a phone's closed archive fold
+   * has made unreachable, and .focus() on it silently does nothing.
+   * offsetParent catches that: it is null for anything not actually laid
+   * out, ancestor-hidden included, fixed-position elements excepted.
+   */
+  function isReachable(el) {
+    if (!el || !document.contains(el)) return false;
+    if (el.closest('[hidden]')) return false;
+    const style = getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    return el.offsetParent !== null || style.position === 'fixed';
   }
 
   function onClose(fn) {
