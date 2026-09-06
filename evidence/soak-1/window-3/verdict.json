@@ -1,0 +1,83 @@
+{
+    "passed": true,
+    "reconciliation": {
+        "ok": true,
+        "tables": {
+            "windows": {
+                "signed": 1,
+                "mismatches": [],
+                "projection": 1
+            },
+            "challenges": {
+                "signed": 3,
+                "mismatches": [],
+                "projection": 3
+            },
+            "detector_runs": {
+                "signed": 17688,
+                "mismatches": [],
+                "projection": 17688
+            },
+            "metrics_daily": {
+                "signed": 9,
+                "mismatches": [],
+                "projection": 9
+            },
+            "contaminations": {
+                "signed": 0,
+                "mismatches": [],
+                "projection": 0
+            }
+        },
+        "first_mismatch": null
+    },
+    "closure_reasons": [
+        "scheduled_close"
+    ],
+    "failing_metrics": [],
+    "liveness_replay": {
+        "rule": "db-cadence-v3",
+        "fails": false,
+        "buckets": 2016,
+        "bucket_s": 300,
+        "blackout_s": 0,
+        "fail_persist_s": 1800,
+        "flagged_buckets": 0,
+        "blackout_buckets": 0,
+        "first_flagged_at": null,
+        "longest_flagged_s": 0,
+        "blackout_intervals": [],
+        "longest_flagged_streak": 0,
+        "fixture_enabled_sampled_at_replay": true
+    },
+    "revealed_schedule": [
+        {
+            "day": 2,
+            "minute": 1111
+        },
+        {
+            "day": 3,
+            "minute": 1094
+        },
+        {
+            "day": 4,
+            "minute": 713
+        }
+    ],
+    "controller_amendments": [
+        {
+            "at": "2026-08-28T00:59:51.034439-04:00",
+            "notes": {
+                "commit": "48e5b340250c838f6d961b8baf472cee69b39616",
+                "reason": "coverage bar unachievable by construction (300-s grid vs ~371-s real cadence; perfect week = 78%) failed the window-2 verdict despite 3/3 autonomous repairs and 0 contaminations; grid now 3x interval with blackout buckets excluded, retro-validated PASS over window 2, commit 48e5b34",
+                "operation": "controller_amended",
+                "config_sha256": "545a819f69a6d665be28a58d98a7c9c38efadf78f1023cc315a837b78086ad1a",
+                "amends_controller_tree_sha256": "caef6e8f51a72849a744b141cb17bb33990cba32b4db51ec14d0fff0ee01ec33"
+            },
+            "install_id": 23,
+            "bootstrap_version": "2026-08-21.5",
+            "controller_tree_sha256": "6b5115417fc2f44755997321a5a1a7efec17425722aeeb2079f554b6ca11994f"
+        }
+    ],
+    "ledger_projection_first_mismatch": null
+}

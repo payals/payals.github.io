@@ -101,14 +101,22 @@ currently-reading shelf that is also tagged with the `site` shelf and not tagged
 also carries the `site` tag. Unrated books are eligible here, since a book in
 progress usually has no rating yet.
 
+`reading_url` sits right after `reading` and is always set alongside it, to
+`https://www.goodreads.com/book/show/<book_id>` for that same currently-reading
+record. A `title_overrides` entry only replaces the displayed title/author
+text; it never changes which book `reading_url` points at.
+
 If the currently-reading shelf has no eligible book -- nothing tagged `site`,
 everything tagged `no-site`, or the shelf is simply empty -- a successful sync
-actively clears `reading` to an empty string rather than leaving a stale value
-in place. The home page's now pane and `reading.markdown` both hide the
-"reading" row when `reading` is empty, so finishing a book with nothing new
-started yet correctly makes the row disappear instead of showing a book
-that's no longer being read. `updated` only changes when `reading` actually
-changes.
+actively clears both `reading` and `reading_url` to an empty string rather
+than leaving a stale value in place. The home page's now pane and
+`reading.markdown` both hide the "reading" row when `reading` is empty, so
+finishing a book with nothing new started yet correctly makes the row
+disappear instead of showing a book that's no longer being read. If an
+existing `now.json` predates `reading_url`, the next sync inserts the key
+right after `reading` -- preserving every other key's order -- even on a run
+where `reading` itself doesn't change. `updated` only moves when `reading`
+or `reading_url` actually changes.
 
 ## Running it locally
 

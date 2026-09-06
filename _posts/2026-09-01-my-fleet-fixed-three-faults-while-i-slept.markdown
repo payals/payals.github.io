@@ -62,6 +62,24 @@ Scorecard for the week: the fleet and the ledger did better than I expected, the
 
 If you want the two-line version of this check for your own setup, `npx skills add payals/ghost-manual` gives your agent a `/stress-test` that names what grades the work and who can edit the grader; run on this bundle, line 2 named me.
 
+## Window 3 result
+
+*Appended September 4.* Window 3 closed at 00:53:14 this morning on its scheduled tick. The verdict string reads `passed` and `failing_metrics` is an empty list. The numbers, from the controller's schema and published in the [window 3 bundle](/evidence/soak-1/window-3/): three sealed challenges, three repairs confirmed, 17,688 detector rows, 0 contaminations, 0 interventions, 0 unauthorized writes, and no reconciliation mismatches on the signed projection. Times below are measured as in window 2: fault to `confirmed`, minutes floored.
+
+- **Day 2.** Fault at 18:32:53. Campaign 204 opened at 18:36:00, verified, merged, and confirmed at 19:07:24. 34 minutes, one attempt.
+- **Day 3.** Fault at 18:18:31. Campaign 205 opened at 18:22:35 and confirmed at 18:53:58. 35 minutes, one attempt.
+- **Day 4.** Fault at 11:54:28. Campaign 206 opened at 12:10:17, the sensor's slowest pickup of the week, and confirmed at 12:41:38. 47 minutes, one attempt.
+
+This time the injector did its job; the receipt is the `injected_at` column of the [challenge table](/evidence/soak-1/window-3/challenges.csv): all three faults fired on their sealed day, each within one controller tick of its sealed minute (sealed 18:31, 18:14, 11:53; fault times above). On the fleet side it was one attempt each, with no lease expiries and no reaps; window 2 exercised the recovery path and this window never needed it. The [event log](/evidence/soak-1/window-3/campaign-events.csv) has 24 rows, eight per campaign, in the same order every time.
+
+Days 5 through 7 were idle. Kernel and controller kept ticking; no campaign opened. That tail is what the coverage, contamination, and liveness bars measure. Under the amended coverage rule, three times the tick interval with blackout buckets excluded and the bar unchanged, all eleven detectors passed, and so did the controller's own tick record. The liveness replay flagged 0 buckets; the laptop never slept, so the blackout list is empty. This window carried one amendment, the coverage fix, installed twelve minutes after open and listed in the [verdict](/evidence/soak-1/window-3/verdict.json) with its commit.
+
+One instrument defect turned up at close, and it does not touch the verdict. The per-day closures table in the report is recomputed at close with the window's end as every day's upper bound, so those rows count each day through the end of the window. The window-level count uses whole-window bounds and is right: three challenges eligible, three closed. Window 2's report has the same rows. Both are disclosed in the bundle indexes rather than edited, the same rule as the `failed` string.
+
+Soak 1 totals, across windows 2 and 3: 6 blinded challenges, 6 autonomous repairs confirmed, 0 contaminations, 0 interventions, 14 days no-touch, 35,101 signed detector rows, 6 signed amendments. Window 2's `failed` string stays in the ledger. Window 3 earned the clean one under the amended coverage rule.
+
+The section above said a clean window would end Soak 1 and point the fleet at real work. The first half is done and its ledger is closed. Window 4, which the controller opened on its own five minutes later, gets closed by hand as an abort rather than run for a seventh repair of the same file. The second half is a decision about my real repository, not about this fixture, and it gets its own post.
+
 *I write more on data reliability and AI systems at [reliable-by-design](https://medium.com/@reliable-by-design) on Medium.*
 
 {% include post-footer.html %}

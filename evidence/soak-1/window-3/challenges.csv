@@ -1,0 +1,4 @@
+challenge_id,scheduled_day,injected_at,fixture_commit_sha,fault_target,campaign_id,campaign_opened_at,campaign_confirmed_at,injection_to_confirmed_min,attempts,resolution,ledger_recorded_at
+7,2,2026-08-29 18:32:53.966307-04,42421c8f0d5807293cec0d9a0c235b1d3d16765c,src/ingestion/_db_lock.py,204,2026-08-29 18:36:00.011169-04,2026-08-29 19:07:24.87228-04,34,1,resolved_confirmed,2026-08-29 19:12:39.84586-04
+8,3,2026-08-30 18:18:31.507501-04,63b4e9a8a428606bad575a74650ef086dcf1fa33,src/ingestion/_db_lock.py,205,2026-08-30 18:22:35.360986-04,2026-08-30 18:53:58.073123-04,35,1,resolved_confirmed,2026-08-30 18:54:48.091491-04
+9,4,2026-08-31 11:54:28.733534-04,e38379889bdb08ddb4541b863a7d01853c1f1ac4,src/ingestion/_db_lock.py,206,2026-08-31 12:10:17.267967-04,2026-08-31 12:41:38.67455-04,47,1,resolved_confirmed,2026-08-31 12:45:00.019636-04

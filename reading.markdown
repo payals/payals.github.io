@@ -7,7 +7,10 @@ permalink: /reading/
 
 ## Now
 
-<p class="reading-now">{{ site.data.now.reading | escape }}</p>
+{% assign reading_url = site.data.now.reading_url | default: "" %}
+{% assign reading_url_head = reading_url | slice: 0, 36 %}
+
+<p class="reading-now">{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}" rel="noopener">{{ site.data.now.reading | escape }}</a>{% else %}{{ site.data.now.reading | escape }}{% endif %}</p>
 
 ## Finished
 

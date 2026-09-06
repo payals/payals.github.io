@@ -1,0 +1,25 @@
+campaign_id,kind,from_state,to_state,actor_role,created_at
+204,opened,,open,looper_sensor,2026-08-29 18:36:00.011169-04
+204,claimed,open,claimed,looper_kernel,2026-08-29 18:36:04.609531-04
+204,attempt_started,claimed,acting,looper_kernel,2026-08-29 18:36:11.367165-04
+204,verifying,acting,verifying,looper_kernel,2026-08-29 18:38:08.269259-04
+204,verified_pass,,,looper_verifier,2026-08-29 18:52:44.104128-04
+204,merge_intended,,,looper_verifier,2026-08-29 18:52:50.188781-04
+204,merge_succeeded,verifying,merged,looper_verifier,2026-08-29 18:52:51.182856-04
+204,confirmed,merged,resolved_confirmed,looper_sensor,2026-08-29 19:07:24.87228-04
+205,opened,,open,looper_sensor,2026-08-30 18:22:35.360986-04
+205,claimed,open,claimed,looper_kernel,2026-08-30 18:22:39.571097-04
+205,attempt_started,claimed,acting,looper_kernel,2026-08-30 18:22:46.039794-04
+205,verifying,acting,verifying,looper_kernel,2026-08-30 18:24:45.022202-04
+205,verified_pass,,,looper_verifier,2026-08-30 18:39:18.459597-04
+205,merge_intended,,,looper_verifier,2026-08-30 18:39:24.835064-04
+205,merge_succeeded,verifying,merged,looper_verifier,2026-08-30 18:39:25.870354-04
+205,confirmed,merged,resolved_confirmed,looper_sensor,2026-08-30 18:53:58.073123-04
+206,opened,,open,looper_sensor,2026-08-31 12:10:17.267967-04
+206,claimed,open,claimed,looper_kernel,2026-08-31 12:10:21.204759-04
+206,attempt_started,claimed,acting,looper_kernel,2026-08-31 12:10:27.871914-04
+206,verifying,acting,verifying,looper_kernel,2026-08-31 12:12:22.853156-04
+206,verified_pass,,,looper_verifier,2026-08-31 12:26:51.954954-04
+206,merge_intended,,,looper_verifier,2026-08-31 12:26:58.530066-04
+206,merge_succeeded,verifying,merged,looper_verifier,2026-08-31 12:26:59.467604-04
+206,confirmed,merged,resolved_confirmed,looper_sensor,2026-08-31 12:41:38.67455-04

@@ -463,8 +463,11 @@ class TestNowReading(unittest.TestCase):
                       date_added="Fri, 01 Mar 2024 00:00:00 -0800",
                       shelves=["currently-reading", "site"]),
         ]
-        result = sg.compute_now_reading(items, make_policy())
-        self.assertEqual(result, "Newer by A2")
+        reading, url = sg.compute_now_reading(items, make_policy())
+        self.assertEqual(reading, "Newer by A2")
+        # reading_url follows the winning candidate's own book_id, not the
+        # older one's.
+        self.assertEqual(url, "https://www.goodreads.com/book/show/2")
 
     def test_book_without_site_shelf_not_a_candidate(self):
         items = [
@@ -473,7 +476,7 @@ class TestNowReading(unittest.TestCase):
                       shelves=["currently-reading"]),
         ]
         result = sg.compute_now_reading(items, make_policy())
-        self.assertEqual(result, "")
+        self.assertEqual(result, ("", ""))
 
     def test_book_on_no_site_shelf_only_is_not_a_candidate(self):
         items = [
@@ -482,7 +485,7 @@ class TestNowReading(unittest.TestCase):
                       shelves=["currently-reading", "no-site"]),
         ]
         result = sg.compute_now_reading(items, make_policy())
-        self.assertEqual(result, "")
+        self.assertEqual(result, ("", ""))
 
     def test_removed_tag_wins_even_with_site_tag_on_same_record(self):
         # A currently-reading item can carry both shelf tags at once (e.g. a
@@ -494,7 +497,7 @@ class TestNowReading(unittest.TestCase):
                       shelves=["currently-reading", "site", "no-site"]),
         ]
         result = sg.compute_now_reading(items, make_policy())
-        self.assertEqual(result, "")
+        self.assertEqual(result, ("", ""))
 
     def test_unrated_currently_reading_book_on_site_shelf_is_still_a_candidate(self):
         # include_unrated only gates the finished-reading list; an in-progress
@@ -502,13 +505,14 @@ class TestNowReading(unittest.TestCase):
         items = [make_item("60", title="In Progress", rating=0,
                             date_added="Fri, 01 Mar 2024 00:00:00 -0800",
                             shelves=["currently-reading", "site"])]
-        result = sg.compute_now_reading(items, make_policy(include_unrated=False))
-        self.assertEqual(result, "In Progress by Some Author")
+        reading, url = sg.compute_now_reading(items, make_policy(include_unrated=False))
+        self.assertEqual(reading, "In Progress by Some Author")
+        self.assertEqual(url, "https://www.goodreads.com/book/show/60")
 
     def test_empty_shelf_returns_empty_string(self):
-        # "" (not None) -- a legitimately empty shelf is a definite result,
+        # ("", "") -- a legitimately empty shelf is a definite result,
         # not "couldn't tell, leave the old value alone".
-        self.assertEqual(sg.compute_now_reading([], make_policy()), "")
+        self.assertEqual(sg.compute_now_reading([], make_policy()), ("", ""))
 
     def test_finished_book_with_nothing_else_eligible_returns_empty_string(self):
         # A book finished and nothing new started: the currently-reading
@@ -518,12 +522,13 @@ class TestNowReading(unittest.TestCase):
                       date_added="Fri, 01 Mar 2024 00:00:00 -0800",
                       shelves=["currently-reading"]),
         ]
-        self.assertEqual(sg.compute_now_reading(items, make_policy()), "")
+        self.assertEqual(sg.compute_now_reading(items, make_policy()), ("", ""))
 
     def test_fixture_currently_reading(self):
         items = sg.load_items_from_file(str(FIXTURES_DIR / "currently-reading.xml"))
-        result = sg.compute_now_reading(items, make_policy())
-        self.assertEqual(result, "In Progress Book by Progress Author")
+        reading, url = sg.compute_now_reading(items, make_policy())
+        self.assertEqual(reading, "In Progress Book by Progress Author")
+        self.assertEqual(url, "https://www.goodreads.com/book/show/7777777")
 
 
 class TestOutputAssembly(unittest.TestCase):
@@ -545,39 +550,78 @@ class TestOutputAssembly(unittest.TestCase):
         self.assertEqual(new_data["read"], new_read)
 
     def test_build_now_output_updates_reading_and_updated(self):
-        old_now = {"reading": "Old Book by Old Author", "shipping": "x", "state": "y",
-                   "updated": "2026-01-01"}
-        new_now, changed = sg.build_now_output(old_now, "New Book by New Author", "2026-09-05")
+        old_now = {"reading": "Old Book by Old Author",
+                   "reading_url": "https://www.goodreads.com/book/show/111",
+                   "shipping": "x", "state": "y", "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(
+            old_now, "New Book by New Author",
+            "https://www.goodreads.com/book/show/222", "2026-09-05",
+        )
         self.assertTrue(changed)
         self.assertEqual(new_now["reading"], "New Book by New Author")
+        # reading_url set alongside reading, to the new book's page
+        self.assertEqual(new_now["reading_url"], "https://www.goodreads.com/book/show/222")
         self.assertEqual(new_now["updated"], "2026-09-05")
-        # other keys preserved, in original order
-        self.assertEqual(list(new_now.keys()), ["reading", "shipping", "state", "updated"])
+        # other keys preserved, in original order, reading_url right after reading
+        self.assertEqual(
+            list(new_now.keys()), ["reading", "reading_url", "shipping", "state", "updated"]
+        )
         self.assertEqual(new_now["shipping"], "x")
         self.assertEqual(new_now["state"], "y")
 
     def test_build_now_output_clears_reading_when_shelf_has_nothing_eligible(self):
-        # compute_now_reading() returns "" (never None) for a successful
-        # fetch with nothing eligible in progress, and build_now_output()
-        # must actually clear the stale value rather than keep it -- the
-        # now pane's Liquid hides the row when reading is genuinely empty.
-        old_now = {"reading": "Old Book by Old Author", "updated": "2026-01-01"}
-        new_now, changed = sg.build_now_output(old_now, "", "2026-09-05")
+        # compute_now_reading() returns ("", "") (never None) for a
+        # successful fetch with nothing eligible in progress, and
+        # build_now_output() must actually clear both stale values rather
+        # than keep them -- the now pane's Liquid hides the row when
+        # reading is genuinely empty.
+        old_now = {"reading": "Old Book by Old Author",
+                   "reading_url": "https://www.goodreads.com/book/show/111",
+                   "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, "", "", "2026-09-05")
         self.assertTrue(changed)
         self.assertEqual(new_now["reading"], "")
+        self.assertEqual(new_now["reading_url"], "")
         self.assertEqual(new_now["updated"], "2026-09-05")
 
     def test_build_now_output_no_change_when_already_empty(self):
-        old_now = {"reading": "", "updated": "2026-01-01"}
-        new_now, changed = sg.build_now_output(old_now, "", "2026-09-05")
+        old_now = {"reading": "", "reading_url": "", "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(old_now, "", "", "2026-09-05")
         self.assertFalse(changed)
         self.assertEqual(new_now["updated"], "2026-01-01")
 
     def test_build_now_output_no_change_when_value_identical(self):
-        old_now = {"reading": "Same Book by Same Author", "updated": "2026-01-01"}
-        new_now, changed = sg.build_now_output(old_now, "Same Book by Same Author", "2026-09-05")
+        old_now = {"reading": "Same Book by Same Author",
+                   "reading_url": "https://www.goodreads.com/book/show/333",
+                   "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(
+            old_now, "Same Book by Same Author",
+            "https://www.goodreads.com/book/show/333", "2026-09-05",
+        )
         self.assertFalse(changed)
         self.assertEqual(new_now["updated"], "2026-01-01")
+
+    def test_build_now_output_inserts_reading_url_when_missing(self):
+        # A now.json written before reading_url existed: the reading text
+        # hasn't changed, but the key is simply absent from disk, and that
+        # alone must count as a change so the key gets backfilled in the
+        # right place -- immediately after "reading" -- without disturbing
+        # any other key's position.
+        old_now = {"reading": "Some Book by Some Author", "shipping": "x", "state": "y",
+                   "updated": "2026-01-01"}
+        new_now, changed = sg.build_now_output(
+            old_now, "Some Book by Some Author",
+            "https://www.goodreads.com/book/show/444", "2026-09-05",
+        )
+        self.assertTrue(changed)
+        self.assertEqual(new_now["reading"], "Some Book by Some Author")
+        self.assertEqual(new_now["reading_url"], "https://www.goodreads.com/book/show/444")
+        self.assertEqual(
+            list(new_now.keys()), ["reading", "reading_url", "shipping", "state", "updated"]
+        )
+        # updated moves even though "reading" text itself didn't change,
+        # because reading_url did (from absent to present).
+        self.assertEqual(new_now["updated"], "2026-09-05")
 
     def test_summarize_books_diff_added_and_removed(self):
         old = [{"title": "Gone", "author": "A", "rating": 5, "year": 2020,
@@ -721,10 +765,16 @@ class TestMainCLI(unittest.TestCase):
             self.assertNotIn("Not Opted In Book", titles)
             now_data = json.loads(out_now.read_text())
             self.assertEqual(now_data["reading"], "In Progress Book by Progress Author")
+            self.assertEqual(
+                now_data["reading_url"], "https://www.goodreads.com/book/show/7777777"
+            )
+            self.assertEqual(list(now_data.keys())[:2], ["reading", "reading_url"])
 
             code2, output2 = self._run(args)
             self.assertEqual(code2, 0)
             self.assertEqual(output2.strip(), "no changes")
+            # second run is a genuine no-op on disk too, not just on stdout
+            self.assertEqual(json.loads(out_now.read_text()), now_data)
 
     def test_grandfathered_book_stays_across_a_real_run(self):
         with tempfile.TemporaryDirectory() as tmp:

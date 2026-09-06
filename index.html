@@ -212,7 +212,9 @@ than holding a year of its own. {%- endcomment -%}
           {%- assign reading_topic = topic_facts.reading.topic | default: "other" -%}
           {%- assign reading_def = topicdefs | where: "id", reading_topic | first -%}
           <dt><span class="mark mark--{{ reading_def.shape }} led" data-topic="{{ reading_topic }}" aria-hidden="true"></span>reading</dt>
-          <dd data-fact="reading" data-topic="{{ reading_topic }}" data-cmd="cat now/reading">{{ now.reading | escape }} <a href="/reading/">past reads</a></dd>
+          {%- assign reading_url = now.reading_url | default: "" -%}
+          {%- assign reading_url_head = reading_url | slice: 0, 36 -%}
+          <dd data-fact="reading" data-topic="{{ reading_topic }}" data-cmd="cat now/reading">{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}" rel="noopener">{{ now.reading | escape }}</a>{% else %}{{ now.reading | escape }}{% endif %} <a href="/reading/">past reads</a></dd>
           {%- endif %}
           {%- if now.state %}
           {%- assign location_topic = topic_facts.location.topic | default: "other" -%}

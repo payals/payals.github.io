@@ -408,22 +408,27 @@ def build_read_list(
 
 def compute_now_reading(
     currently_reading_items: list[dict[str, Any]], policy: dict[str, Any]
-) -> str:
-    """Title/author of the most recently added currently-reading book that
-    carries the include_shelf tag (unrated is normal for a book still in
-    progress, so it is not gated here) and does not carry the remove_shelf
-    tag -- remove_shelf always wins, same as it does for the read list, even
-    if the item also carries the include_shelf tag. Returns "" if there is
-    no such book, including the ordinary case where the shelf legitimately
-    has nothing eligible on it right now (a finished book with nothing else
-    in progress). Grandfathering does not apply to currently-reading: there
-    is no prior now.json value to match a book id against, only the shelf
-    tags on the current fetch.
+) -> tuple[str, str]:
+    """(reading, reading_url) for the most recently added currently-reading
+    book that carries the include_shelf tag (unrated is normal for a book
+    still in progress, so it is not gated here) and does not carry the
+    remove_shelf tag -- remove_shelf always wins, same as it does for the
+    read list, even if the item also carries the include_shelf tag. Returns
+    ("", "") if there is no such book, including the ordinary case where the
+    shelf legitimately has nothing eligible on it right now (a finished book
+    with nothing else in progress). Grandfathering does not apply to
+    currently-reading: there is no prior now.json value to match a book id
+    against, only the shelf tags on the current fetch.
+
+    reading_url always points at the same record that produced reading --
+    https://www.goodreads.com/book/show/<book_id> for that item's book_id --
+    even when title_overrides replaces the text; the override only ever
+    touches the displayed title/author, never which book the link points at.
 
     currently_reading_items only ever reaches this function after a
     successful fetch -- a malformed or failed fetch raises SyncError
-    upstream, before this point -- so "" here always means the shelf really
-    is empty of eligible books, never that the fetch failed."""
+    upstream, before this point -- so ("", "") here always means the shelf
+    really is empty of eligible books, never that the fetch failed."""
     candidates = []
     for item in currently_reading_items:
         if is_removed(item, policy):
@@ -432,15 +437,16 @@ def compute_now_reading(
             continue
         title, author = apply_overrides(item, policy)
         added_at = parse_rfc822(item["user_date_added"])
-        candidates.append((added_at, title, author))
+        url = f"https://www.goodreads.com/book/show/{item['book_id']}"
+        candidates.append((added_at, title, author, url))
 
     if not candidates:
-        return ""
+        return "", ""
 
     epoch = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
     candidates.sort(key=lambda c: c[0] or epoch, reverse=True)
-    _, title, author = candidates[0]
-    return f"{title} by {author}"
+    _, title, author, url = candidates[0]
+    return f"{title} by {author}", url
 
 
 # --------------------------------------------------------------------------
@@ -478,16 +484,44 @@ def build_books_output(
 
 
 def build_now_output(
-    old_now: dict[str, Any], reading_value: str, today_str: str
+    old_now: dict[str, Any], reading_value: str, reading_url_value: str, today_str: str
 ) -> tuple[dict[str, Any], bool]:
-    """reading_value is compute_now_reading()'s result from a successful
-    fetch -- "" is a legitimate value meaning nothing is eligible right now,
-    not "leave the old value alone". Key order is preserved and "updated"
-    is only touched when "reading" actually changes."""
-    if old_now.get("reading") == reading_value:
+    """reading_value/reading_url_value are compute_now_reading()'s result
+    from a successful fetch -- "" is a legitimate value for either one
+    meaning nothing is eligible right now, not "leave the old value alone".
+
+    reading_url is kept immediately after reading in the output, inserted
+    there the first time a now.json on disk predates this key (moving it
+    there if it were ever anywhere else, though in practice it is always
+    written right after reading to begin with). All other keys keep their
+    original relative order, byte-for-byte.
+
+    Nothing changes -- old_now is returned as-is, and "updated" does not
+    move -- unless reading, reading_url, or the mere presence of the
+    reading_url key actually changes: a now.json that already has the
+    matching reading/reading_url pair is left untouched even if this run
+    recomputed the exact same values (idempotent re-runs must be no-ops),
+    but a now.json that is missing reading_url entirely always counts as
+    changed so the key gets backfilled even if reading itself didn't move."""
+    had_reading_url = "reading_url" in old_now
+    reading_changed = old_now.get("reading") != reading_value
+    url_changed = (not had_reading_url) or (old_now.get("reading_url") != reading_url_value)
+    if not reading_changed and not url_changed:
         return old_now, False
-    new_now = dict(old_now)
-    new_now["reading"] = reading_value
+
+    new_now: dict[str, Any] = {}
+    for key, value in old_now.items():
+        if key == "reading_url":
+            continue  # re-inserted right after "reading" below, wherever it was
+        new_now[key] = value
+        if key == "reading":
+            new_now["reading"] = reading_value
+            new_now["reading_url"] = reading_url_value
+    if "reading" not in new_now:
+        # old_now had no "reading" key at all (shouldn't happen in practice
+        # for a real now.json); fall back to appending both at the end.
+        new_now["reading"] = reading_value
+        new_now["reading_url"] = reading_url_value
     new_now["updated"] = today_str
     return new_now, True
 
@@ -682,14 +716,14 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
 
-    now_reading_value = compute_now_reading(currently_reading_items, policy)
+    now_reading_value, now_reading_url = compute_now_reading(currently_reading_items, policy)
 
     today = today_str()
 
     new_books, books_changed = build_books_output(old_books, new_read_list, today)
 
     old_now = load_json_if_exists(args.out_now) or {}
-    new_now, now_changed = build_now_output(old_now, now_reading_value, today)
+    new_now, now_changed = build_now_output(old_now, now_reading_value, now_reading_url, today)
 
     if not books_changed and not now_changed:
         print("no changes")
@@ -699,7 +733,12 @@ def main(argv: list[str] | None = None) -> int:
     if books_changed:
         diff_lines.extend(summarize_books_diff(old_read, new_read_list))
     if now_changed:
-        diff_lines.append(f"now: {old_now.get('reading')!r} -> {new_now['reading']!r}")
+        if old_now.get("reading") != new_now["reading"]:
+            diff_lines.append(f"now: {old_now.get('reading')!r} -> {new_now['reading']!r}")
+        if old_now.get("reading_url") != new_now.get("reading_url"):
+            diff_lines.append(
+                f"now url: {old_now.get('reading_url')!r} -> {new_now.get('reading_url')!r}"
+            )
 
     print("\n".join(diff_lines) if diff_lines else "no changes")
 
