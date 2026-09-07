@@ -5,10 +5,13 @@
   "include_unrated": true,
   "title_overrides": {
     "49645708": "Unveiled",
-    "125116554": "Same As Ever"
+    "125116554": "Same As Ever",
+    "224003186": "When Everyone Knows That Everyone Knows"
   },
   "author_overrides": {
     "28820444": "Kevin Simler and Robin Hanson"
   },
-  "strip_title_suffixes": [" (Vintage International)"]
+  "strip_title_suffixes": [
+    " (Vintage International)"
+  ]
 }
