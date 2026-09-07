@@ -5,8 +5,9 @@
   {
    "title": "Same As Ever",
    "author": "Morgan Housel",
-   "rating": 5,
+   "rating": 3,
    "year": 2026,
+   "date": "2026-09-06",
    "url": "https://www.goodreads.com/book/show/125116554"
   },
   {
@@ -14,6 +15,7 @@
    "author": "Kevin Simler and Robin Hanson",
    "rating": 4,
    "year": 2026,
+   "date": "2026-06-15",
    "url": "https://www.goodreads.com/book/show/28820444"
   },
   {
@@ -21,6 +23,7 @@
    "author": "James Burnham",
    "rating": 3,
    "year": 2026,
+   "date": "2026-06-15",
    "url": "https://www.goodreads.com/book/show/1270379"
   },
   {
@@ -28,34 +31,31 @@
    "author": "Naomi Klein",
    "rating": 3,
    "year": 2026,
+   "date": "2026-01-27",
    "url": "https://www.goodreads.com/book/show/1237300"
-  },
-  {
-   "title": "Factotum",
-   "author": "Charles Bukowski",
-   "rating": 4,
-   "year": 2025,
-   "url": "https://www.goodreads.com/book/show/497199"
-  },
-  {
-   "title": "The Briar Club",
-   "author": "Kate Quinn",
-   "rating": 4,
-   "year": 2025,
-   "url": "https://www.goodreads.com/book/show/181110045"
   },
   {
    "title": "The Nix",
    "author": "Nathan Hill",
    "rating": 5,
    "year": 2025,
+   "date": "2025-08-05",
    "url": "https://www.goodreads.com/book/show/28251002"
+  },
+  {
+   "title": "Factotum",
+   "author": "Charles Bukowski",
+   "rating": 4,
+   "year": 2025,
+   "date": "2025-05-19",
+   "url": "https://www.goodreads.com/book/show/497199"
   },
   {
    "title": "The Paris Apartment",
    "author": "Lucy Foley",
    "rating": 4,
    "year": 2025,
+   "date": "2025-05-19",
    "url": "https://www.goodreads.com/book/show/58468990"
   },
   {
@@ -63,272 +63,319 @@
    "author": "Jeneva Rose",
    "rating": 2,
    "year": 2025,
+   "date": "2025-04-26",
    "url": "https://www.goodreads.com/book/show/223688351"
   },
   {
-   "title": "The Nazi Officer's Wife: How One Jewish Woman Survived the Holocaust",
-   "author": "Edith Hahn Beer",
+   "title": "The Briar Club",
+   "author": "Kate Quinn",
    "rating": 4,
-   "year": 2024,
-   "url": "https://www.goodreads.com/book/show/682761"
+   "year": 2025,
+   "date": "2025-04-06",
+   "url": "https://www.goodreads.com/book/show/181110045"
   },
   {
    "title": "The Night She Disappeared",
    "author": "Lisa Jewell",
    "rating": 4,
    "year": 2024,
+   "date": "2024-04-09",
    "url": "https://www.goodreads.com/book/show/55922299"
   },
   {
-   "title": "Under the Banner of Heaven: A Story of Violent Faith",
-   "author": "Jon Krakauer",
+   "title": "The Nazi Officer's Wife: How One Jewish Woman Survived the Holocaust",
+   "author": "Edith Hahn Beer",
    "rating": 4,
    "year": 2024,
-   "url": "https://www.goodreads.com/book/show/10847"
+   "date": "2024-04-01",
+   "url": "https://www.goodreads.com/book/show/682761"
   },
   {
    "title": "Unveiled",
    "author": "Yasmine Mohammed",
    "rating": 5,
    "year": 2024,
+   "date": "2024-01-17",
    "url": "https://www.goodreads.com/book/show/49645708"
+  },
+  {
+   "title": "Under the Banner of Heaven: A Story of Violent Faith",
+   "author": "Jon Krakauer",
+   "rating": 4,
+   "year": 2024,
+   "date": "2024-01-16",
+   "url": "https://www.goodreads.com/book/show/10847"
   },
   {
    "title": "Bloodlands: Europe Between Hitler and Stalin",
    "author": "Timothy Snyder",
    "rating": 5,
    "year": 2023,
+   "date": "2023-10-26",
    "url": "https://www.goodreads.com/book/show/6572270"
-  },
-  {
-   "title": "Hindutva",
-   "author": "V.D. Savarkar",
-   "rating": 1,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/2159387"
-  },
-  {
-   "title": "None of This Is True",
-   "author": "Lisa Jewell",
-   "rating": 5,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/62334530"
-  },
-  {
-   "title": "Of Boys and Men: Why the Modern Male Is Struggling, Why It Matters, and What to Do About It",
-   "author": "Richard V. Reeves",
-   "rating": 5,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/60613920"
-  },
-  {
-   "title": "The Diamond Eye",
-   "author": "Kate Quinn",
-   "rating": 5,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/58490567"
-  },
-  {
-   "title": "The Fall",
-   "author": "Albert Camus",
-   "rating": 5,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/11991"
-  },
-  {
-   "title": "The Midnight Library (The Midnight World, #1)",
-   "author": "Matt Haig",
-   "rating": 5,
-   "year": 2023,
-   "url": "https://www.goodreads.com/book/show/52578297"
   },
   {
    "title": "The Quiet Tenant",
    "author": "Clémence Michallon",
    "rating": 5,
    "year": 2023,
+   "date": "2023-10-24",
    "url": "https://www.goodreads.com/book/show/61897971"
   },
   {
-   "title": "The Rose Code",
-   "author": "Kate Quinn",
-   "rating": 4,
+   "title": "None of This Is True",
+   "author": "Lisa Jewell",
+   "rating": 5,
    "year": 2023,
-   "url": "https://www.goodreads.com/book/show/53914938"
+   "date": "2023-10-22",
+   "url": "https://www.goodreads.com/book/show/62334530"
   },
   {
    "title": "The Running Grave (Cormoran Strike, #7)",
    "author": "Robert Galbraith",
    "rating": 5,
    "year": 2023,
+   "date": "2023-10-18",
    "url": "https://www.goodreads.com/book/show/139399948"
   },
   {
-   "title": "Career of Evil (Cormoran Strike, #3)",
-   "author": "Robert Galbraith",
+   "title": "The Fall",
+   "author": "Albert Camus",
    "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/40611999"
+   "year": 2023,
+   "date": "2023-08-18",
+   "url": "https://www.goodreads.com/book/show/11991"
   },
   {
-   "title": "Invisible Girl",
-   "author": "Lisa Jewell",
-   "rating": 4,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/50542147"
+   "title": "Hindutva",
+   "author": "V.D. Savarkar",
+   "rating": 1,
+   "year": 2023,
+   "date": "2023-08-15",
+   "url": "https://www.goodreads.com/book/show/2159387"
   },
   {
-   "title": "Lethal White (Cormoran Strike, #4)",
-   "author": "Robert Galbraith",
+   "title": "The Midnight Library (The Midnight World, #1)",
+   "author": "Matt Haig",
    "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/42283287"
+   "year": 2023,
+   "date": "2023-07-05",
+   "url": "https://www.goodreads.com/book/show/52578297"
   },
   {
-   "title": "Project Hail Mary",
-   "author": "Andy Weir",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/54493401"
-  },
-  {
-   "title": "Pygmalion",
-   "author": "George Bernard Shaw",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/7714"
-  },
-  {
-   "title": "QualityLand (QualityLand, #1)",
-   "author": "Marc-Uwe Kling",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/36216607"
-  },
-  {
-   "title": "Recursion",
-   "author": "Blake Crouch",
-   "rating": 4,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/42046112"
-  },
-  {
-   "title": "T: The Story of Testosterone, the Hormone that Dominates and Divides Us",
-   "author": "Carole Hooven",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/53138024"
-  },
-  {
-   "title": "Tender Is the Flesh",
-   "author": "Agustina Bazterrica",
-   "rating": 3,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/49090884"
-  },
-  {
-   "title": "The Alice Network",
+   "title": "The Diamond Eye",
    "author": "Kate Quinn",
    "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/32051912"
+   "year": 2023,
+   "date": "2023-07-04",
+   "url": "https://www.goodreads.com/book/show/58490567"
   },
   {
-   "title": "The Canterville Ghost",
-   "author": "Oscar Wilde",
-   "rating": 0,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/45685"
-  },
-  {
-   "title": "The Cuckoo's Calling (Cormoran Strike, #1)",
-   "author": "Robert Galbraith",
-   "rating": 4,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/16160797"
-  },
-  {
-   "title": "The Egg",
-   "author": "Andy Weir",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/17563539"
-  },
-  {
-   "title": "The Hot Zone: The Terrifying True Story of the Origins of the Ebola Virus",
-   "author": "Richard Preston",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/16213"
-  },
-  {
-   "title": "The Huntress",
+   "title": "The Rose Code",
    "author": "Kate Quinn",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/40245700"
+   "rating": 4,
+   "year": 2023,
+   "date": "2023-07-04",
+   "url": "https://www.goodreads.com/book/show/53914938"
   },
   {
-   "title": "The Inimitable Jeeves (Jeeves, #2)",
-   "author": "P.G. Wodehouse",
+   "title": "Of Boys and Men: Why the Modern Male Is Struggling, Why It Matters, and What to Do About It",
+   "author": "Richard V. Reeves",
    "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/16396"
-  },
-  {
-   "title": "The Ink Black Heart (Cormoran Strike, #6)",
-   "author": "Robert Galbraith",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/59756995"
-  },
-  {
-   "title": "The Selfish Gene",
-   "author": "Richard Dawkins",
-   "rating": 0,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/61535"
-  },
-  {
-   "title": "The Silkworm (Cormoran Strike, #2)",
-   "author": "Robert Galbraith",
-   "rating": 5,
-   "year": 2022,
-   "url": "https://www.goodreads.com/book/show/18214414"
+   "year": 2023,
+   "date": "2023-03-05",
+   "url": "https://www.goodreads.com/book/show/60613920"
   },
   {
    "title": "Troubled Blood (Cormoran Strike, #5)",
    "author": "Robert Galbraith",
    "rating": 5,
    "year": 2022,
+   "date": "2022-09-26",
    "url": "https://www.goodreads.com/book/show/51807232"
   },
   {
-   "title": "Unweaving the Rainbow: Science, Delusion and the Appetite for Wonder",
-   "author": "Richard Dawkins",
-   "rating": 0,
+   "title": "Lethal White (Cormoran Strike, #4)",
+   "author": "Robert Galbraith",
+   "rating": 5,
    "year": 2022,
-   "url": "https://www.goodreads.com/book/show/31487"
+   "date": "2022-09-20",
+   "url": "https://www.goodreads.com/book/show/42283287"
+  },
+  {
+   "title": "Career of Evil (Cormoran Strike, #3)",
+   "author": "Robert Galbraith",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-09-17",
+   "url": "https://www.goodreads.com/book/show/40611999"
+  },
+  {
+   "title": "The Cuckoo's Calling (Cormoran Strike, #1)",
+   "author": "Robert Galbraith",
+   "rating": 4,
+   "year": 2022,
+   "date": "2022-09-10",
+   "url": "https://www.goodreads.com/book/show/16160797"
+  },
+  {
+   "title": "The Silkworm (Cormoran Strike, #2)",
+   "author": "Robert Galbraith",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-09-10",
+   "url": "https://www.goodreads.com/book/show/18214414"
+  },
+  {
+   "title": "Recursion",
+   "author": "Blake Crouch",
+   "rating": 4,
+   "year": 2022,
+   "date": "2022-09-05",
+   "url": "https://www.goodreads.com/book/show/42046112"
+  },
+  {
+   "title": "Project Hail Mary",
+   "author": "Andy Weir",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-09-04",
+   "url": "https://www.goodreads.com/book/show/54493401"
+  },
+  {
+   "title": "The Egg",
+   "author": "Andy Weir",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-09-04",
+   "url": "https://www.goodreads.com/book/show/17563539"
+  },
+  {
+   "title": "The Ink Black Heart (Cormoran Strike, #6)",
+   "author": "Robert Galbraith",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-09-02",
+   "url": "https://www.goodreads.com/book/show/59756995"
   },
   {
    "title": "Upgrade",
    "author": "Blake Crouch",
    "rating": 4,
    "year": 2022,
+   "date": "2022-08-20",
    "url": "https://www.goodreads.com/book/show/59838811"
+  },
+  {
+   "title": "The Canterville Ghost",
+   "author": "Oscar Wilde",
+   "rating": 0,
+   "year": 2022,
+   "date": "2022-08-18",
+   "url": "https://www.goodreads.com/book/show/45685"
+  },
+  {
+   "title": "Tender Is the Flesh",
+   "author": "Agustina Bazterrica",
+   "rating": 3,
+   "year": 2022,
+   "date": "2022-08-14",
+   "url": "https://www.goodreads.com/book/show/49090884"
+  },
+  {
+   "title": "Invisible Girl",
+   "author": "Lisa Jewell",
+   "rating": 4,
+   "year": 2022,
+   "date": "2022-07-05",
+   "url": "https://www.goodreads.com/book/show/50542147"
+  },
+  {
+   "title": "The Huntress",
+   "author": "Kate Quinn",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-07-05",
+   "url": "https://www.goodreads.com/book/show/40245700"
+  },
+  {
+   "title": "The Alice Network",
+   "author": "Kate Quinn",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-07-01",
+   "url": "https://www.goodreads.com/book/show/32051912"
+  },
+  {
+   "title": "The Hot Zone: The Terrifying True Story of the Origins of the Ebola Virus",
+   "author": "Richard Preston",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-06-03",
+   "url": "https://www.goodreads.com/book/show/16213"
+  },
+  {
+   "title": "The Selfish Gene",
+   "author": "Richard Dawkins",
+   "rating": 0,
+   "year": 2022,
+   "date": "2022-05-30",
+   "url": "https://www.goodreads.com/book/show/61535"
+  },
+  {
+   "title": "Unweaving the Rainbow: Science, Delusion and the Appetite for Wonder",
+   "author": "Richard Dawkins",
+   "rating": 0,
+   "year": 2022,
+   "date": "2022-05-30",
+   "url": "https://www.goodreads.com/book/show/31487"
   },
   {
    "title": "Why We Sleep: Unlocking the Power of Sleep and Dreams",
    "author": "Matthew Walker",
    "rating": 0,
    "year": 2022,
+   "date": "2022-05-30",
    "url": "https://www.goodreads.com/book/show/34466963"
+  },
+  {
+   "title": "T: The Story of Testosterone, the Hormone that Dominates and Divides Us",
+   "author": "Carole Hooven",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-02-04",
+   "url": "https://www.goodreads.com/book/show/53138024"
+  },
+  {
+   "title": "Pygmalion",
+   "author": "George Bernard Shaw",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-01-30",
+   "url": "https://www.goodreads.com/book/show/7714"
+  },
+  {
+   "title": "The Inimitable Jeeves (Jeeves, #2)",
+   "author": "P.G. Wodehouse",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-01-30",
+   "url": "https://www.goodreads.com/book/show/16396"
+  },
+  {
+   "title": "QualityLand (QualityLand, #1)",
+   "author": "Marc-Uwe Kling",
+   "rating": 5,
+   "year": 2022,
+   "date": "2022-01-29",
+   "url": "https://www.goodreads.com/book/show/36216607"
   },
   {
    "title": "The Alchemist",
    "author": "Paulo Coelho",
    "rating": 4,
    "year": 2021,
+   "date": "2021-11-18",
    "url": "https://www.goodreads.com/book/show/18144590"
   },
   {
@@ -336,90 +383,63 @@
    "author": "Douglas Adams",
    "rating": 5,
    "year": 2021,
+   "date": "2021-11-18",
    "url": "https://www.goodreads.com/book/show/8695"
-  },
-  {
-   "title": "The Second Sex",
-   "author": "Simone de Beauvoir",
-   "rating": 0,
-   "year": 2021,
-   "url": "https://www.goodreads.com/book/show/457264"
   },
   {
    "title": "Transmetropolitan, Vol. 1: Back on the Street",
    "author": "Warren Ellis",
    "rating": 0,
    "year": 2021,
+   "date": "2021-11-18",
    "url": "https://www.goodreads.com/book/show/22416"
   },
   {
-   "title": "1984",
-   "author": "George Orwell",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/40961427"
-  },
-  {
-   "title": "All Summer in a Day",
-   "author": "Ray Bradbury",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/45306054"
-  },
-  {
-   "title": "Candide",
-   "author": "Voltaire",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/19380"
+   "title": "The Second Sex",
+   "author": "Simone de Beauvoir",
+   "rating": 0,
+   "year": 2021,
+   "date": "2021-05-09",
+   "url": "https://www.goodreads.com/book/show/457264"
   },
   {
    "title": "Edgar Allan Poe: The Complete Tales and Poems",
    "author": "Edgar Allan Poe",
    "rating": 5,
    "year": 2020,
+   "date": "2020-12-24",
    "url": "https://www.goodreads.com/book/show/44552248"
-  },
-  {
-   "title": "Fahrenheit 451",
-   "author": "Ray Bradbury",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/13079982"
   },
   {
    "title": "Galileo's Middle Finger: Heretics, Activists, and One Scholar's Search for Justice",
    "author": "Alice Domurat Dreger",
    "rating": 5,
    "year": 2020,
+   "date": "2020-12-22",
    "url": "https://www.goodreads.com/book/show/24623376"
   },
   {
-   "title": "Harry Potter and the Chamber of Secrets (Harry Potter, #2)",
-   "author": "J.K. Rowling",
-   "rating": 4,
+   "title": "All Summer in a Day",
+   "author": "Ray Bradbury",
+   "rating": 5,
    "year": 2020,
-   "url": "https://www.goodreads.com/book/show/15881"
+   "date": "2020-11-29",
+   "url": "https://www.goodreads.com/book/show/45306054"
   },
   {
    "title": "Harry Potter and the Deathly Hallows (Harry Potter, #7)",
    "author": "J.K. Rowling",
    "rating": 5,
    "year": 2020,
+   "date": "2020-11-26",
    "url": "https://www.goodreads.com/book/show/136251"
-  },
-  {
-   "title": "Harry Potter and the Goblet of Fire (Harry Potter, #4)",
-   "author": "J.K. Rowling",
-   "rating": 4,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/6"
   },
   {
    "title": "Harry Potter and the Half-Blood Prince (Harry Potter, #6)",
    "author": "J.K. Rowling",
    "rating": 5,
    "year": 2020,
+   "date": "2020-11-26",
    "url": "https://www.goodreads.com/book/show/1"
   },
   {
@@ -427,13 +447,87 @@
    "author": "J.K. Rowling",
    "rating": 4,
    "year": 2020,
+   "date": "2020-11-21",
    "url": "https://www.goodreads.com/book/show/2"
+  },
+  {
+   "title": "Fahrenheit 451",
+   "author": "Ray Bradbury",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-11-01",
+   "url": "https://www.goodreads.com/book/show/13079982"
+  },
+  {
+   "title": "Pride and Prejudice",
+   "author": "Jane Austen",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-10-30",
+   "url": "https://www.goodreads.com/book/show/1885"
+  },
+  {
+   "title": "The Great Gatsby",
+   "author": "F. Scott Fitzgerald",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-10-30",
+   "url": "https://www.goodreads.com/book/show/4671"
+  },
+  {
+   "title": "Infidel",
+   "author": "Ayaan Hirsi Ali",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-10-19",
+   "url": "https://www.goodreads.com/book/show/81227"
+  },
+  {
+   "title": "1984",
+   "author": "George Orwell",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-10-18",
+   "url": "https://www.goodreads.com/book/show/40961427"
+  },
+  {
+   "title": "Rebecca",
+   "author": "Daphne du Maurier",
+   "rating": 2,
+   "year": 2020,
+   "date": "2020-10-16",
+   "url": "https://www.goodreads.com/book/show/17899948"
+  },
+  {
+   "title": "The Raven",
+   "author": "Edgar Allan Poe",
+   "rating": 5,
+   "year": 2020,
+   "date": "2020-10-13",
+   "url": "https://www.goodreads.com/book/show/264158"
+  },
+  {
+   "title": "Harry Potter and the Chamber of Secrets (Harry Potter, #2)",
+   "author": "J.K. Rowling",
+   "rating": 4,
+   "year": 2020,
+   "date": "2020-10-12",
+   "url": "https://www.goodreads.com/book/show/15881"
+  },
+  {
+   "title": "Harry Potter and the Goblet of Fire (Harry Potter, #4)",
+   "author": "J.K. Rowling",
+   "rating": 4,
+   "year": 2020,
+   "date": "2020-10-12",
+   "url": "https://www.goodreads.com/book/show/6"
   },
   {
    "title": "Harry Potter and the Prisoner of Azkaban (Harry Potter, #3)",
    "author": "J.K. Rowling",
    "rating": 5,
    "year": 2020,
+   "date": "2020-10-12",
    "url": "https://www.goodreads.com/book/show/5"
   },
   {
@@ -441,6 +535,7 @@
    "author": "J.K. Rowling",
    "rating": 5,
    "year": 2020,
+   "date": "2020-10-12",
    "url": "https://www.goodreads.com/book/show/3"
   },
   {
@@ -448,69 +543,23 @@
    "author": "Richard Matheson",
    "rating": 4,
    "year": 2020,
+   "date": "2020-10-06",
    "url": "https://www.goodreads.com/book/show/6564706"
-  },
-  {
-   "title": "Infidel",
-   "author": "Ayaan Hirsi Ali",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/81227"
   },
   {
    "title": "Invisible Women: Data Bias in a World Designed for Men",
    "author": "Caroline Criado Pérez",
    "rating": 5,
    "year": 2020,
+   "date": "2020-09-27",
    "url": "https://www.goodreads.com/book/show/41104077"
-  },
-  {
-   "title": "Pride and Prejudice",
-   "author": "Jane Austen",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/1885"
-  },
-  {
-   "title": "Rebecca",
-   "author": "Daphne du Maurier",
-   "rating": 2,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/17899948"
-  },
-  {
-   "title": "The Da Vinci Code (Robert Langdon, #2)",
-   "author": "Dan Brown",
-   "rating": 4,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/968"
-  },
-  {
-   "title": "The Great Gatsby",
-   "author": "F. Scott Fitzgerald",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/4671"
-  },
-  {
-   "title": "The Raven",
-   "author": "Edgar Allan Poe",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/264158"
-  },
-  {
-   "title": "The Silent Patient",
-   "author": "Alex Michaelides",
-   "rating": 5,
-   "year": 2020,
-   "url": "https://www.goodreads.com/book/show/40396699"
   },
   {
    "title": "Where the Crawdads Sing",
    "author": "Delia Owens",
    "rating": 3,
    "year": 2020,
+   "date": "2020-09-26",
    "url": "https://www.goodreads.com/book/show/36809135"
   },
   {
@@ -518,62 +567,79 @@
    "author": "Glendy Vanderah",
    "rating": 3,
    "year": 2020,
+   "date": "2020-09-23",
    "url": "https://www.goodreads.com/book/show/40545956"
   },
   {
-   "title": "All the Light We Cannot See",
-   "author": "Anthony Doerr",
+   "title": "Candide",
+   "author": "Voltaire",
    "rating": 5,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/19398490"
+   "year": 2020,
+   "date": "2020-09-16",
+   "url": "https://www.goodreads.com/book/show/19380"
   },
   {
-   "title": "Animal Farm",
-   "author": "George Orwell",
-   "rating": 5,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/8349198"
+   "title": "The Da Vinci Code (Robert Langdon, #2)",
+   "author": "Dan Brown",
+   "rating": 4,
+   "year": 2020,
+   "date": "2020-04-04",
+   "url": "https://www.goodreads.com/book/show/968"
   },
   {
-   "title": "Fox 8",
-   "author": "George Saunders",
+   "title": "The Silent Patient",
+   "author": "Alex Michaelides",
    "rating": 5,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/17620753"
-  },
-  {
-   "title": "Great Expectations",
-   "author": "Charles Dickens",
-   "rating": 0,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/2623"
-  },
-  {
-   "title": "If This Isn't Nice, What Is?: Advice for the Young",
-   "author": "Kurt Vonnegut Jr.",
-   "rating": 5,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/17894477"
-  },
-  {
-   "title": "Seven Brief Lessons on Physics",
-   "author": "Carlo Rovelli",
-   "rating": 5,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/26844576"
+   "year": 2020,
+   "date": "2020-03-08",
+   "url": "https://www.goodreads.com/book/show/40396699"
   },
   {
    "title": "Slaughterhouse-Five",
    "author": "Kurt Vonnegut Jr.",
    "rating": 5,
    "year": 2019,
+   "date": "2019-05-23",
    "url": "https://www.goodreads.com/book/show/4981"
+  },
+  {
+   "title": "Fox 8",
+   "author": "George Saunders",
+   "rating": 5,
+   "year": 2019,
+   "date": "2019-04-15",
+   "url": "https://www.goodreads.com/book/show/17620753"
+  },
+  {
+   "title": "If This Isn't Nice, What Is?: Advice for the Young",
+   "author": "Kurt Vonnegut Jr.",
+   "rating": 5,
+   "year": 2019,
+   "date": "2019-04-14",
+   "url": "https://www.goodreads.com/book/show/17894477"
+  },
+  {
+   "title": "The Yellow Wall-Paper",
+   "author": "Charlotte Perkins Gilman",
+   "rating": 0,
+   "year": 2019,
+   "date": "2019-04-14",
+   "url": "https://www.goodreads.com/book/show/286957"
+  },
+  {
+   "title": "All the Light We Cannot See",
+   "author": "Anthony Doerr",
+   "rating": 5,
+   "year": 2019,
+   "date": "2019-04-13",
+   "url": "https://www.goodreads.com/book/show/19398490"
   },
   {
    "title": "The Adventures of Huckleberry Finn (Adventures of Tom and Huck, #2)",
    "author": "Mark Twain",
    "rating": 0,
    "year": 2019,
+   "date": "2019-04-09",
    "url": "https://www.goodreads.com/book/show/2956"
   },
   {
@@ -581,28 +647,48 @@
    "author": "Shel Silverstein",
    "rating": 0,
    "year": 2019,
+   "date": "2019-04-09",
    "url": "https://www.goodreads.com/book/show/370493"
+  },
+  {
+   "title": "Animal Farm",
+   "author": "George Orwell",
+   "rating": 5,
+   "year": 2019,
+   "date": "2019-04-07",
+   "url": "https://www.goodreads.com/book/show/8349198"
   },
   {
    "title": "The Incurable Romantic: And Other Tales of Madness and Desire",
    "author": "Frank Tallis",
    "rating": 5,
    "year": 2019,
+   "date": "2019-04-01",
    "url": "https://www.goodreads.com/book/show/37955663"
+  },
+  {
+   "title": "Great Expectations",
+   "author": "Charles Dickens",
+   "rating": 0,
+   "year": 2019,
+   "date": "2019-03-14",
+   "url": "https://www.goodreads.com/book/show/2623"
+  },
+  {
+   "title": "Seven Brief Lessons on Physics",
+   "author": "Carlo Rovelli",
+   "rating": 5,
+   "year": 2019,
+   "date": "2019-03-14",
+   "url": "https://www.goodreads.com/book/show/26844576"
   },
   {
    "title": "The Road",
    "author": "Cormac McCarthy",
    "rating": 0,
    "year": 2019,
+   "date": "2019-03-14",
    "url": "https://www.goodreads.com/book/show/6288"
-  },
-  {
-   "title": "The Yellow Wall-Paper",
-   "author": "Charlotte Perkins Gilman",
-   "rating": 0,
-   "year": 2019,
-   "url": "https://www.goodreads.com/book/show/286957"
   }
  ]
 }

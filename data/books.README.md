@@ -27,10 +27,25 @@ the currently-reading shelf never appears in the read list, even if the same
 review also shows up on the read feed, which happens when a finished book gets
 re-shelved as in progress.
 
+Each entry carries a `date` field (`YYYY-MM-DD`), placed right after `year`,
+alongside `title`, `author`, `rating`, and `url`. Both `year` and `date` come
+from the same source field: Goodreads' `user_read_at` timestamp when it is
+present and parses, otherwise `user_date_added`. It's possible (though rare)
+for only a bare year to be salvageable from a malformed timestamp; when that
+happens the entry keeps its `year` but has no `date` key at all, rather than
+guessing a day. A re-run never overwrites a `date` already committed to
+`data/books.json` -- whether an earlier sync wrote it or it was corrected by
+hand -- it only fills one in when the entry on disk doesn't have one yet.
+
 Books with the same title after `strip_title_suffixes` is applied count as
 different editions of the same book and collapse into a single row: the row
-keeps the earliest year among the editions and the highest rating among them.
-The url always points at `https://www.goodreads.com/book/show/<book_id>`.
+keeps the earliest year among the editions, the earliest date among them, and
+the highest rating among them. The url always points at
+`https://www.goodreads.com/book/show/<book_id>`.
+
+The read list is sorted by year descending, then by date descending within a
+year, then by title. An entry with a year but no `date` sorts after every
+dated entry in the same year.
 
 The job is quiet by default. If the computed read list and now-reading value
 match what is already on disk, it writes nothing and prints `no changes`. It

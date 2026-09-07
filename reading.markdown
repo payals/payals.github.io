@@ -15,19 +15,22 @@ permalink: /reading/
 ## Finished
 
 {% assign scale = site.data.books.scale | default: 5 %}
-{% assign books = site.data.books.read | sort: "year" | reverse %}
+{% assign books = site.data.books.read | sort: "date" | reverse %}
 {% assign years = books | map: "year" | uniq %}
-{%- assign gr_prefix = "https://www.goodreads.com/book/show/" -%}
-{%- assign gr_prefix_len = gr_prefix.size -%}
-{% for year in years %}
-### {{ year }}
+{% assign gr_prefix = "https://www.goodreads.com/book/show/" %}
+{% assign gr_prefix_len = gr_prefix.size %}
 
+<div class="reading-years">
+{%- for year in years %}
+{%- assign year_books = books | where: "year", year %}
+<details class="reading-year"{% if forloop.first %} open{% endif %}>
+<summary><span class="reading-year__label">{{ year }}</span> <span class="reading-year__count">{{ year_books.size }} book{% if year_books.size != 1 %}s{% endif %}</span></summary>
 <table>
   <thead>
     <tr><th>Book</th><th>Author</th><th>Rating</th></tr>
   </thead>
   <tbody>
-  {%- for book in books %}{%- if book.year == year %}
+  {%- for book in year_books %}
     {%- assign url_ok = false -%}
     {%- if book.url and book.url.size > gr_prefix_len -%}
       {%- assign url_head = book.url | slice: 0, gr_prefix_len -%}
@@ -44,11 +47,19 @@ permalink: /reading/
       <td>{{ book.author | escape }}</td>
       <td>{% if book.rating > 0 %}<span aria-hidden="true">{% for i in (1..scale) %}{% if i <= book.rating %}★{% else %}☆{% endif %}{% endfor %}</span> {{ book.rating }} of {{ scale }}{% else %}not rated{% endif %}</td>
     </tr>
-  {%- endif %}{%- endfor %}
+  {%- endfor %}
   </tbody>
 </table>
-{% endfor %}
+</details>
+{%- endfor %}
+</div>
 
-Ratings are mine and out of {{ scale }}. Titles link to Goodreads. The current book lives in the now pane on the [home page](/#now).
+<script>
+(function () {
+  if (!window.matchMedia || !window.matchMedia("(max-width: 767px)").matches) return;
+  var years = document.querySelectorAll("details.reading-year");
+  for (var i = 1; i < years.length; i++) years[i].open = false;
+})();
+</script>
 
 Ratings are mine and out of {{ scale }}. Titles link to Goodreads. The current book lives in the now pane on the [home page](/#now).

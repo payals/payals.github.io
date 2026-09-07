@@ -264,6 +264,26 @@ def extract_year(date_str: str) -> int | None:
     match = re.search(r"\b(19|20)\d{2}\b", date_str)
     return int(match.group(0)) if match else None
 
+def derive_year_and_date(read_at: str, date_added: str) -> "tuple[int | None, str | None]":
+    """(year, date) derived from a single source field: user_read_at when it
+    yields a year, else user_date_added -- the same fallback order
+    extract_year already used alone, now shared by both values so they never
+    come from two different fields.
+
+    date is the ISO YYYY-MM-DD form of that same field's full RFC822
+    timestamp. It is None whenever only extract_year's bare-year regex
+    fallback matched (no full RFC822 timestamp parsed) -- a real year can
+    still be known without a real day, and build_read_list's sort treats a
+    None date as sorting after every dated entry in the same year rather
+    than guessing a day.
+    """
+    for candidate in (read_at, date_added):
+        year = extract_year(candidate)
+        if year is not None:
+            dt = parse_rfc822(candidate)
+            return year, (dt.strftime("%Y-%m-%d") if dt is not None else None)
+    return None, None
+
 
 # --------------------------------------------------------------------------
 # Policy
@@ -347,6 +367,32 @@ def grandfathered_ids_from_books(old_books: dict[str, Any] | None) -> set[str]:
     return ids
 
 
+def grandfathered_dates_from_books(old_books: dict[str, Any] | None) -> dict[str, str]:
+    """book_id -> that read-list entry's existing "date" value, for every
+    entry already on disk that carries one.
+
+    A re-run must not silently overwrite a date already committed to
+    data/books.json -- whether a prior sync wrote it or an operator corrected
+    it by hand -- so build_read_list() looks a freshly-derived date up here
+    by book_id first and keeps the disk value when one exists. A book_id
+    absent from this mapping (new to the read list, or on disk without a
+    date field at all -- e.g. from before this field existed) falls through
+    to the freshly-computed value instead, which is exactly the "backfill a
+    missing date" case.
+    """
+    if not old_books:
+        return {}
+    dates: dict[str, str] = {}
+    for book in old_books.get("read", []):
+        date = book.get("date")
+        if not date:
+            continue
+        book_id = book_id_from_url(book.get("url", ""))
+        if book_id:
+            dates[book_id] = date
+    return dates
+
+
 def normalize_title(title: str) -> str:
     """Collapsing key for same-book editions. Deliberately does not strip
     parenthetical suffixes (e.g. series markers) since those distinguish
@@ -361,12 +407,25 @@ def normalize_title(title: str) -> str:
 # --------------------------------------------------------------------------
 
 
+def _date_sort_rank(date: "str | None") -> "tuple[int, int]":
+    """Sort helper for a read-list entry's "date": every dated entry (rank 0)
+    sorts before every dateless one (rank 1) within the same year; among
+    dated entries, a later date sorts first (descending), since the second
+    element is that date's negated YYYYMMDD value."""
+    if not date:
+        return (1, 0)
+    year, month, day = date.split("-")
+    return (0, -(int(year) * 10000 + int(month) * 100 + int(day)))
+
+
 def build_read_list(
     read_items: list[dict[str, Any]],
     currently_reading_items: list[dict[str, Any]],
     policy: dict[str, Any],
     grandfathered_ids: "set[str] | frozenset[str]" = frozenset(),
+    old_dates: "dict[str, str] | None" = None,
 ) -> list[dict[str, Any]]:
+    old_dates = old_dates or {}
     currently_reading_ids = {it["book_id"] for it in currently_reading_items}
 
     groups: dict[str, list[dict[str, Any]]] = {}
@@ -376,33 +435,43 @@ def build_read_list(
         if not passes_policy(item, policy, grandfathered_ids):
             continue
         title, author = apply_overrides(item, policy)
-        year = extract_year(item["user_read_at"]) or extract_year(item["user_date_added"])
+        year, date = derive_year_and_date(item["user_read_at"], item["user_date_added"])
         if year is None:
             continue  # can't place it chronologically; skip rather than guess
+        if item["book_id"] in old_dates:
+            # Already committed to disk (by an earlier sync, or by hand):
+            # keep it rather than silently overwrite it from the feed.
+            date = old_dates[item["book_id"]]
         entry = {
             "title": title,
             "author": author,
             "rating": item["rating"],
             "year": year,
-            "url": f"https://www.goodreads.com/book/show/{item['book_id']}",
         }
+        if date is not None:
+            entry["date"] = date
+        entry["url"] = f"https://www.goodreads.com/book/show/{item['book_id']}"
         groups.setdefault(normalize_title(title), []).append(entry)
 
     collapsed = []
     for entries in groups.values():
         best_rating = max(e["rating"] for e in entries)
         canonical = min(entries, key=lambda e: e["year"])  # earliest edition wins title/url
-        collapsed.append(
-            {
-                "title": canonical["title"],
-                "author": canonical["author"],
-                "rating": best_rating,
-                "year": canonical["year"],
-                "url": canonical["url"],
-            }
-        )
+        dated = [e["date"] for e in entries if e.get("date")]
+        collapsed_entry = {
+            "title": canonical["title"],
+            "author": canonical["author"],
+            "rating": best_rating,
+            "year": canonical["year"],
+        }
+        if dated:
+            collapsed_entry["date"] = min(dated)  # earliest date among all editions
+        collapsed_entry["url"] = canonical["url"]
+        collapsed.append(collapsed_entry)
 
-    collapsed.sort(key=lambda e: (-e["year"], e["title"].lower()))
+    collapsed.sort(
+        key=lambda e: (-e["year"], _date_sort_rank(e.get("date")), e["title"].lower())
+    )
     return collapsed
 
 
@@ -694,9 +763,10 @@ def main(argv: list[str] | None = None) -> int:
     old_books = load_json_if_exists(args.out_books)
     old_read = old_books.get("read", []) if old_books else []
     grandfathered_ids = grandfathered_ids_from_books(old_books)
+    old_dates = grandfathered_dates_from_books(old_books)
 
     new_read_list = build_read_list(
-        read_items, currently_reading_items, policy, grandfathered_ids
+        read_items, currently_reading_items, policy, grandfathered_ids, old_dates
     )
 
     if not args.allow_shrink:

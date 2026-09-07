@@ -1557,3 +1557,21 @@ a:hover {
   color: inherit;
   background: none;
 }
+
+/* 11. Reading page: one fold per year, the latest open; older years fold on phones (script). */
+.reading-now { font-size: 1.0625rem; }
+.reading-years { margin: var(--space-3) 0; }
+.reading-year { border-top: 1px solid var(--line); }
+.reading-year:last-child { border-bottom: 1px solid var(--line); }
+.reading-year > summary {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  min-height: 44px; padding: var(--space-2) 0; cursor: pointer;
+  font-family: var(--font-mono); font-size: 0.9375rem; color: var(--ink);
+  list-style: none;
+}
+.reading-year > summary::-webkit-details-marker { display: none; }
+.reading-year > summary::before { content: "+"; width: 1ch; color: var(--ink-2); }
+.reading-year[open] > summary::before { content: "\2013"; }
+.reading-year > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reading-year__count { color: var(--ink-2); font-size: 0.8125rem; }
+.reading-year .table-wrap { margin: 0 0 var(--space-3); }

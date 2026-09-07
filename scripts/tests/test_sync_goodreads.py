@@ -257,6 +257,39 @@ class TestYearDerivation(unittest.TestCase):
         self.assertIsNone(sg.extract_year(""))
 
 
+class TestDeriveYearAndDate(unittest.TestCase):
+    def test_date_from_read_at(self):
+        year, date = sg.derive_year_and_date(
+            "Sat, 04 Mar 2023 00:00:00 +0000", "Sat, 04 Mar 2020 10:00:00 -0800"
+        )
+        self.assertEqual(year, 2023)
+        self.assertEqual(date, "2023-03-04")
+
+    def test_falls_back_to_date_added_when_read_at_blank(self):
+        year, date = sg.derive_year_and_date("", "Tue, 14 Jun 2022 09:30:00 -0700")
+        self.assertEqual(year, 2022)
+        self.assertEqual(date, "2022-06-14")
+
+    def test_falls_back_to_date_added_when_read_at_unparseable(self):
+        # read_at present but garbage (no full RFC822 timestamp, no bare
+        # year either) -- falls through to date_added for both year and date.
+        year, date = sg.derive_year_and_date("not a date", "Tue, 14 Jun 2022 09:30:00 -0700")
+        self.assertEqual(year, 2022)
+        self.assertEqual(date, "2022-06-14")
+
+    def test_bare_year_regex_fallback_yields_year_without_date(self):
+        # read_at carries a recognizable year but not a full RFC822
+        # timestamp: the year is still derivable (extract_year's regex
+        # fallback), but there is no day to report, so date is None even
+        # though it came from the same (read_at) source as the year.
+        year, date = sg.derive_year_and_date("Read sometime in 2019", "")
+        self.assertEqual(year, 2019)
+        self.assertIsNone(date)
+
+    def test_both_fields_unparseable_returns_none_none(self):
+        self.assertEqual(sg.derive_year_and_date("", ""), (None, None))
+
+
 class TestPolicy(unittest.TestCase):
     def setUp(self):
         self.items = sg.load_items_from_file(str(FIXTURES_DIR / "read.xml"))
@@ -352,6 +385,31 @@ class TestGrandfatheredIds(unittest.TestCase):
 
     def test_missing_read_key_returns_empty_set(self):
         self.assertEqual(sg.grandfathered_ids_from_books({}), set())
+
+
+class TestGrandfatheredDates(unittest.TestCase):
+    def test_extracts_dates_from_existing_books(self):
+        old_books = {
+            "read": [
+                {"title": "A", "date": "2020-05-01",
+                 "url": "https://www.goodreads.com/book/show/111"},
+                {"title": "B", "url": "https://www.goodreads.com/book/show/222"},
+            ]
+        }
+        self.assertEqual(
+            sg.grandfathered_dates_from_books(old_books), {"111": "2020-05-01"}
+        )
+
+    def test_entry_without_date_is_not_included(self):
+        old_books = {"read": [{"title": "B",
+                                "url": "https://www.goodreads.com/book/show/222"}]}
+        self.assertEqual(sg.grandfathered_dates_from_books(old_books), {})
+
+    def test_none_returns_empty_dict(self):
+        self.assertEqual(sg.grandfathered_dates_from_books(None), {})
+
+    def test_missing_read_key_returns_empty_dict(self):
+        self.assertEqual(sg.grandfathered_dates_from_books({}), {})
 
 
 class TestBuildReadList(unittest.TestCase):
@@ -451,6 +509,94 @@ class TestBuildReadList(unittest.TestCase):
                             shelves=["site"])]
         result = sg.build_read_list(items, [], make_policy())
         self.assertEqual(result, [])
+
+    def test_date_derived_from_read_at(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        by_title = {b["title"]: b for b in result}
+        # book_id 1111111: user_read_at "Sat, 04 Mar 2023 00:00:00 +0000"
+        self.assertEqual(by_title["Test Novel"]["date"], "2023-03-04")
+
+    def test_date_falls_back_to_date_added_when_read_at_blank(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        by_title = {b["title"]: b for b in result}
+        # book_id 2222222: user_read_at blank, user_date_added
+        # "Tue, 14 Jun 2022 09:30:00 -0700"
+        self.assertEqual(by_title["Unrated Book"]["date"], "2022-06-14")
+
+    def test_date_key_placed_right_after_year(self):
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        by_title = {b["title"]: b for b in result}
+        keys = list(by_title["Test Novel"].keys())
+        self.assertEqual(keys.index("date"), keys.index("year") + 1)
+
+    def test_sorted_by_year_then_date_desc_then_title(self):
+        items = [
+            make_item("100", title="Early In Year", read_at="Mon, 01 Jan 2020 00:00:00 +0000",
+                      shelves=["site"]),
+            make_item("101", title="Late In Year", read_at="Tue, 01 Dec 2020 00:00:00 +0000",
+                      shelves=["site"]),
+            make_item("102", title="Newer Year", read_at="Mon, 01 Jan 2021 00:00:00 +0000",
+                      shelves=["site"]),
+        ]
+        result = sg.build_read_list(items, [], make_policy())
+        titles = [b["title"] for b in result]
+        self.assertEqual(titles, ["Newer Year", "Late In Year", "Early In Year"])
+
+    def test_entries_without_date_sort_last_within_their_year(self):
+        # "Aardvark No Date" carries only a bare year (extract_year's regex
+        # fallback) -- it has a year but no derivable date -- and must sort
+        # after every dated entry in the same year, even though its title
+        # would otherwise sort first alphabetically.
+        items = [
+            make_item("200", title="Aardvark No Date", read_at="Read sometime in 2020",
+                      shelves=["site"]),
+            make_item("201", title="Zebra Dated", read_at="Mon, 01 Jan 2020 00:00:00 +0000",
+                      shelves=["site"]),
+        ]
+        result = sg.build_read_list(items, [], make_policy())
+        titles = [b["title"] for b in result]
+        self.assertEqual(titles, ["Zebra Dated", "Aardvark No Date"])
+        no_date_entry = next(b for b in result if b["title"] == "Aardvark No Date")
+        self.assertNotIn("date", no_date_entry)
+
+    def test_grandfathered_date_is_kept_even_if_feed_date_differs(self):
+        # book_id 1111111's feed user_read_at implies "2023-03-04", but the
+        # disk copy already carries a different, presumably hand-corrected
+        # date -- it must win over the freshly computed value.
+        old_dates = {"1111111": "2023-01-01"}
+        result = sg.build_read_list(self.read_items, [], self.policy, old_dates=old_dates)
+        by_title = {b["title"]: b for b in result}
+        self.assertEqual(by_title["Test Novel"]["date"], "2023-01-01")
+
+    def test_grandfathered_entry_without_date_is_backfilled_from_feed(self):
+        # book_id absent from old_dates entirely (predates the date field,
+        # or is new to the read list): the freshly computed feed date fills
+        # it in rather than being left blank.
+        result = sg.build_read_list(self.read_items, [], self.policy, old_dates={})
+        by_title = {b["title"]: b for b in result}
+        self.assertEqual(by_title["Test Novel"]["date"], "2023-03-04")
+
+    def test_edition_collapsing_uses_earliest_date(self):
+        # "Duplicate Title" editions: book_id 6666666 (2018-02-21) is the
+        # earlier year, as already covered by
+        # test_edition_collapsing_keeps_earliest_year_and_best_rating, and
+        # its date must be the one that survives collapsing.
+        result = sg.build_read_list(self.read_items, [], self.policy)
+        dup_rows = [b for b in result if b["title"] == "Duplicate Title"]
+        self.assertEqual(len(dup_rows), 1)
+        self.assertEqual(dup_rows[0]["date"], "2018-02-21")
+
+    def test_edition_collapsing_picks_earliest_date_even_when_years_tie(self):
+        # Same normalized title, same year -- collapsing must report the
+        # earlier of the two exact dates regardless of which entry the
+        # (year-only) canonical tie-break happens to pick for title/url.
+        a = make_item("300", title="Tied Year Book", rating=3,
+                      read_at="Mon, 01 Jan 2020 00:00:00 +0000", shelves=["site"])
+        b = make_item("301", title="Tied Year Book", rating=5,
+                      read_at="Wed, 01 Jul 2020 00:00:00 +0000", shelves=["site"])
+        result = sg.build_read_list([b, a], [], make_policy())
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["date"], "2020-01-01")
 
 
 class TestNowReading(unittest.TestCase):
@@ -845,6 +991,76 @@ class TestMainCLI(unittest.TestCase):
             data = json.loads(out_books.read_text())
             titles = {b["title"] for b in data["read"]}
             self.assertNotIn("No Site Tag Book", titles)
+
+    def test_grandfathered_date_kept_across_a_real_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            # Seed books.json with book_id 1111111 ("Test Novel") already
+            # carrying a hand-corrected date that differs from what the
+            # fixture's user_read_at would compute ("2023-03-04").
+            out_books.write_text(json.dumps({
+                "scale": 5,
+                "source": "seed",
+                "read": [{
+                    "title": "Test Novel",
+                    "author": "Test Author",
+                    "rating": 5,
+                    "year": 2023,
+                    "date": "2023-01-01",
+                    "url": "https://www.goodreads.com/book/show/1111111",
+                }],
+            }))
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code, _ = self._run(args)
+            self.assertEqual(code, 0)
+            data = json.loads(out_books.read_text())
+            by_title = {b["title"]: b for b in data["read"]}
+            self.assertEqual(by_title["Test Novel"]["date"], "2023-01-01")
+
+    def test_second_run_after_dates_written_is_fully_idempotent(self):
+        # Beyond "no changes" on stdout (already covered by
+        # test_real_run_writes_files_then_second_run_is_idempotent), the
+        # written books.json -- dates included -- must be byte-for-byte
+        # identical across the two runs.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy_path = tmp / "policy.json"
+            policy_path.write_text(json.dumps(make_policy()))
+            out_books = tmp / "books.json"
+            out_now = tmp / "now.json"
+            out_now.write_text(json.dumps({"reading": "Nothing Yet", "updated": "2020-01-01"}))
+
+            args = [
+                "--from-file", str(FIXTURES_DIR / "read.xml"),
+                "--from-file-reading", str(FIXTURES_DIR / "currently-reading.xml"),
+                "--policy", str(policy_path),
+                "--out-books", str(out_books),
+                "--out-now", str(out_now),
+            ]
+            code1, _ = self._run(args)
+            self.assertEqual(code1, 0)
+            first_text = out_books.read_text()
+            data = json.loads(first_text)
+            by_title = {b["title"]: b for b in data["read"]}
+            self.assertIn("date", by_title["Test Novel"])
+
+            code2, output2 = self._run(args)
+            self.assertEqual(code2, 0)
+            self.assertEqual(output2.strip(), "no changes")
+            # byte-for-byte unchanged on a second run, dates included
+            self.assertEqual(out_books.read_text(), first_text)
 
     def test_currently_reading_without_site_shelf_clears_stale_now(self):
         # A successful fetch with nothing eligible on the currently-reading
