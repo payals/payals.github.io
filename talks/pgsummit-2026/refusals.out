@@ -1,0 +1,143 @@
+psql:refusals.sql:17: ERROR:  new row for relation "answers" violates check constraint "answers_confidence_check"
+psql:refusals.sql:19: ERROR:  new row for relation "answers" violates check constraint "cites_something"
+psql:refusals.sql:33: ERROR:  insert or update on table "citations" violates foreign key constraint "citations_chunk_id_fkey"
+psql:refusals.sql:50: ERROR:  illegal transition queued -> done on step 1
+psql:refusals.sql:78: ERROR:  step 1 cannot be verified: no passing verdict row
+psql:refusals.sql:88: ERROR:  ledger is append-only: UPDATE on gate_log refused
+psql:refusals.sql:89: ERROR:  ledger is append-only: DELETE on gate_log refused
+psql:refusals.sql:101: ERROR:  permission denied for table gate_log
+psql:refusals.sql:102: ERROR:  permission denied for table steps
+CREATE TABLE answers (
+id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+confidence  numeric NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+body        jsonb   NOT NULL,
+CONSTRAINT cites_something CHECK (jsonb_array_length(body->'citations') > 0)
+);
+CREATE TABLE
+INSERT INTO answers (confidence, body) VALUES (1.5, '{"answer":"x","citations":[3]}');
+INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[]}');
+INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[3]}');
+INSERT 0 1
+CREATE TABLE chunks (chunk_id bigint PRIMARY KEY, doc text NOT NULL);
+CREATE TABLE
+INSERT INTO chunks VALUES (3, 'runbook.md');
+INSERT 0 1
+CREATE TABLE citations (
+answer_id bigint REFERENCES answers(id),
+chunk_id  bigint REFERENCES chunks(chunk_id)
+);
+CREATE TABLE
+INSERT INTO citations SELECT id, 3   FROM answers;
+INSERT 0 1
+INSERT INTO citations SELECT id, 999 FROM answers;
+CREATE TABLE transitions (from_state text, to_state text, PRIMARY KEY (from_state, to_state));
+CREATE TABLE
+INSERT INTO transitions VALUES ('queued','running'), ('running','verified'), ('running','failed'), ('verified','done');
+INSERT 0 4
+CREATE TABLE steps (id bigint PRIMARY KEY, status text NOT NULL DEFAULT 'queued');
+CREATE TABLE
+CREATE FUNCTION guard_transition() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM transitions WHERE from_state = OLD.status AND to_state = NEW.status) THEN
+RAISE EXCEPTION 'illegal transition % -> % on step %', OLD.status, NEW.status, NEW.id;
+END IF;
+RETURN NEW;
+END $$;
+CREATE FUNCTION
+CREATE TRIGGER steps_guard BEFORE UPDATE OF status ON steps FOR EACH ROW EXECUTE FUNCTION guard_transition();
+CREATE TRIGGER
+INSERT INTO steps (id) VALUES (1);
+INSERT 0 1
+UPDATE steps SET status = 'done' WHERE id = 1;
+UPDATE steps SET status = 'running' WHERE id = 1 RETURNING old.status AS was, new.status AS now;
+was	now
+queued	running
+UPDATE 1
+CREATE TABLE gate_log (step_id bigint, gate text, passed boolean NOT NULL);
+CREATE TABLE
+SELECT bool_and(passed)                                   AS naive_all_passed,
+coalesce(bool_and(passed), false)                  AS safe_all_passed,
+count(*) FILTER (WHERE passed) = count(*) AND count(*) > 0 AS strict_all_passed
+FROM gate_log WHERE step_id = 1;
+naive_all_passed	safe_all_passed	strict_all_passed
+	f	f
+CREATE TABLE verdicts (step_id bigint, judge text NOT NULL, passed boolean NOT NULL);
+CREATE TABLE
+CREATE FUNCTION require_verdict() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+IF NEW.status = 'verified' AND NOT EXISTS (SELECT 1 FROM verdicts WHERE step_id = NEW.id AND passed) THEN
+RAISE EXCEPTION 'step % cannot be verified: no passing verdict row', NEW.id;
+END IF;
+RETURN NULL;
+END $$;
+CREATE FUNCTION
+CREATE CONSTRAINT TRIGGER steps_need_verdict AFTER UPDATE OF status ON steps
+DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION require_verdict();
+CREATE TRIGGER
+BEGIN;
+BEGIN
+UPDATE steps SET status = 'verified' WHERE id = 1;
+UPDATE 1
+COMMIT;
+SELECT status FROM steps WHERE id = 1;
+status
+running
+CREATE FUNCTION forbid_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'ledger is append-only: % on % refused', TG_OP, TG_TABLE_NAME; END $$;
+CREATE FUNCTION
+CREATE TRIGGER gate_log_immutable BEFORE UPDATE OR DELETE ON gate_log FOR EACH ROW EXECUTE FUNCTION forbid_mutation();
+CREATE TRIGGER
+INSERT INTO gate_log VALUES (1, 'grounding', false);
+INSERT 0 1
+UPDATE gate_log SET passed = true WHERE step_id = 1;
+DELETE FROM gate_log WHERE step_id = 1;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_demo') THEN CREATE ROLE agent_demo NOLOGIN; END IF; END $$;
+DO
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_demo;
+REVOKE
+CREATE FUNCTION record_gate(p_step bigint, p_gate text, p_passed boolean) RETURNS void
+LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS
+$$ INSERT INTO gate_log VALUES (p_step, p_gate, p_passed) $$;
+CREATE FUNCTION
+GRANT EXECUTE ON FUNCTION record_gate TO agent_demo;
+GRANT
+SET ROLE agent_demo;
+SET
+INSERT INTO gate_log VALUES (1, 'format', true);
+UPDATE steps SET status = 'done';
+SELECT record_gate(1, 'format', true);
+record_gate
+RESET ROLE;
+RESET
+CREATE TABLE jobs (id bigint PRIMARY KEY, lease_token uuid, lease_until timestamptz);
+CREATE TABLE
+INSERT INTO jobs (id) VALUES (10), (11);
+INSERT 0 2
+BEGIN;
+BEGIN
+WITH next AS (
+SELECT id FROM jobs WHERE lease_until IS NULL OR lease_until < now()
+ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1
+)
+UPDATE jobs j SET lease_token = uuidv7(), lease_until = now() + interval '5 min'
+FROM next WHERE j.id = next.id RETURNING j.id, j.lease_token;
+id	lease_token
+10	01a0c53a-79a9-709b-af55-8f70ec51abed
+UPDATE 1
+COMMIT;
+COMMIT
+ALTER TABLE answers ADD CONSTRAINT score_range CHECK (confidence >= 0) NOT ENFORCED;
+ALTER TABLE
+SELECT conname, convalidated, conenforced, pg_get_constraintdef(oid)
+FROM pg_constraint WHERE conrelid = 'answers'::regclass ORDER BY conname;
+conname	convalidated	conenforced	pg_get_constraintdef
+answers_body_not_null	t	t	NOT NULL body
+answers_confidence_check	t	t	CHECK (((confidence >= (0)::numeric) AND (confidence <= (1)::numeric)))
+answers_confidence_not_null	t	t	NOT NULL confidence
+answers_id_not_null	t	t	NOT NULL id
+answers_pkey	t	t	PRIMARY KEY (id)
+cites_something	t	t	CHECK ((jsonb_array_length((body -> 'citations'::text)) > 0))
+score_range	f	f	CHECK ((confidence >= (0)::numeric)) NOT ENFORCED
+SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid = 'gate_log'::regclass AND NOT tgisinternal;
+tgname	tgenabled
+gate_log_immutable	O

@@ -8,8 +8,9 @@
     "evidence_level": "scheduled_upcoming",
     "evidence_id": "postgressummit-us-2026-control-plane",
     "event_url": "https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/",
+    "slides_url": "https://payalsingh.me/talks/pgsummit-2026/",
     "status": "upcoming",
-    "note": "The official schedule lists this upcoming session."
+    "note": "The official schedule lists this upcoming session. Speaker-hosted slides are linked."
   },
   {
     "id": "scale-23x-ai-control-plane",
