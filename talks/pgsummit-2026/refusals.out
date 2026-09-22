@@ -1,21 +1,16 @@
-psql:refusals.sql:17: ERROR:  new row for relation "answers" violates check constraint "answers_confidence_check"
-psql:refusals.sql:19: ERROR:  new row for relation "answers" violates check constraint "cites_something"
-psql:refusals.sql:33: ERROR:  insert or update on table "citations" violates foreign key constraint "citations_chunk_id_fkey"
-psql:refusals.sql:50: ERROR:  illegal transition queued -> done on step 1
-psql:refusals.sql:78: ERROR:  step 1 cannot be verified: no passing verdict row
-psql:refusals.sql:88: ERROR:  ledger is append-only: UPDATE on gate_log refused
-psql:refusals.sql:89: ERROR:  ledger is append-only: DELETE on gate_log refused
-psql:refusals.sql:101: ERROR:  permission denied for table gate_log
-psql:refusals.sql:102: ERROR:  permission denied for table steps
 CREATE TABLE answers (
-id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-confidence  numeric NOT NULL CHECK (confidence BETWEEN 0 AND 1),
-body        jsonb   NOT NULL,
-CONSTRAINT cites_something CHECK (jsonb_array_length(body->'citations') > 0)
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  confidence  numeric NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+  body        jsonb   NOT NULL,
+  CONSTRAINT cites_something CHECK (jsonb_array_length(body->'citations') > 0)
 );
 CREATE TABLE
 INSERT INTO answers (confidence, body) VALUES (1.5, '{"answer":"x","citations":[3]}');
+psql:refusals.sql:17: ERROR:  new row for relation "answers" violates check constraint "answers_confidence_check"
+DETAIL:  Failing row contains (1, 1.5, {"answer": "x", "citations": [3]}).
 INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[]}');
+psql:refusals.sql:19: ERROR:  new row for relation "answers" violates check constraint "cites_something"
+DETAIL:  Failing row contains (2, 0.9, {"answer": "x", "citations": []}).
 INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[3]}');
 INSERT 0 1
 CREATE TABLE chunks (chunk_id bigint PRIMARY KEY, doc text NOT NULL);
@@ -23,13 +18,15 @@ CREATE TABLE
 INSERT INTO chunks VALUES (3, 'runbook.md');
 INSERT 0 1
 CREATE TABLE citations (
-answer_id bigint REFERENCES answers(id),
-chunk_id  bigint REFERENCES chunks(chunk_id)
+  answer_id bigint REFERENCES answers(id),
+  chunk_id  bigint REFERENCES chunks(chunk_id)
 );
 CREATE TABLE
 INSERT INTO citations SELECT id, 3   FROM answers;
 INSERT 0 1
 INSERT INTO citations SELECT id, 999 FROM answers;
+psql:refusals.sql:33: ERROR:  insert or update on table "citations" violates foreign key constraint "citations_chunk_id_fkey"
+DETAIL:  Key (chunk_id)=(999) is not present in table "chunks".
 CREATE TABLE transitions (from_state text, to_state text, PRIMARY KEY (from_state, to_state));
 CREATE TABLE
 INSERT INTO transitions VALUES ('queued','running'), ('running','verified'), ('running','failed'), ('verified','done');
@@ -38,10 +35,10 @@ CREATE TABLE steps (id bigint PRIMARY KEY, status text NOT NULL DEFAULT 'queued'
 CREATE TABLE
 CREATE FUNCTION guard_transition() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-IF NOT EXISTS (SELECT 1 FROM transitions WHERE from_state = OLD.status AND to_state = NEW.status) THEN
-RAISE EXCEPTION 'illegal transition % -> % on step %', OLD.status, NEW.status, NEW.id;
-END IF;
-RETURN NEW;
+  IF NOT EXISTS (SELECT 1 FROM transitions WHERE from_state = OLD.status AND to_state = NEW.status) THEN
+    RAISE EXCEPTION 'illegal transition % -> % on step %', OLD.status, NEW.status, NEW.id;
+  END IF;
+  RETURN NEW;
 END $$;
 CREATE FUNCTION
 CREATE TRIGGER steps_guard BEFORE UPDATE OF status ON steps FOR EACH ROW EXECUTE FUNCTION guard_transition();
@@ -49,39 +46,52 @@ CREATE TRIGGER
 INSERT INTO steps (id) VALUES (1);
 INSERT 0 1
 UPDATE steps SET status = 'done' WHERE id = 1;
+psql:refusals.sql:50: ERROR:  illegal transition queued -> done on step 1
+CONTEXT:  PL/pgSQL function guard_transition() line 4 at RAISE
 UPDATE steps SET status = 'running' WHERE id = 1 RETURNING old.status AS was, new.status AS now;
-was	now
-queued	running
+  was   |   now   
+--------+---------
+ queued | running
+(1 row)
+
 UPDATE 1
 CREATE TABLE gate_log (step_id bigint, gate text, passed boolean NOT NULL);
 CREATE TABLE
 SELECT bool_and(passed)                                   AS naive_all_passed,
-coalesce(bool_and(passed), false)                  AS safe_all_passed,
-count(*) FILTER (WHERE passed) = count(*) AND count(*) > 0 AS strict_all_passed
+       coalesce(bool_and(passed), false)                  AS safe_all_passed,
+       count(*) FILTER (WHERE passed) = count(*) AND count(*) > 0 AS strict_all_passed
 FROM gate_log WHERE step_id = 1;
-naive_all_passed	safe_all_passed	strict_all_passed
-	f	f
+ naive_all_passed | safe_all_passed | strict_all_passed 
+------------------+-----------------+-------------------
+                  | f               | f
+(1 row)
+
 CREATE TABLE verdicts (step_id bigint, judge text NOT NULL, passed boolean NOT NULL);
 CREATE TABLE
 CREATE FUNCTION require_verdict() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-IF NEW.status = 'verified' AND NOT EXISTS (SELECT 1 FROM verdicts WHERE step_id = NEW.id AND passed) THEN
-RAISE EXCEPTION 'step % cannot be verified: no passing verdict row', NEW.id;
-END IF;
-RETURN NULL;
+  IF NEW.status = 'verified' AND NOT EXISTS (SELECT 1 FROM verdicts WHERE step_id = NEW.id AND passed) THEN
+    RAISE EXCEPTION 'step % cannot be verified: no passing verdict row', NEW.id;
+  END IF;
+  RETURN NULL;
 END $$;
 CREATE FUNCTION
 CREATE CONSTRAINT TRIGGER steps_need_verdict AFTER UPDATE OF status ON steps
-DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION require_verdict();
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION require_verdict();
 CREATE TRIGGER
 BEGIN;
 BEGIN
 UPDATE steps SET status = 'verified' WHERE id = 1;
 UPDATE 1
 COMMIT;
+psql:refusals.sql:78: ERROR:  step 1 cannot be verified: no passing verdict row
+CONTEXT:  PL/pgSQL function require_verdict() line 4 at RAISE
 SELECT status FROM steps WHERE id = 1;
-status
-running
+ status  
+---------
+ running
+(1 row)
+
 CREATE FUNCTION forbid_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN RAISE EXCEPTION 'ledger is append-only: % on % refused', TG_OP, TG_TABLE_NAME; END $$;
 CREATE FUNCTION
@@ -90,23 +100,33 @@ CREATE TRIGGER
 INSERT INTO gate_log VALUES (1, 'grounding', false);
 INSERT 0 1
 UPDATE gate_log SET passed = true WHERE step_id = 1;
+psql:refusals.sql:88: ERROR:  ledger is append-only: UPDATE on gate_log refused
+CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
 DELETE FROM gate_log WHERE step_id = 1;
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_demo') THEN CREATE ROLE agent_demo NOLOGIN; END IF; END $$;
+psql:refusals.sql:89: ERROR:  ledger is append-only: DELETE on gate_log refused
+CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_role') THEN CREATE ROLE agent_role NOLOGIN; END IF; END $$;
 DO
-REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_demo;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_role;
 REVOKE
 CREATE FUNCTION record_gate(p_step bigint, p_gate text, p_passed boolean) RETURNS void
-LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS
-$$ INSERT INTO gate_log VALUES (p_step, p_gate, p_passed) $$;
+  LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS
+  $$ INSERT INTO gate_log VALUES (p_step, p_gate, p_passed) $$;
 CREATE FUNCTION
-GRANT EXECUTE ON FUNCTION record_gate TO agent_demo;
+GRANT EXECUTE ON FUNCTION record_gate TO agent_role;
 GRANT
-SET ROLE agent_demo;
+SET ROLE agent_role;
 SET
 INSERT INTO gate_log VALUES (1, 'format', true);
+psql:refusals.sql:101: ERROR:  permission denied for table gate_log
 UPDATE steps SET status = 'done';
+psql:refusals.sql:102: ERROR:  permission denied for table steps
 SELECT record_gate(1, 'format', true);
-record_gate
+ record_gate 
+-------------
+ 
+(1 row)
+
 RESET ROLE;
 RESET
 CREATE TABLE jobs (id bigint PRIMARY KEY, lease_token uuid, lease_until timestamptz);
@@ -116,13 +136,16 @@ INSERT 0 2
 BEGIN;
 BEGIN
 WITH next AS (
-SELECT id FROM jobs WHERE lease_until IS NULL OR lease_until < now()
-ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1
+  SELECT id FROM jobs WHERE lease_until IS NULL OR lease_until < now()
+  ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1
 )
 UPDATE jobs j SET lease_token = uuidv7(), lease_until = now() + interval '5 min'
 FROM next WHERE j.id = next.id RETURNING j.id, j.lease_token;
-id	lease_token
-10	01a0c53a-79a9-709b-af55-8f70ec51abed
+ id |             lease_token              
+----+--------------------------------------
+ 10 | 01a0c943-fc4b-774d-84f0-bf1fb967d654
+(1 row)
+
 UPDATE 1
 COMMIT;
 COMMIT
@@ -130,14 +153,172 @@ ALTER TABLE answers ADD CONSTRAINT score_range CHECK (confidence >= 0) NOT ENFOR
 ALTER TABLE
 SELECT conname, convalidated, conenforced, pg_get_constraintdef(oid)
 FROM pg_constraint WHERE conrelid = 'answers'::regclass ORDER BY conname;
-conname	convalidated	conenforced	pg_get_constraintdef
-answers_body_not_null	t	t	NOT NULL body
-answers_confidence_check	t	t	CHECK (((confidence >= (0)::numeric) AND (confidence <= (1)::numeric)))
-answers_confidence_not_null	t	t	NOT NULL confidence
-answers_id_not_null	t	t	NOT NULL id
-answers_pkey	t	t	PRIMARY KEY (id)
-cites_something	t	t	CHECK ((jsonb_array_length((body -> 'citations'::text)) > 0))
-score_range	f	f	CHECK ((confidence >= (0)::numeric)) NOT ENFORCED
+           conname           | convalidated | conenforced |                          pg_get_constraintdef                           
+-----------------------------+--------------+-------------+-------------------------------------------------------------------------
+ answers_body_not_null       | t            | t           | NOT NULL body
+ answers_confidence_check    | t            | t           | CHECK (((confidence >= (0)::numeric) AND (confidence <= (1)::numeric)))
+ answers_confidence_not_null | t            | t           | NOT NULL confidence
+ answers_id_not_null         | t            | t           | NOT NULL id
+ answers_pkey                | t            | t           | PRIMARY KEY (id)
+ cites_something             | t            | t           | CHECK ((jsonb_array_length((body -> 'citations'::text)) > 0))
+ score_range                 | f            | f           | CHECK ((confidence >= (0)::numeric)) NOT ENFORCED
+(7 rows)
+
 SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid = 'gate_log'::regclass AND NOT tgisinternal;
-tgname	tgenabled
-gate_log_immutable	O
+       tgname       | tgenabled 
+--------------------+-----------
+ gate_log_immutable | O
+(1 row)
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'actor_role')  THEN CREATE ROLE actor_role  LOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grader_role') THEN CREATE ROLE grader_role LOGIN; END IF;
+END $$;
+DO
+ALTER ROLE actor_role LOGIN;
+ALTER ROLE
+ALTER ROLE grader_role LOGIN;
+ALTER ROLE
+GRANT CONNECT ON DATABASE pgtalk_refusals TO actor_role, grader_role;
+GRANT
+CREATE SCHEMA work;
+CREATE SCHEMA
+CREATE SCHEMA eval;
+CREATE SCHEMA
+CREATE TABLE work.attempts (
+  id         bigint  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  step_id    bigint  NOT NULL,
+  actor      text    NOT NULL DEFAULT current_user,       -- the role that did the work
+  claim      text    NOT NULL,                             -- what it says happened
+  written_by text    NOT NULL DEFAULT session_user,        -- who really connected (survives SET ROLE)
+  from_addr  inet             DEFAULT inet_client_addr(),  -- and from where (NULL on a local socket)
+  at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE
+CREATE TABLE eval.verdicts (
+  id         bigint  PRIMARY KEY,                          -- assigned by the sealing trigger, inside a lock
+  attempt_id bigint  NOT NULL REFERENCES work.attempts,
+  actor      text    NOT NULL,                             -- copied from the attempt by the trigger
+  judge      text    NOT NULL DEFAULT current_user,        -- stamped by the engine, never by the client
+  passed     boolean NOT NULL,
+  written_by text    NOT NULL DEFAULT session_user,
+  from_addr  inet             DEFAULT inet_client_addr(),
+  at         timestamptz NOT NULL DEFAULT now(),
+  prev_hash  bytea,
+  hash       bytea   NOT NULL,
+  CONSTRAINT no_self_judging CHECK (judge IS DISTINCT FROM actor)
+);
+CREATE TABLE
+CREATE SEQUENCE eval.verdicts_id_seq OWNED BY eval.verdicts.id;
+CREATE SEQUENCE
+GRANT USAGE ON SCHEMA work TO actor_role, grader_role;
+GRANT
+GRANT INSERT (step_id, claim) ON work.attempts TO actor_role;
+GRANT
+GRANT SELECT ON work.attempts TO actor_role;
+GRANT
+REVOKE ALL ON SCHEMA eval FROM actor_role, PUBLIC;
+REVOKE
+GRANT SELECT ON work.attempts TO grader_role;
+GRANT
+GRANT USAGE ON SCHEMA eval TO grader_role;
+GRANT
+GRANT SELECT ON eval.verdicts TO grader_role;
+GRANT
+GRANT INSERT (attempt_id, passed) ON eval.verdicts TO grader_role;
+GRANT
+GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO grader_role;
+GRANT
+CREATE FUNCTION eval.seal_verdict() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = pg_catalog, eval, work AS $$   -- runs as the inserting role, so current_user is the real judge
+DECLARE prev bytea;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('eval.verdicts'));          -- one sealer at a time
+  NEW.id    := nextval('eval.verdicts_id_seq');                       -- id assigned inside the lock, so id order = chain order
+  NEW.actor := (SELECT actor FROM work.attempts WHERE id = NEW.attempt_id);
+  NEW.judge := current_user;                                          -- not what the client wrote
+  SELECT hash INTO prev FROM eval.verdicts ORDER BY id DESC LIMIT 1;  -- READ COMMITTED: sees the last committed seal
+  NEW.prev_hash := prev;
+  NEW.hash := sha256(coalesce(prev, '\x'::bytea) ||
+              convert_to(format('%s|%s|%s|%s|%s|%s', NEW.id, NEW.attempt_id, NEW.actor, NEW.judge, NEW.passed, NEW.at), 'UTF8'));
+  RETURN NEW;
+END $$;
+CREATE FUNCTION
+CREATE TRIGGER verdicts_seal      BEFORE INSERT           ON eval.verdicts FOR EACH ROW EXECUTE FUNCTION eval.seal_verdict();
+CREATE TRIGGER
+CREATE TRIGGER verdicts_immutable BEFORE UPDATE OR DELETE ON eval.verdicts FOR EACH ROW EXECUTE FUNCTION public.forbid_mutation();
+CREATE TRIGGER
+You are now connected to database "pgtalk_refusals" as user "actor_role".
+INSERT INTO work.attempts (step_id, claim) VALUES (7, 'fix applied, tests green') RETURNING id, actor, written_by;
+ id |   actor    | written_by 
+----+------------+------------
+  1 | actor_role | actor_role
+(1 row)
+
+INSERT 0 1
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true);
+psql:refusals.sql:202: ERROR:  permission denied for schema eval
+LINE 1: INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, tr...
+                    ^
+SELECT judge, passed FROM eval.verdicts;
+psql:refusals.sql:203: ERROR:  permission denied for schema eval
+LINE 1: SELECT judge, passed FROM eval.verdicts;
+                                  ^
+SET ROLE grader_role;
+psql:refusals.sql:204: ERROR:  permission denied to set role "grader_role"
+You are now connected to database "pgtalk_refusals" as user "grader_role".
+INSERT INTO eval.verdicts (attempt_id, passed, judge) VALUES (1, true, 'auditor');
+psql:refusals.sql:208: ERROR:  permission denied for table verdicts
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true)
+  RETURNING id, actor, judge, written_by, left(encode(hash, 'hex'), 12) AS hash;
+ id |   actor    |    judge    | written_by  |     hash     
+----+------------+-------------+-------------+--------------
+  1 | actor_role | grader_role | grader_role | b188a6b32ddf
+(1 row)
+
+INSERT 0 1
+You are now connected to database "pgtalk_refusals" as user "pi".
+INSERT INTO work.attempts (step_id, claim) VALUES (8, 'owner did this one');
+INSERT 0 1
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, true);
+psql:refusals.sql:215: ERROR:  new row for relation "verdicts" violates check constraint "no_self_judging"
+DETAIL:  Failing row contains (2, 2, pi, pi, t, pi, null, 2026-09-22 09:17:51.06384-04, \xb188a6b32ddfa1be83b652171ea2980a2b95e0f6230bafd2bdcd18c5048122..., \x772574bfc1ab7f2de6b5e8de8f32b87da76e84d924480d855302f28f445adb...).
+UPDATE eval.verdicts SET passed = false WHERE id = 1;
+psql:refusals.sql:220: ERROR:  ledger is append-only: UPDATE on verdicts refused
+CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
+DELETE FROM eval.verdicts WHERE id = 1;
+psql:refusals.sql:221: ERROR:  ledger is append-only: DELETE on verdicts refused
+CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
+You are now connected to database "pgtalk_refusals" as user "grader_role".
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, false) RETURNING id, left(encode(prev_hash,'hex'),12) AS prev, left(encode(hash,'hex'),12) AS hash;
+ id |     prev     |     hash     
+----+--------------+--------------
+  3 | b188a6b32ddf | 6e60d8776c73
+(1 row)
+
+INSERT 0 1
+You are now connected to database "pgtalk_refusals" as user "pi".
+CREATE VIEW eval.chain_check AS
+SELECT bool_and(hash = sha256(coalesce(prev_hash, '\x'::bytea) ||
+                convert_to(format('%s|%s|%s|%s|%s|%s', id, attempt_id, actor, judge, passed, at), 'UTF8'))) AS rows_intact,
+       bool_and(prev_hash IS NOT DISTINCT FROM lag_hash)                                            AS links_intact
+FROM (SELECT v.*, lag(hash) OVER (ORDER BY id) AS lag_hash FROM eval.verdicts v) s;
+CREATE VIEW
+SELECT * FROM eval.chain_check;
+ rows_intact | links_intact 
+-------------+--------------
+ t           | t
+(1 row)
+
+ALTER TABLE eval.verdicts DISABLE TRIGGER verdicts_immutable;
+ALTER TABLE
+UPDATE eval.verdicts SET passed = true WHERE id = 3;
+UPDATE 1
+SELECT * FROM eval.chain_check;
+ rows_intact | links_intact 
+-------------+--------------
+ f           | t
+(1 row)
+
+ALTER TABLE eval.verdicts ENABLE TRIGGER verdicts_immutable;
+ALTER TABLE

@@ -2,7 +2,7 @@
 -- Runs on a throwaway database. Every ERROR line below is real PostgreSQL output.
 -- Usage: createdb pgtalk_refusals && psql -X -e -d pgtalk_refusals -f refusals.sql > refusals.out 2>&1
 \set ON_ERROR_STOP off
-\set VERBOSITY terse
+\set VERBOSITY default
 
 -- ---------------------------------------------------------------
 -- 1. A constraint refuses model output that a JSON schema accepted
@@ -91,13 +91,13 @@ DELETE FROM gate_log WHERE step_id = 1;
 -- ---------------------------------------------------------------
 -- 7. The agent role has no table access at all; only typed functions
 -- ---------------------------------------------------------------
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_demo') THEN CREATE ROLE agent_demo NOLOGIN; END IF; END $$;
-REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_demo;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_role') THEN CREATE ROLE agent_role NOLOGIN; END IF; END $$;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_role;
 CREATE FUNCTION record_gate(p_step bigint, p_gate text, p_passed boolean) RETURNS void
   LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS
   $$ INSERT INTO gate_log VALUES (p_step, p_gate, p_passed) $$;
-GRANT EXECUTE ON FUNCTION record_gate TO agent_demo;
-SET ROLE agent_demo;
+GRANT EXECUTE ON FUNCTION record_gate TO agent_role;
+SET ROLE agent_role;
 INSERT INTO gate_log VALUES (1, 'format', true);     -- direct write
 UPDATE steps SET status = 'done';                    -- direct state change
 SELECT record_gate(1, 'format', true);               -- the one door that is open
@@ -125,3 +125,112 @@ ALTER TABLE answers ADD CONSTRAINT score_range CHECK (confidence >= 0) NOT ENFOR
 SELECT conname, convalidated, conenforced, pg_get_constraintdef(oid)
 FROM pg_constraint WHERE conrelid = 'answers'::regclass ORDER BY conname;
 SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid = 'gate_log'::regclass AND NOT tgisinternal;
+
+-- ---------------------------------------------------------------
+-- 10. Whoever does the work cannot write the verdict, read it, or become the one who can
+-- ---------------------------------------------------------------
+-- Bind each role to an identity the agent cannot forge. That is pg_hba.conf, not SQL:
+--   local   all  grader_role  peer                  # the OS user IS the role (same box, different user)
+--   hostssl all  grader_role  10.0.2.0/24  cert     # or a second host, with its own client certificate
+-- The database cannot tell those two apart, and does not need to: identity is the role.
+\set owner :USER
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'actor_role')  THEN CREATE ROLE actor_role  LOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grader_role') THEN CREATE ROLE grader_role LOGIN; END IF;
+END $$;
+ALTER ROLE actor_role LOGIN; ALTER ROLE grader_role LOGIN;
+-- (LOGIN so this script can connect as each one over the local trust socket; in production pg_hba does the binding)
+GRANT CONNECT ON DATABASE pgtalk_refusals TO actor_role, grader_role;
+CREATE SCHEMA work;   -- what the worker writes
+CREATE SCHEMA eval;   -- what only the grader writes
+CREATE TABLE work.attempts (
+  id         bigint  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  step_id    bigint  NOT NULL,
+  actor      text    NOT NULL DEFAULT current_user,       -- the role that did the work
+  claim      text    NOT NULL,                             -- what it says happened
+  written_by text    NOT NULL DEFAULT session_user,        -- who really connected (survives SET ROLE)
+  from_addr  inet             DEFAULT inet_client_addr(),  -- and from where (NULL on a local socket)
+  at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE eval.verdicts (
+  id         bigint  PRIMARY KEY,                          -- assigned by the sealing trigger, inside a lock
+  attempt_id bigint  NOT NULL REFERENCES work.attempts,
+  actor      text    NOT NULL,                             -- copied from the attempt by the trigger
+  judge      text    NOT NULL DEFAULT current_user,        -- stamped by the engine, never by the client
+  passed     boolean NOT NULL,
+  written_by text    NOT NULL DEFAULT session_user,
+  from_addr  inet             DEFAULT inet_client_addr(),
+  at         timestamptz NOT NULL DEFAULT now(),
+  prev_hash  bytea,
+  hash       bytea   NOT NULL,
+  CONSTRAINT no_self_judging CHECK (judge IS DISTINCT FROM actor)
+);
+CREATE SEQUENCE eval.verdicts_id_seq OWNED BY eval.verdicts.id;
+-- the worker: one schema, one table, two columns
+GRANT USAGE ON SCHEMA work TO actor_role, grader_role;
+GRANT INSERT (step_id, claim) ON work.attempts TO actor_role;
+GRANT SELECT ON work.attempts TO actor_role;                    -- it may read what it filed
+REVOKE ALL ON SCHEMA eval FROM actor_role, PUBLIC;
+-- the grader: may read attempts, may add verdicts, may not name the judge or touch the seal
+GRANT SELECT ON work.attempts TO grader_role;
+GRANT USAGE ON SCHEMA eval TO grader_role;
+GRANT SELECT ON eval.verdicts TO grader_role;
+GRANT INSERT (attempt_id, passed) ON eval.verdicts TO grader_role;
+GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO grader_role;     -- the seal needs the next id
+-- every verdict seals the one before it
+CREATE FUNCTION eval.seal_verdict() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = pg_catalog, eval, work AS $$   -- runs as the inserting role, so current_user is the real judge
+DECLARE prev bytea;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('eval.verdicts'));          -- one sealer at a time
+  NEW.id    := nextval('eval.verdicts_id_seq');                       -- id assigned inside the lock, so id order = chain order
+  NEW.actor := (SELECT actor FROM work.attempts WHERE id = NEW.attempt_id);
+  NEW.judge := current_user;                                          -- not what the client wrote
+  SELECT hash INTO prev FROM eval.verdicts ORDER BY id DESC LIMIT 1;  -- READ COMMITTED: sees the last committed seal
+  NEW.prev_hash := prev;
+  NEW.hash := sha256(coalesce(prev, '\x'::bytea) ||
+              convert_to(format('%s|%s|%s|%s|%s|%s', NEW.id, NEW.attempt_id, NEW.actor, NEW.judge, NEW.passed, NEW.at), 'UTF8'));
+  RETURN NEW;
+END $$;
+CREATE TRIGGER verdicts_seal      BEFORE INSERT           ON eval.verdicts FOR EACH ROW EXECUTE FUNCTION eval.seal_verdict();
+CREATE TRIGGER verdicts_immutable BEFORE UPDATE OR DELETE ON eval.verdicts FOR EACH ROW EXECUTE FUNCTION public.forbid_mutation();
+
+-- the worker connects as itself and files its claim
+\c - actor_role
+INSERT INTO work.attempts (step_id, claim) VALUES (7, 'fix applied, tests green') RETURNING id, actor, written_by;
+-- then reaches for the verdict, three ways
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true);     -- write one
+SELECT judge, passed FROM eval.verdicts;                            -- even read one
+SET ROLE grader_role;                                               -- become the grader
+
+-- the grader connects as itself; it may write a verdict, but only the columns it was granted
+\c - grader_role
+INSERT INTO eval.verdicts (attempt_id, passed, judge) VALUES (1, true, 'auditor');   -- naming the judge by hand
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true)
+  RETURNING id, actor, judge, written_by, left(encode(hash, 'hex'), 12) AS hash;
+\c - :owner
+
+-- nobody grades their own work, not even the owner
+INSERT INTO work.attempts (step_id, claim) VALUES (8, 'owner did this one');
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, true);    -- judge = actor = you
+
+-- ---------------------------------------------------------------
+-- 11. The ledger cannot be rewritten, and a bypass leaves a mark
+-- ---------------------------------------------------------------
+UPDATE eval.verdicts SET passed = false WHERE id = 1;
+DELETE FROM eval.verdicts WHERE id = 1;
+-- a second sealed verdict, then walk the chain
+\c - grader_role
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, false) RETURNING id, left(encode(prev_hash,'hex'),12) AS prev, left(encode(hash,'hex'),12) AS hash;
+\c - :owner
+CREATE VIEW eval.chain_check AS
+SELECT bool_and(hash = sha256(coalesce(prev_hash, '\x'::bytea) ||
+                convert_to(format('%s|%s|%s|%s|%s|%s', id, attempt_id, actor, judge, passed, at), 'UTF8'))) AS rows_intact,
+       bool_and(prev_hash IS NOT DISTINCT FROM lag_hash)                                            AS links_intact
+FROM (SELECT v.*, lag(hash) OVER (ORDER BY id) AS lag_hash FROM eval.verdicts v) s;
+SELECT * FROM eval.chain_check;
+-- the table owner can switch the trigger off and turn the fail into a pass. The chain still tells.
+ALTER TABLE eval.verdicts DISABLE TRIGGER verdicts_immutable;
+UPDATE eval.verdicts SET passed = true WHERE id = 3;
+SELECT * FROM eval.chain_check;
+ALTER TABLE eval.verdicts ENABLE TRIGGER verdicts_immutable;
