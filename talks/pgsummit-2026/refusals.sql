@@ -11,12 +11,14 @@ CREATE TABLE answers (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   confidence  numeric NOT NULL CHECK (confidence BETWEEN 0 AND 1),
   body        jsonb   NOT NULL,
-  CONSTRAINT cites_something CHECK (jsonb_array_length(body->'citations') > 0)
+  CONSTRAINT cites_something CHECK (coalesce(jsonb_array_length(body->'citations'), 0) > 0)
 );
 -- shape is fine, value is not
 INSERT INTO answers (confidence, body) VALUES (1.5, '{"answer":"x","citations":[3]}');
 -- shape is fine, citations are empty
 INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[]}');
+-- the citations key is missing: a NULL CHECK would have passed this, coalesce refuses it
+INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x"}');
 -- the one that passes
 INSERT INTO answers (confidence, body) VALUES (0.9, '{"answer":"x","citations":[3]}');
 
@@ -96,7 +98,8 @@ REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agent_role;
 CREATE FUNCTION record_gate(p_step bigint, p_gate text, p_passed boolean) RETURNS void
   LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS
   $$ INSERT INTO gate_log VALUES (p_step, p_gate, p_passed) $$;
-GRANT EXECUTE ON FUNCTION record_gate TO agent_role;
+REVOKE EXECUTE ON FUNCTION record_gate FROM PUBLIC;   -- EXECUTE is granted to PUBLIC by default
+GRANT  EXECUTE ON FUNCTION record_gate TO agent_role;
 SET ROLE agent_role;
 INSERT INTO gate_log VALUES (1, 'format', true);     -- direct write
 UPDATE steps SET status = 'done';                    -- direct state change
@@ -234,3 +237,32 @@ ALTER TABLE eval.verdicts DISABLE TRIGGER verdicts_immutable;
 UPDATE eval.verdicts SET passed = true WHERE id = 3;
 SELECT * FROM eval.chain_check;
 ALTER TABLE eval.verdicts ENABLE TRIGGER verdicts_immutable;
+
+-- ---------------------------------------------------------------
+-- 12. Hybrid retrieval in one statement (the slide's query, on a three-row fixture)
+-- ---------------------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE doc (doc_id bigint PRIMARY KEY, title text NOT NULL);
+CREATE TABLE chunk (chunk_id bigint PRIMARY KEY, doc_id bigint REFERENCES doc, body text NOT NULL,
+                    embedding vector(3), tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', body)) STORED);
+INSERT INTO doc VALUES (1, 'runbook'), (2, 'postmortem');
+INSERT INTO chunk (chunk_id, doc_id, body, embedding) VALUES
+  (1, 1, 'restart the worker after a lease expires',  '[0.9, 0.1, 0.0]'),
+  (2, 1, 'the reaper writes a row for a crashed worker', '[0.8, 0.2, 0.1]'),
+  (3, 2, 'the dashboard stayed green for fifty-five hours', '[0.0, 0.1, 0.9]');
+\set q_vec '''[0.85, 0.15, 0.05]'''
+\set q '''crashed worker'''
+WITH sem AS (
+  SELECT chunk_id, row_number() OVER (ORDER BY embedding <=> :q_vec) AS r
+  FROM chunk WHERE embedding IS NOT NULL
+  ORDER BY embedding <=> :q_vec LIMIT 50
+), lex AS (
+  SELECT chunk_id, row_number() OVER (ORDER BY ts_rank_cd(tsv, plainto_tsquery(:q)) DESC) AS r
+  FROM chunk WHERE tsv @@ plainto_tsquery(:q)
+  ORDER BY ts_rank_cd(tsv, plainto_tsquery(:q)) DESC LIMIT 50
+)
+SELECT c.chunk_id, d.title,
+       coalesce(0.7 / (60 + sem.r), 0) + coalesce(0.3 / (60 + lex.r), 0) AS rrf
+FROM sem FULL OUTER JOIN lex USING (chunk_id)
+JOIN chunk c USING (chunk_id) JOIN doc d USING (doc_id)
+ORDER BY rrf DESC LIMIT 10;
