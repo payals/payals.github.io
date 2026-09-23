@@ -3,7 +3,7 @@
 `data/books.json` and `data/now.json` are generated from Goodreads. A scheduled job
 reads two shelves on the Goodreads account, applies the policy in
 `data/books.policy.json`, and rewrites the two data files that `reading.markdown`
-and the home page's now pane render.
+and the home page's Now door and drawer render.
 
 Publishing is opt-in. Finishing a book on Goodreads does not put it on the site by
 itself. A book only shows up because it was deliberately tagged, or because it was
@@ -108,7 +108,7 @@ Two other policy knobs are worth knowing about:
   difference is a suffix like `" (Vintage International)"` still merge into
   one row.
 
-## How the now pane is driven
+## How the Now reading line is driven
 
 `data/now.json`'s `reading` field is set to the most recently added book on the
 currently-reading shelf that is also tagged with the `site` shelf and not tagged
@@ -124,7 +124,7 @@ text; it never changes which book `reading_url` points at.
 If the currently-reading shelf has no eligible book -- nothing tagged `site`,
 everything tagged `no-site`, or the shelf is simply empty -- a successful sync
 actively clears both `reading` and `reading_url` to an empty string rather
-than leaving a stale value in place. The home page's now pane and
+than leaving a stale value in place. The home page's Now drawer and
 `reading.markdown` both hide the "reading" row when `reading` is empty, so
 finishing a book with nothing new started yet correctly makes the row
 disappear instead of showing a book that's no longer being read. If an

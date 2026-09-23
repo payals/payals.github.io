@@ -1,6 +1,6 @@
 title: Payal Singh
 description: Notes on Postgres, AI, and systems engineering.
-# Topbar positioning line on every page; rendered after the name, so it starts lowercase.
+# Positioning line; the home page's role line is its first sentence, upper-cased.
 tagline: "staff platform engineer. Postgres, data systems, DevOps, and AI-native systems."
 url: "https://payalsingh.me"
 baseurl: ""
@@ -12,11 +12,26 @@ source_url: https://github.com/payals/payals.github.io
 # github-pages would otherwise inject jekyll-theme-primer (assets/css/style.css).
 theme: null
 
-# BUDGET (phase3.md arbitration table): assets/css/features.scss compiles to
-# assets/css/features.css. Compressed output is what keeps the landing
-# transfer under the 150KB gzipped cap.
-sass:
-  style: compressed
+# Contact and elsewhere links for the command layout (/, /talks/, /cv/).
+# Email comes from `email` above. One list here, rendered by Liquid, so a new
+# profile link is one edit.
+profile_links:
+  contact:
+    - label: LinkedIn
+      url: https://linkedin.com/in/payalsingh
+    - label: GitHub
+      url: https://github.com/payals
+  elsewhere:
+    - label: Codeberg
+      url: https://codeberg.org/sillygoose
+    - label: Medium
+      url: https://medium.com/@reliable-by-design
+    - label: Older blog
+      url: https://penningpence.blogspot.com
+    - label: Reading
+      url: /reading/
+    - label: RSS
+      url: /feed.xml
 
 # Read data/*.json directly so site.data and the public /data/*.json URLs share one file.
 data_dir: data
@@ -37,12 +52,26 @@ feed:
   categories:
     - postgres
 
+# Every page renders through _layouts/command.html. These defaults set the
+# command layout's section, kind and path where a page's own front matter
+# should not change: the evidence bundles are published as-is (c_kind doc:
+# wide tables, prompt path from the URL), and /reading/ sits under Now.
 defaults:
   - scope:
       path: ""
       type: posts
     values:
       layout: post
+  - scope:
+      path: "evidence"
+    values:
+      c_kind: doc
+      c_section: writing
+  - scope:
+      path: "reading.markdown"
+    values:
+      c_section: now
+      c_path: reading
 
 exclude:
   - _talk-evidence/

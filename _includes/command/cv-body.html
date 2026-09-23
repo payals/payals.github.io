@@ -1,0 +1,35 @@
+{%- comment -%}
+command/cv-body.html: roles, independent work, selected writing, speaking and
+education from data/cv.md (via command/cv-data.html, which must run first).
+Used by the home CV drawer (h=h3) and by /cv/ (h=h2). Speaking links to
+/talks/ instead of repeating the list; print_speaking=true adds cv.md's whole
+Speaking section for print only (/cv/). anchors=true adds the old kramdown
+heading ids as section and role ids (/cv/ only, where they were). Each role
+shows its first sentence; the rest of its paragraph sits in a "More"
+<details>, so nothing repeats.
+{%- endcomment -%}
+{%- assign _h = include.h | default: "h3" -%}
+{%- if _h == "h2" -%}{%- assign _hr = "h3" -%}{%- else -%}{%- assign _hr = "h4" -%}{%- endif -%}
+{%- if c_cv_roles_count > 0 %}
+<section class="cv-block"{% if include.anchors %} id="professional-record"{% endif %} aria-labelledby="{{ include.prefix }}roles-h"><{{ _h }} class="cv-h" id="{{ include.prefix }}roles-h">Roles</{{ _h }}>
+<ol class="roles" role="list">
+{%- for _t in c_cv_role_titles -%}
+{%- assign _i = forloop.index0 -%}
+{%- assign _rest = c_cv_role_rests[_i] | strip -%}
+<li class="role"{% if include.anchors %} id="{{ _t | append: ' ' | append: c_cv_role_orgs[_i] | slugify }}"{% endif %}><{{ _hr }} class="role-title">{{ _t }}</{{ _hr }}><p class="role-org"><span>{{ c_cv_role_orgs[_i] }}</span> <span class="mono">{{ c_cv_role_periods[_i] | replace_first: "-", "–" }}</span></p><p class="role-short">{{ c_cv_role_shorts[_i] }}</p>
+{%- if _rest != "" -%}<details class="more"><summary>More <svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary><div class="more-body"><p>{{ _rest }}</p></div></details>{%- endif -%}
+</li>
+{%- endfor %}
+</ol></section>
+{%- endif -%}
+{%- if c_cv_work != "" %}
+<section class="cv-block"{% if include.anchors %} id="selected-independent-work"{% endif %} aria-labelledby="{{ include.prefix }}work-h"><{{ _h }} class="cv-h" id="{{ include.prefix }}work-h">Independent work</{{ _h }}>{{ c_cv_work }}</section>
+{%- endif -%}
+{%- if c_cv_writing != "" %}
+<section class="cv-block"{% if include.anchors %} id="selected-writing"{% endif %} aria-labelledby="{{ include.prefix }}writing-h"><{{ _h }} class="cv-h" id="{{ include.prefix }}writing-h">Selected writing</{{ _h }}>{{ c_cv_writing }}</section>
+{%- endif %}
+<section class="cv-block"{% if include.anchors %} id="speaking"{% endif %} aria-labelledby="{{ include.prefix }}speaking-h"><{{ _h }} class="cv-h" id="{{ include.prefix }}speaking-h">Speaking</{{ _h }}><div class="screen-only"><p>{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}. <a href="{{ include.talks_href | default: '/talks/' }}">See the talks</a></p>{% if c_cv_speaking_note != "" %}<p class="cv-note">{{ c_cv_speaking_note }}</p>{% endif %}</div>
+{%- if include.print_speaking and c_cv_speaking_html != "" %}<div class="print-only cv-print-speaking">{{ c_cv_speaking_html }}</div>{% endif %}</section>
+{%- if c_cv_education != "" %}
+<section class="cv-block"{% if include.anchors %} id="education"{% endif %} aria-labelledby="{{ include.prefix }}edu-h"><{{ _h }} class="cv-h" id="{{ include.prefix }}edu-h">Education</{{ _h }}>{{ c_cv_education }}</section>
+{%- endif -%}

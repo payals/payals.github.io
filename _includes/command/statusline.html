@@ -1,0 +1,18 @@
+{%- comment -%} The one loud terminal strip, on every page. The path shows where
+you are (and, on the home page, which drawer is open); it mirrors the top
+nav's path, and on phones a nested path keeps only its last segment. The
+three buttons need JavaScript, so they stay hidden until command.js runs. {%- endcomment -%}
+{%- assign _sp = include.path | default: include.section | default: "" -%}
+{%- assign _ss = include.section | default: "" -%}
+{%- assign _parts = _sp | split: "/" -%}
+{%- assign _last = _parts | last -%}
+{%- assign _dir_n = _sp.size | minus: _last.size -%}
+{%- if _dir_n > 0 -%}{%- assign _dir = _sp | slice: 0, _dir_n -%}{%- else -%}{%- assign _dir = "" -%}{%- endif %}
+<footer class="statusline" aria-label="Status line">
+  <span class="sl-path"><span class="sl-dot" aria-hidden="true"></span><b>payal</b><span id="sl-path">{% if _sp != "" %}~/{% if _dir != "" %}<span class="sl-dir">{{ _dir | escape }}</span><span class="sl-ell" aria-hidden="true">…/</span>{% endif %}<span class="sec"{% if _ss != "" %} style="--hue:var(--{{ _ss }})"{% endif %}>{{ _last | escape }}</span>{% else %}~{% endif %}</span></span>
+  <span class="sl-right js-only">
+    <button class="sl-btn" type="button" data-act="search" aria-keyshortcuts="/ Control+K Meta+K"><kbd>/</kbd><svg aria-hidden="true" focusable="false"><use href="#i-search"/></svg>Search</button>
+    <button class="sl-btn kbd-only" type="button" data-act="keys" aria-keyshortcuts="?"><kbd>?</kbd>Keys</button>
+    <button class="sl-btn" type="button" data-act="theme"><svg aria-hidden="true" focusable="false"><use href="#i-theme"/></svg><span class="theme-label">Theme</span></button>
+  </span>
+</footer>

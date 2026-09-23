@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+{%- comment -%}
+command.html: the one base layout of the "command-first" design system
+(redesign direction C, 2026-09). Every page on the site renders through it:
+home, /talks/, /cv/, the blog (post, page and blog layouts sit on top of it),
+/reading/, the evidence pages and the 404. The one exception is the
+standalone deck under /talks/pgsummit-2026/, which is static files with no
+front matter. Tokens, type, status line, "/" palette, "?" keys and the theme
+toggle all live in assets/css/command.css and assets/js/command.js.
+
+Front matter it reads, from the page first and then from the layout chain
+(Jekyll 3.10 merges layout front matter up the chain, child wins):
+  c_home     the home page: no top nav, no colophon, the prompt help
+  c_section  talks, writing, cv or now: the section hue and the nav mark
+  c_kind     post, page, index, doc or error: body class c-<kind>
+  c_path     what the prompt path shows after "~/" (default: c_section;
+             for c_kind doc, the page URL)
+No third-party requests: the two faces are self-hosted woff2 (assets/fonts,
+OFL). The theme script runs before paint so a stored choice never flashes.
+{%- endcomment %}
+{%- assign c_sec = page.c_section | default: layout.c_section | default: "" -%}
+{%- assign c_kind = page.c_kind | default: layout.c_kind | default: "" -%}
+{%- assign c_path = page.c_path | default: layout.c_path | default: "" -%}
+{%- if c_path == "" -%}
+{%- if c_kind == "doc" -%}{%- assign c_path = page.url | remove_first: "/" | split: "/" | join: "/" -%}{%- else -%}{%- assign c_path = c_sec -%}{%- endif -%}
+{%- endif %}
+<html lang="{{ site.lang | default: 'en' }}">
+<head>
+{% include head-meta.html %}
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#15141f" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f5fa" media="(prefers-color-scheme: light)">
+  <script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('ps-theme');if(t==='light'||t==='dark'){r.setAttribute('data-theme',t);var m=document.createElement('meta'),f=document.querySelector('meta[name="theme-color"]');m.name='theme-color';m.id='theme-pick';m.content=t==='light'?'#f6f5fa':'#15141f';f.parentNode.insertBefore(m,f);}}catch(e){}})();</script>
+  <link rel="preload" href="/assets/fonts/onest-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/martian-mono-latin-wdth.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/command.css">
+</head>
+<body class="c-body{% if page.c_home %} c-home{% endif %}{% if c_kind != "" %} c-{{ c_kind }}{% endif %}">
+{%- include command/data.html -%}
+<a class="skip-link" href="#main">Skip to content</a>
+{% include command/sprite.html %}
+{%- unless page.c_home %}
+<div class="wrap">
+{% include command/topnav.html section=c_sec path=c_path %}
+</div>
+{%- endunless %}
+<main id="main" tabindex="-1"{% if c_sec != "" %} style="--hue:var(--{{ c_sec }})"{% endif %}>
+  <div class="wrap">
+{{ content }}
+{%- unless page.c_home %}
+{% include command/colophon.html %}
+{%- endunless %}
+  </div>
+</main>
+{% include command/statusline.html section=c_sec path=c_path %}
+{% include command/dialogs.html home=page.c_home %}
+{% include command/search-index.html %}
+<script src="/assets/js/command.js" defer></script>
+</body>
+</html>

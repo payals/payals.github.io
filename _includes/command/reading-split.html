@@ -1,0 +1,7 @@
+{%- comment -%} command/reading-split.html: split data/now.json's `reading`
+("{title} by {author}", as sync_goodreads.py writes it) into reading_title,
+reading_author and reading_has_by, so the home Now drawer and /reading/ link
+the title alone. Split on the LAST " by ", so a title that itself contains
+" by " stays whole. Expects `reading` to be assigned. {%- endcomment -%}
+{%- assign reading_author = reading -%}{%- assign reading_title = reading -%}{%- assign reading_has_by = false -%}
+{%- if reading contains " by " -%}{%- assign _r_parts = reading | split: " by " -%}{%- if _r_parts.size > 1 -%}{%- assign reading_author = _r_parts | last -%}{%- assign _r_tlen = reading.size | minus: reading_author.size | minus: 4 -%}{%- if _r_tlen > 0 -%}{%- assign reading_title = reading | slice: 0, _r_tlen -%}{%- assign reading_has_by = true -%}{%- else -%}{%- assign reading_author = reading -%}{%- endif -%}{%- endif -%}{%- endif -%}

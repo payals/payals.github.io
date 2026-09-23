@@ -1,0 +1,38 @@
+---
+layout: command
+title: Talks
+c_section: talks
+description: "Conference talks and sessions, upcoming first, each backed by an official schedule or program listing."
+permalink: /talks/
+---
+{%- comment -%}
+/talks/: the full talks list in the command layout (L1 + L2 as a page). One row
+per talk family, each expandable to its venues, dates, caveats and links;
+archive leads at the end. Same records and same rendering as the home Talks
+drawer (command/talk-rows.html over data/talks.json and
+data/talk_families.json). With JavaScript on: a topic filter, an expand-all
+toggle and the opt-in timeline; a #talk-<id> link opens that row. With it off,
+every row is a working <details>, and a #talk-<id> link scrolls to its row and
+marks it (.row:target) but leaves it closed: browsers do not open a <details>
+that is itself the fragment target. Every URL goes through safe-link.html.
+{%- endcomment -%}
+{%- include command/data.html -%}
+<header class="page-head" style="--hue:var(--talks)">
+  <h1 class="page-title">Talks</h1>
+  <p class="page-lede">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}, grouped into {{ c_fam_ids.size }} talk{% unless c_fam_ids.size == 1 %}s{% endunless %}.{% if c_next and c_next_is_upcoming %} Next: {{ c_next.venue | escape }}, {% if c_next.date %}<time datetime="{{ c_next.date | escape }}">{{ c_next.date | date: "%b %-d, %Y" }}</time>{% else %}{{ c_next.date_label | escape }}{% endif %}.{% endif %} Open a talk for its venues, slides and schedule.</p>
+</header>
+
+<section class="listing" id="talk-list" style="--hue:var(--talks)" aria-label="All talks" data-list="talks" data-expandable>
+  <div class="listing-tools">
+    <div class="panel-tools js-only" data-tools></div>
+    <p class="filter-status" aria-live="polite"></p>
+  </div>
+  <div class="plot js-only" hidden></div>
+  {% include command/talk-rows.html %}
+</section>
+
+{% include command/talk-leads.html mode="section" %}
+
+<p class="panel-note">Schedule records establish scheduling, not delivery.</p>
+<p class="panel-foot"><a class="chip" href="/data/talks.json">Talk records (JSON)</a><a class="chip" href="/cv/">CV</a></p>
+{% include command/talk-json.html %}

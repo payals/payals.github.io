@@ -58,7 +58,7 @@ Official dated schedule listings establish scheduling, not independent proof tha
 ### Additional appearances under reconstruction
 
 - **Earlier NYC PostgreSQL conference appearance**, circa 2014. Backups and disaster recovery, likely an earlier version of the later verified talk. The program record has not yet been recovered.
-- **CPOSC automation talk**, circa 2016-2018. Automation using configuration-management tools including Chef and Puppet. The exact title and year are under reconstruction.
+- **CPOSC automation talk**, circa 2016–2018. Automation using configuration-management tools including Chef and Puppet. The exact title and year are under reconstruction.
 - **NYC and Philadelphia meetup appearances**, dates under reconstruction. Event archives are incomplete, and titles and dates have not yet been recovered.
 
 ## Education

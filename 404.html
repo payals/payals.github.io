@@ -1,21 +1,31 @@
 ---
-layout: blog
-title: "404"
-description: That path does not exist on this site.
+layout: command
+c_kind: error
+c_path: "404"
+title: Page not found
+description: There is no page at this address on payalsingh.me.
 permalink: /404.html
 sitemap: false
 ---
-<section class="pane pane--terminal" aria-label="Terminal output">
-  <div class="pane__body">
-    <div class="scrollback" role="log" aria-label="Terminal output">
-      <p class="scrollback__line scrollback__line--echo">payal@payalsingh.me:~$ cd /that-page</p>
-      <p class="scrollback__line scrollback__line--err">bash: cd: /that-page: No such file or directory</p>
-      <p class="scrollback__line scrollback__line--echo">payal@payalsingh.me:~$ cd ~</p>
-    </div>
-    <div class="prompt" aria-hidden="true">
-      <span class="prompt__ps1">payal@payalsingh.me:~$</span>
-      <span class="prompt__field"><span class="cursor cursor--active cursor--blink"></span></span>
-    </div>
-  </div>
-</section>
-<p class="actions"><a class="btn" href="/">home</a> <a href="/blog/">writing</a> <a href="/#talks">talks</a> <a href="/#cv">cv</a></p>
+{%- comment -%}
+404: say what happened and how to recover, in the site's own voice. GitHub
+Pages serves this file for a missing path at any depth, so every URL here is
+root-relative. command.js writes the requested path into [data-nf-path] with
+textContent; without JavaScript the sentence reads "at this address" and the
+prompt echo and the search button stay hidden. The deck under
+/talks/pgsummit-2026/ has its own 404 and never uses this one.
+{%- endcomment %}
+<header class="page-head">
+  <h1 class="page-title">Page not found</h1>
+  <p class="page-lede">There is nothing at <span class="nf-path" data-nf-path>this address</span>. It may have moved, or the link may have a typo.</p>
+</header>
+<div class="nf">
+  <p class="nf-echo js-only" aria-hidden="true"><span class="mono">payal@payalsingh.me:~$ cd <span data-nf-path></span></span><span class="mono nf-out">no such page</span></p>
+  <p class="nf-search js-only"><button class="btn" type="button" data-act="search" aria-keyshortcuts="/ Control+K Meta+K">Search the site<kbd>/</kbd></button></p>
+  <ul class="nf-links" role="list" aria-label="Go to">
+    <li><a class="chip" href="/talks/">Talks</a></li>
+    <li><a class="chip" href="/blog/">Writing</a></li>
+    <li><a class="chip" href="/cv/">CV</a></li>
+    <li><a class="chip" href="/">Home</a></li>
+  </ul>
+</div>

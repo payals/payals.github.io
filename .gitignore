@@ -12,6 +12,7 @@ vendor/
 # OMC runtime state (not specs/plans/design — those are intentionally tracked)
 .omc/state/
 .omc/sessions/
+.omc/handoffs/
 .omc/project-memory.json
 .omo/
 

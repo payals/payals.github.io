@@ -1,0 +1,21 @@
+{%- comment -%}
+command/topic-of.html: the topic of one talk record or one post, from
+data/topics.json. Pass talk=<record id> or post=<post>. Sets c_topic (id),
+c_shape (the glyph in command/sprite.html) and c_topic_label (display text).
+A post with no entry in topics.json falls back to tag_precedence, the rule
+topics.json documents for new posts. Needs command/data.html first.
+{%- endcomment -%}
+{%- assign c_topic = "other" -%}
+{%- if include.talk -%}
+{%- assign _te = c_topic_talks[include.talk] -%}
+{%- if _te.topic -%}{%- assign c_topic = _te.topic -%}{%- endif -%}
+{%- elsif include.post -%}
+{%- assign _pslug = include.post.url | split: '/' | last -%}
+{%- assign _pe = c_topic_posts[_pslug] -%}
+{%- if _pe.topic -%}{%- assign c_topic = _pe.topic -%}{%- else -%}
+{%- for _tag in c_tag_precedence -%}{%- if include.post.tags contains _tag -%}{%- assign c_topic = c_topic_tags[_tag] | default: "other" -%}{%- break -%}{%- endif -%}{%- endfor -%}
+{%- endif -%}
+{%- endif -%}
+{%- assign _tdef = c_topicdefs | where: "id", c_topic | first -%}
+{%- assign c_shape = _tdef.shape | default: "ring" -%}
+{%- if c_topic == "ai" -%}{%- assign c_topic_label = "AI" -%}{%- else -%}{%- assign c_topic_label = _tdef.label | default: c_topic | capitalize -%}{%- endif -%}

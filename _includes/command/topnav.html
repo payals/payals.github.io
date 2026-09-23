@@ -1,0 +1,18 @@
+{%- comment -%} Top bar on every page but home: who and where, and the way back.
+include.section (talks, writing, cv, now or empty) marks the nav link and
+colours the path; include.path is what follows "~/" (default: the section).
+A page with no section (the 404) shows its path in plain ink. The marked link
+gets aria-current="page" only on the page it points to, "true" (in this
+section) everywhere else. {%- endcomment -%}
+{%- assign _tp = include.path | default: include.section | default: "" -%}
+{%- assign _ts = include.section | default: "" %}
+<header class="topnav">
+  <a class="topnav-id" href="/"><span class="mono">payal@payalsingh.me:<span class="p-path">~{% if _tp != "" %}/<span class="p-sec"{% if _ts != "" %} style="--hue:var(--{{ _ts }})"{% endif %}>{{ _tp | escape | replace: "/", "/<wbr>" }}</span>{% endif %}</span></span><span class="sr-only"> (home)</span></a>
+  <nav class="topnav-links" aria-label="Site">
+    <a href="/">Home</a>
+    <a href="/talks/"{% if _ts == "talks" %} aria-current="{% if page.url == "/talks/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--talks)">Talks</a>
+    <a href="/blog/"{% if _ts == "writing" %} aria-current="{% if page.url == "/blog/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--writing)">Writing</a>
+    <a href="/cv/"{% if _ts == "cv" %} aria-current="{% if page.url == "/cv/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--cv)">CV</a>
+    <a href="/#now"{% if _ts == "now" %} aria-current="{% if page.url == "/#now" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--now)">Now</a>
+  </nav>
+</header>

@@ -40,7 +40,7 @@
     "id": "lead-cposc",
     "date": "2016",
     "precision": "circa",
-    "label": "circa 2016-2018",
+    "label": "circa 2016–2018",
     "kind": "talk",
     "level": "warn",
     "text": "CPOSC automation talk, configuration management with Chef and Puppet",

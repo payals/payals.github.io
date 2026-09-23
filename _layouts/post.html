@@ -1,24 +1,101 @@
 ---
-layout: default
+layout: command
+c_section: writing
+c_kind: post
 ---
-{% assign words = content | strip_html | number_of_words %}
-{% assign minutes = words | divided_by: 200.0 | ceil %}
-{% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
-<header class="page__header">
-  <h1 class="page__title">{{ page.title | escape }}</h1>
-  {% if page.subtitle %}<p class="page__subtitle">{{ page.subtitle | escape }}</p>{% endif %}
-  <p class="meta page__meta">
-    <time datetime="{{ page.date | date_to_xmlschema }}" data-year="{{ page.date | date: '%Y' }}">{{ page.date | date: '%Y-%m-%d' }}</time>
-    &middot; {{ minutes }} min read
-    {% if page.tags and page.tags != empty %}&middot; {% for tag in page.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}{% endif %}
-  </p>
+{%- comment -%}
+post.html: one post in the command layout. Header (title, subtitle, a meta
+row of separate spans: date, minutes, topic, series part), a contents list
+built from the post's own h2s when it has four or more (a sticky rail from
+1280px, a closed <details> below), the body in .prose, then the pager.
+
+The body is the post's rendered content, untouched except for presentation
+hooks: wide tables get a scroll wrapper, all-emphasis paragraphs get a
+class, and every kramdown h2 (<h2 id="...">)
+gets an empty "#" link to itself whose glyph is CSS, so the text of the
+article is exactly the post's text. The heading text is wrapped in a span
+the h2 is aria-labelledby, so the heading's accessible name stays its own
+text, and the link is named after its section. The footer's series card
+gets its id="series" focus target here, not in the include, so the feeds
+carry plain markup. Minutes use the same rounding as the
+home drawer and the /blog/ list (words plus 199, divided by 200).
+{%- endcomment -%}
+{%- include command/data.html -%}
+{%- include command/topic-of.html post=page -%}
+{%- assign _words = content | strip_html | number_of_words -%}
+{%- assign minutes = _words | plus: 199 | divided_by: 200 -%}
+{%- if minutes < 1 -%}{%- assign minutes = 1 -%}{%- endif -%}
+{%- assign _body = content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' | replace_first: '<nav class="series" ', '<nav class="series" id="series" tabindex="-1" ' -%}
+{%- comment -%} A paragraph that is emphasis from end to end (the Medium
+closing note, a disclaimer) gets class p-aside, so .prose can set it as a
+quiet aside while an inline <em> stays stressed. A paragraph that only opens
+with an <em> ("Appended September 4.") has text after the </em> and is left
+alone. {%- endcomment -%}
+{%- if _body contains '<p><em>' -%}
+{%- assign _ems = _body | split: '<p><em>' -%}
+{%- capture _body -%}{{ _ems | first }}{%- for _e in _ems offset: 1 -%}
+{%- assign _para = _e | split: '</p>' | first -%}
+{%- assign _para_end = _para | slice: -5, 5 -%}
+{%- assign _para_ems = _para | split: '</em>' | size -%}
+{%- if _para_end == '</em>' and _para_ems == 1 -%}<p class="p-aside"><em>{%- else -%}<p><em>{%- endif -%}{{ _e }}
+{%- endfor -%}{%- endcapture -%}
+{%- endif -%}
+{%- assign _parts = _body | split: '<h2 id="' -%}
+{%- assign _toc_n = 0 -%}
+{%- capture _toc -%}
+{%- for _p in _parts offset: 1 -%}
+{%- assign _hid = _p | split: '"' | first -%}
+{%- if _hid != "" -%}
+{%- assign _htxt = _p | split: '</h2>' | first | remove_first: _hid | remove_first: '">' | strip_html | strip -%}
+{%- assign _toc_n = _toc_n | plus: 1 -%}
+<li><a href="#{{ _hid }}">{{ _htxt }}</a></li>
+{%- endif -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- capture _article -%}
+{{ _parts | first }}
+{%- for _p in _parts offset: 1 -%}
+{%- assign _hid = _p | split: '"' | first -%}
+{%- if _hid != "" -%}
+{%- assign _htxt = _p | split: '</h2>' | first | remove_first: _hid | remove_first: '">' | strip_html | strip | replace: '"', '&quot;' -%}
+{%- capture _anchor -%}</span><a class="h-anchor" href="#{{ _hid }}" aria-label="Link to section: {{ _htxt }}"></a></h2>{%- endcapture -%}
+<h2 id="{{ _hid }}" aria-labelledby="{{ _hid }}--h"><span id="{{ _hid }}--h">{{ _p | remove_first: _hid | remove_first: '">' | replace_first: '</h2>', _anchor }}
+{%- else -%}
+<h2 id="{{ _p }}
+{%- endif -%}
+{%- endfor -%}
+{%- endcapture -%}
+<div class="post-layout{% if _toc_n >= 4 %} has-toc{% endif %}">
+<header class="post-head">
+  <h1 class="post-title">{{ page.title | escape }}</h1>
+  {%- if page.subtitle and page.subtitle != "" %}
+  <p class="post-sub">{{ page.subtitle | escape }}</p>
+  {%- endif %}
+  <p class="post-meta"><time class="mono" datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time><span>{{ minutes }} min read</span><span class="tag"><svg class="shape" aria-hidden="true" focusable="false"><use href="#s-{{ c_shape }}"/></svg>{{ c_topic_label }}</span>{% if page.series and page.part %}<a href="#series">Part {{ page.part }} of {{ page.series | escape }}</a>{% endif %}</p>
+  {%- if _toc_n >= 4 %}
+  <details class="more toc-fold">
+    <summary>Contents<span class="n mono">{{ _toc_n }}</span><svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
+    <ol class="toc-list" role="list">{{ _toc }}</ol>
+  </details>
+  {%- endif %}
 </header>
-<article class="prose">
-{{ content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' }}
-</article>
-{% if page.previous or page.next %}
-<nav class="pager" aria-label="Adjacent posts">
-  {% if page.next %}<p class="pager__item pager__item--newer"><span class="pager__label">newer</span> <a href="{{ page.next.url }}">{{ page.next.title | escape }}</a></p>{% endif %}
-  {% if page.previous %}<p class="pager__item pager__item--older"><span class="pager__label">older</span> <a href="{{ page.previous.url }}">{{ page.previous.title | escape }}</a></p>{% endif %}
+{%- if _toc_n >= 4 %}
+<nav class="toc-rail" aria-label="Contents">
+  <p class="toc-h">Contents</p>
+  <ol class="toc-list" role="list">{{ _toc }}</ol>
 </nav>
-{% endif %}
+{%- endif %}
+<article class="prose">
+{{ _article }}
+</article>
+{%- if page.previous or page.next %}
+<nav class="pager" aria-label="More posts">
+  {%- if page.next %}
+  <a class="pager-card pager-newer" href="{{ page.next.url | escape }}" rel="next"><span class="pager-label">Newer</span><span class="pager-title">{{ page.next.title | escape }}</span></a>
+  {%- endif %}
+  {%- if page.previous %}
+  <a class="pager-card pager-older" href="{{ page.previous.url | escape }}" rel="prev"><span class="pager-label">Older</span><span class="pager-title">{{ page.previous.title | escape }}</span></a>
+  {%- endif %}
+</nav>
+{%- endif %}
+</div>

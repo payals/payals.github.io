@@ -1,754 +1,184 @@
 ---
+layout: command
+c_home: true
 description: Payal Singh, staff platform engineer. Postgres, data systems, DevOps, and AI-native systems. Talks, writing, and CV.
 ---
-{%- assign now = site.data.now -%}
-{%- assign talks = site.data.talks -%}
-{%- assign sourced = talks | where: "record_type", "sourced" -%}
-{%- assign leads = talks | where: "record_type", "archive_lead" -%}
-{%- assign upcoming = sourced | where: "status", "upcoming" -%}
-{%- assign past = sourced | where: "status", "past" -%}
-{%- assign ordered = upcoming | concat: past -%}
-{%- assign visible_talks = 6 -%}
-{%- assign visible_posts = 5 -%}
-{%- assign more_talks = ordered.size | minus: visible_talks -%}
-{%- assign latest = site.posts.first -%}
-{%- capture cv_markdown -%}{% include_relative data/cv.md %}{%- endcapture -%}
-{%- comment -%} Phase 3: the topic key. data/topics.json maps every talk id, every
-archive lead id and every post slug to one of six topics, each with a reason. The
-map adds no facts: it points at records that already exist. Topic is a second key,
-orthogonal to the phase-2 kind key, and it is always drawn as colour plus shape plus
-a text label. {%- endcomment -%}
-{%- assign topicdefs = site.data.topics.topics -%}
-{%- assign topic_talks = site.data.topics.talks -%}
-{%- assign topic_posts = site.data.topics.posts -%}
-{%- assign topic_facts = site.data.topics.facts -%}
-{%- comment -%} The career epoch, from data/cv.md ("Senior Database Reliability
-Engineer ... 2013-June 2026"). chart-cv.js reads it off the console element rather
-than holding a year of its own. {%- endcomment -%}
-{%- assign career_start = "2013-01-01" -%}
-{%- assign mobile_visible = 3 -%}
-{%- assign mobile_more_talks = visible_talks | minus: mobile_visible | plus: more_talks | plus: leads.size -%}
-{%- assign mobile_more_posts = site.posts.size | minus: mobile_visible -%}
-{%- assign mobile_initial_posts = visible_posts | minus: mobile_visible -%}
-{%- assign more_visible_talks = visible_talks | minus: mobile_visible -%}
-<!DOCTYPE html>
-<html lang="en">
-{% include head.html %}
-<body>
+{%- comment -%}
+Home, redesign direction C ("command-first", 2026-09). One hero with the
+15-second facts, four door cards, the prompt, then the four sections. With
+JavaScript off the sections are plain page content below the doors and every
+door is an in-page link to one. With it on, command.js lifts each section into
+a drawer (a bottom sheet under 768px) and a door click types its command into
+the prompt first. Every value is Liquid over data/*.json, data/cv.md, the posts
+and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
+{%- endcomment -%}
+{%- include command/data.html -%}
+{%- capture c_cv_md -%}{% include_relative data/cv.md %}{%- endcapture -%}
+{%- include command/cv-data.html -%}
+{%- comment -%} Upcase the first letter only: Liquid's capitalize lowercases the rest ("GKE" -> "gke"). {%- endcomment -%}
+{%- assign _tl = site.tagline | split: "." | first | strip -%}
+{%- assign _tl_rest = _tl | slice: 1, 9999 -%}
+{%- assign role_line = _tl | slice: 0 | upcase | append: _tl_rest -%}
+{%- assign year_now = site.time | date: "%Y" | plus: 0 -%}
+{%- assign start_year = c_cv_start_year | plus: 0 -%}
+{%- assign years_pg = year_now | minus: start_year -%}
+{%- assign number_words = "Zero,One,Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten" | split: "," -%}
+{%- if c_cv_roles_count < 11 -%}{%- assign roles_word = number_words[c_cv_roles_count] -%}{%- else -%}{%- assign roles_word = c_cv_roles_count -%}{%- endif -%}
+{%- assign reading = c_now.reading | default: "" -%}
+{%- assign reading_url = c_now.reading_url | default: "" -%}
+{%- assign reading_url_head = reading_url | slice: 0, 36 -%}
+{%- include command/reading-split.html %}
+<header class="hero" id="about" tabindex="-1">
+  <h1 class="name">{{ site.author | escape }}</h1>
+  <p class="hero-role">{{ role_line | escape }}</p>
+  {%- if c_cv_lede != "" and c_cv_lede != "." %}
+  <p class="lede">{{ c_cv_lede }}</p>
+  {%- endif %}
+  <dl class="facts">
+    {%- if c_cv_now_fact != "" %}
+    <div class="fact" style="--hue:var(--cv)"><dt>Role</dt><dd>{{ c_cv_now_fact }}</dd></div>
+    {%- endif %}
+    {%- if c_next %}
+    <div class="fact" style="--hue:var(--talks)"><dt>{% if c_next_is_upcoming %}Next talk{% else %}Latest talk{% endif %}</dt><dd><a class="fact-link" href="#talk-{{ c_next_fid | escape }}">{{ c_next.title | escape }}</a><span class="fact-meta">{{ c_next.venue | escape }}, {% if c_next.date %}<time datetime="{{ c_next.date | escape }}">{{ c_next.date | date: "%b %-d, %Y" }}</time>{% else %}{{ c_next.date_label | escape }}{% endif %}</span></dd></div>
+    {%- endif %}
+  </dl>
+  <ul class="contact" aria-label="Contact" role="list">
+    <li><a class="chip" href="mailto:{{ site.email | escape }}">Email</a></li>
+    {%- for l in site.profile_links.contact %}
+    <li><a class="chip" href="{{ l.url | escape }}">{{ l.label | escape }}</a></li>
+    {%- endfor %}
+  </ul>
+</header>
 
-<a class="skip-link" href="#main">Skip to content</a>
-
-<div class="shell shell--landing">
-
-  {% include navbar.html %}
-
-  {%- comment -%} Topic legend (T1). Server-rendered with real counts, so it reads
-  correctly with JavaScript off; topics.js only adds the pressing. One chip per topic
-  that has at least one record. Colour, shape and a text label, always all three.
-  Worker T. {%- endcomment %}
-  <div class="legendbar" data-legendbar>
-    <span class="legendbar__label" id="legend-label">topics</span>
-    <ul class="legend" aria-labelledby="legend-label" data-legend>
-      {%- for topic in topicdefs -%}
-      {%- assign n_talks = 0 -%}
-      {%- for talk in talks -%}{%- assign entry = topic_talks[talk.id] -%}{%- if entry.topic == topic.id -%}{%- assign n_talks = n_talks | plus: 1 -%}{%- endif -%}{%- endfor -%}
-      {%- assign n_posts = 0 -%}
-      {%- for post in site.posts -%}{%- assign pslug = post.url | split: '/' | last -%}{%- assign entry = topic_posts[pslug] -%}{%- if entry.topic == topic.id -%}{%- assign n_posts = n_posts | plus: 1 -%}{%- endif -%}{%- endfor -%}
-      {%- assign n_all = n_talks | plus: n_posts -%}
-      {%- if n_all > 0 %}
-      <li><button class="legend__btn" type="button" data-legend-btn="{{ topic.id }}" data-topic="{{ topic.id }}" aria-pressed="false" aria-label="{{ topic.label | escape }} {{ n_all }}: {{ n_talks }} talk{% unless n_talks == 1 %}s{% endunless %} and {{ n_posts }} post{% unless n_posts == 1 %}s{% endunless %}. Press to light this topic up in every pane."><span class="mark mark--{{ topic.shape }}" data-topic="{{ topic.id }}" aria-hidden="true"></span>{{ topic.label | escape }} <span class="legend__count">{{ n_all }}</span></button></li>
-      {%- endif -%}
-      {%- endfor %}
+<div class="stage">
+  <nav class="doors-wrap" aria-label="Sections">
+    <ul class="doors" role="list">
+      <li><a class="door" href="#talks" data-section="talks" style="--hue:var(--talks)">
+        <span class="door-name">Talks</span>
+        <span class="door-line">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}</span>
+        {%- if c_brands != "" %}<span class="door-sub">{{ c_brands | escape }}</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat talks</span>
+      </a></li>
+      <li><a class="door" href="#writing" data-section="writing" style="--hue:var(--writing)">
+        <span class="door-name">Writing</span>
+        <span class="door-line">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if c_posts_first %} since {{ c_posts_first.date | date: "%B %Y" }}{% endif %}</span>
+        {%- if c_posts_latest %}<span class="door-sub">Latest {{ c_posts_latest.date | date: "%b %-d" }}</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat writing</span>
+      </a></li>
+      <li><a class="door" href="#cv" data-section="cv" style="--hue:var(--cv)">
+        <span class="door-name">CV</span>
+        <span class="door-line">{% if start_year > 0 %}{{ years_pg }} years around Postgres{% else %}Roles and education{% endif %}</span>
+        {%- if c_cv_roles_count > 0 %}<span class="door-sub">{{ roles_word }} role{% unless c_cv_roles_count == 1 %}s{% endunless %}, PDF ready</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat cv</span>
+      </a></li>
+      <li><a class="door" href="#now" data-section="now" style="--hue:var(--now)">
+        <span class="door-name">Now</span>
+        <span class="door-line">{% if reading != "" %}Reading {{ reading_author | escape }}{% elsif c_now.shipping and c_now.shipping != "" %}Shipping {{ c_now.shipping | escape }}{% else %}What I am up to{% endif %}</span>
+        {%- if c_now.updated %}<span class="door-sub">Updated {{ c_now.updated | date: "%b %-d" }}</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat now</span>
+      </a></li>
     </ul>
-    {%- comment -%} PP7 / adversarial-review-4 finding 1: the topic-filter
-    result pill lives in the legend row, not inside .console. topics.js
-    toggles its hidden attribute and fills the text; it never sets
-    body[data-topic-filter] itself, so it works the same way at every
-    width. It used to be the console grid's first child, so unhiding it
-    on a topic press took a grid cell with no placement of its own and
-    shifted every pane after it (now/talks/writing down a cell, cv into
-    an implicit row past the explicitly placed terminal and links rows),
-    and the same unhide disturbed the zoomed grid templates too, which
-    have no spare cell for it either. The legend row sits above .console
-    entirely, so showing or hiding the pill here can never move a pane's
-    top coordinate or touch a zoomed layout. Desktop shows it beside the
-    existing T2 dim; the phone opt-in console additionally swaps that dim
-    for a hide (features.css, scoped to html.console-forced), so the pill
-    is what tells a visitor on a touch screen that a tap did something.
-    {%- endcomment -%}
-    <div class="filterpill" data-filterpill hidden>
-      <span data-filterpill-text></span>
-      <button class="filterpill__clear" type="button" data-filterpill-clear>clear</button>
-    </div>
-    <p class="legendbar__hint" data-legend-hint>press a topic to light it up across every pane. esc clears.</p>
-    <p class="sr-only" data-topic-live role="status" aria-live="polite"></p>
-  </div>
-
-  {%- comment -%} PP1: one shared main landmark for both experiences, so a
-  phone without ?console=1 and a desktop visitor each see exactly one
-  <main>, never two (the other is display:none, so it never reaches the
-  accessibility tree, but two elements sharing id="main" would still be
-  invalid HTML, which is why the id and tabindex moved up here rather than
-  staying on the console div below). {%- endcomment %}
-  <main id="main" tabindex="-1">
-
-    {%- comment -%} PM1-PM6 (2026-09-04, "minimal phone page, second pass":
-    "looks worse now, we need a redesign for mobile or at least
-    minimalistic principles, too much text"). Binding over PP3 and PP5.
-    Below 768px this section renders and the console beneath it is
-    display:none; at 768px and up it is display:none and the console
-    renders, as does a phone carrying ?console=1 (the console-forced
-    class set by head.html before paint). One card: name, positioning,
-    a two-line now block, three door cards to real pages (PM2), a
-    four-link row, and a footer link to the full console. No lists, no
-    dates column, no handles, no reading line, no topbar nav (features.scss
-    section 15 hides the topbar's tagline and nav here). No chart, no
-    legend, no slider, no terminal, no status bar, no boot log, and no
-    script beyond the one at the end of this file, which now only maps
-    #talks and #cv (PM2 moved those from in-page sections to real pages,
-    so it navigates instead of scrolling). Every number below is Liquid,
-    not hand-typed (PM5). {%- endcomment %}
-    {%- assign pm_next_talk = upcoming | first -%}
-    {%- if pm_next_talk %}
-    {%- assign pm_next_venue = pm_next_talk.venue | split: "," | first -%}
-    {%- assign pm_next_date = pm_next_talk.date | date: "%b %-d" -%}
-    {%- endif -%}
-    {%- if latest %}{%- assign pm_latest_date = latest.date | date: "%b %-d" -%}{%- endif -%}
-    {%- comment -%} Years around Postgres: site.time is the build clock, so
-    this never needs a hand edit; the start year is read off career_start
-    above (itself derived from data/cv.md's "2013-June 2026"), not a second
-    literal 2013. {%- endcomment -%}
-    {%- assign pm_year_now = site.time | date: "%Y" | plus: 0 -%}
-    {%- assign pm_start_year = career_start | slice: 0, 4 | plus: 0 -%}
-    {%- assign pm_years = pm_year_now | minus: pm_start_year -%}
-    <div class="phone-page" id="phone-page">
-
-      <h1 class="pm-name">{{ site.author | escape }}</h1>
-      <p class="pm-role">Staff platform engineer</p>
-      <p class="pm-desc">Postgres &middot; data platforms &middot; AI-native systems</p>
-
-      <div class="pm-now">
-        <p class="pm-now__line">Staff Data Engineer at Lore</p>
-        {%- if pm_next_talk %}
-        {%- capture pm_speaking_text %}Speaking at {{ pm_next_venue | escape }}, {{ pm_next_date }}{% endcapture %}
-        <p class="pm-now__line">{% include safe-link.html url=pm_next_talk.event_url text=pm_speaking_text target="_blank" rel="noopener" %}</p>
-        {%- endif %}
-      </div>
-
-      <div class="pm-doors">
-        <a class="pm-door" href="/talks/">
-          <span class="pm-door__title">Talks</span>
-          <span class="pm-door__meta">{{ sourced.size }} talk{% unless sourced.size == 1 %}s{% endunless %}{% if pm_next_date %} &middot; next {{ pm_next_date }}{% endif %}</span>
-        </a>
-        <a class="pm-door" href="/blog/">
-          <span class="pm-door__title">Writing</span>
-          <span class="pm-door__meta">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if pm_latest_date %} &middot; latest {{ pm_latest_date }}{% endif %}</span>
-        </a>
-        <a class="pm-door" href="/cv/">
-          <span class="pm-door__title">CV</span>
-          <span class="pm-door__meta">{{ pm_years }} years around Postgres</span>
-        </a>
-      </div>
-
-      <ul class="pm-links">
-        <li><a href="https://github.com/payals" target="_blank" rel="noopener">github</a></li>
-        <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener">linkedin</a></li>
-        <li><a href="mailto:{{ site.email }}">email</a></li>
-        <li><a href="/feed.xml">rss</a></li>
-      </ul>
-
-      <p class="pm-foot"><a href="/?console=1">open the full console</a></p>
-
-    </div>
-
-    <div class="console"
-        data-career-start="{{ career_start }}"
-        data-now-updated="{{ now.updated | escape }}"
-        data-talks-sourced="{{ sourced.size }}"
-        data-talks-leads="{{ leads.size }}"
-        data-posts="{{ site.posts.size }}">
-
-    {%- comment -%} Zoom tab strip (Z1): zoom.js fills it with one tab per collapsed pane
-    while a pane is zoomed; hidden at rest. Worker A. {%- endcomment %}
-    <nav class="zoomtabs" data-zoomtabs aria-label="Collapsed panes" hidden></nav>
-
-    <section class="pane" id="now" tabindex="-1" aria-labelledby="now-title" data-kind="now">
-      <h2 class="pane__title" id="now-title"><span class="pane__key">0</span>now{% if now.updated %}<span class="pane__meta" data-pane-meta>updated {{ now.updated | escape }}</span>{% endif %}</h2>
-      <div class="pane__body" data-pane-body>
-        {%- comment -%} N1: the career uptime line. The years and months are filled in
-        by chart-cv.js at load, computed once from data-career-start; with JavaScript
-        off the sentence still reads. No ticker. Worker CV. {%- endcomment %}
-        <p class="uptime" data-uptime-line><span class="mark mark--circle led led--ok" aria-hidden="true"></span><span class="uptime__text">career uptime <strong data-uptime hidden></strong> since {{ career_start | slice: 0, 4 }}, all of it around Postgres</span></p>
-        {%- comment -%} N2: every fact carries an LED in its topic colour and shape.
-        The topic of the speaking row follows the upcoming talk, the topic of the
-        latest post row follows that post, and the fixed facts come from the `facts`
-        block of data/topics.json. {%- endcomment -%}
-        {%- assign role_topic = topic_facts.role.topic | default: "other" -%}
-        {%- assign role_def = topicdefs | where: "id", role_topic | first -%}
-        <dl class="facts" data-facts>
-          <dt><span class="mark mark--{{ role_def.shape }} led" data-topic="{{ role_topic }}" aria-hidden="true"></span>role</dt>
-          <dd data-fact="role" data-topic="{{ role_topic }}" data-cmd="cat now/role">Staff Data Engineer at Lore, since June 2026</dd>
-          {%- for talk in upcoming limit:1 %}
-          {%- assign talk_topic = topic_talks[talk.id].topic | default: "other" -%}
-          {%- assign talk_def = topicdefs | where: "id", talk_topic | first -%}
-          {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-          <dt><span class="mark mark--{{ talk_def.shape }} led" data-topic="{{ talk_topic }}" aria-hidden="true"></span>speaking</dt>
-          <dd data-fact="speaking" data-topic="{{ talk_topic }}" data-cmd="cat talks/{{ talk.id }}">{% include safe-link.html url=talk.event_url text=talk_title_safe target="_blank" rel="noopener" %}, {{ talk.venue | escape }}, <span data-year="{{ talk.date | slice: 0, 4 }}">{{ talk.date }}</span></dd>
-          {%- endfor %}
-          {%- if latest %}
-          {%- assign latest_slug = latest.url | split: '/' | last -%}
-          {%- assign latest_topic = topic_posts[latest_slug].topic | default: "other" -%}
-          {%- assign latest_def = topicdefs | where: "id", latest_topic | first -%}
-          <dt><span class="mark mark--{{ latest_def.shape }} led" data-topic="{{ latest_topic }}" aria-hidden="true"></span>latest post</dt>
-          <dd data-fact="latest-post" data-topic="{{ latest_topic }}" data-cmd="cat writing/{{ latest_slug }}"><a href="{{ latest.url | escape }}">{{ latest.title | escape }}</a>, <span data-year="{{ latest.date | date: '%Y' }}">{{ latest.date | date: "%Y-%m-%d" }}</span></dd>
-          {%- endif %}
-          {%- if now.shipping %}
-          {%- assign shipping_topic = topic_facts.shipping.topic | default: "other" -%}
-          {%- assign shipping_def = topicdefs | where: "id", shipping_topic | first -%}
-          <dt><span class="mark mark--{{ shipping_def.shape }} led" data-topic="{{ shipping_topic }}" aria-hidden="true"></span>shipping</dt>
-          <dd data-fact="shipping" data-topic="{{ shipping_topic }}" data-cmd="cat now/shipping">{{ now.shipping | escape }}</dd>
-          {%- endif %}
-          {%- if now.reading and now.reading != "" %}
-          {%- assign reading_topic = topic_facts.reading.topic | default: "other" -%}
-          {%- assign reading_def = topicdefs | where: "id", reading_topic | first -%}
-          <dt><span class="mark mark--{{ reading_def.shape }} led" data-topic="{{ reading_topic }}" aria-hidden="true"></span>reading</dt>
-          {%- assign reading_url = now.reading_url | default: "" -%}
-          {%- assign reading_url_head = reading_url | slice: 0, 36 -%}
-          <dd data-fact="reading" data-topic="{{ reading_topic }}" data-cmd="cat now/reading">{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}" rel="noopener">{{ now.reading | escape }}</a>{% else %}{{ now.reading | escape }}{% endif %} <a href="/reading/">past reads</a></dd>
-          {%- endif %}
-          {%- if now.state %}
-          {%- assign location_topic = topic_facts.location.topic | default: "other" -%}
-          {%- assign location_def = topicdefs | where: "id", location_topic | first -%}
-          <dt><span class="mark mark--{{ location_def.shape }} led" data-topic="{{ location_topic }}" aria-hidden="true"></span>location</dt>
-          <dd data-fact="location" data-topic="{{ location_topic }}" data-cmd="cat now/location">{{ now.state | escape }}</dd>
-          {%- endif %}
-        </dl>
-        {%- comment -%} Scrubber (B2) writes the one-line "then" fact here when a past year
-        is selected; hidden at rest. Worker C. {%- endcomment %}
-        <p class="then" data-then hidden></p>
-      </div>
-    </section>
-
-    <section class="pane" id="talks" tabindex="-1" aria-labelledby="talks-title" data-kind="talk">
-      <h2 class="pane__title" id="talks-title"><span class="pane__key">1</span>talks<span class="pane__meta" data-pane-meta>{{ sourced.size }} sourced, {{ leads.size }} leads</span></h2>
-      <div class="pane__body" data-pane-body>
-        {%- comment -%} TL1: the timeline strip. Height is reserved by --chart-h so
-        filling it later moves nothing; the record list below is what the pane is for
-        and keeps its room. chart-talks.js fills the plot. Worker TL. {%- endcomment %}
-        <div class="chart" data-chart="talks">
-          <div class="chart__plot" data-tl></div>
-          <p class="chart__hint" data-tl-hint><span class="chart__hint-lg">hover the strip to scrub a year. hover or focus a mark for its record. hollow marks are archive leads.</span><span class="chart__hint-sm">tap a mark. hollow marks are archive leads.</span></p>
-        </div>
-        {%- if ordered.size == 0 %}
-        <p class="meta">No sourced talks on record yet.</p>
-        {%- else %}
-        <ul class="rows" data-talks>
-          {%- for talk in ordered limit:mobile_visible %}
-          {%- if talk.date %}{% assign talk_year = talk.date | slice: 0, 4 %}{% else %}{% assign talk_year = talk.date_label | slice: -4, 4 %}{% endif %}
-          {%- assign talk_topic = topic_talks[talk.id].topic | default: "other" -%}
-          {%- assign talk_def = topicdefs | where: "id", talk_topic | first -%}
-          {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-          {%- capture talk_progsched_safe %}{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}{% endcapture %}
-          {%- capture talk_archive_safe %}{{ talk.archive_label | default: "archive" | escape }}{% endcapture %}
-          <li class="row{% if talk.status == 'upcoming' %} row--current{% endif %}" data-kind="talk" data-topic="{{ talk_topic }}" data-id="{{ talk.id }}" data-year="{{ talk_year }}" data-status="{{ talk.status }}" data-cmd="cat talks/{{ talk.id }}">
-            {%- if talk.date %}
-            <time class="row__date" datetime="{{ talk.date }}" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date }}</time>
-            {%- else %}
-            <span class="row__date" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date_label | escape }}</span>
-            {%- endif %}
-            {% include safe-link.html url=talk.event_url text=talk_title_safe class="row__title" target="_blank" rel="noopener" %}
-            <span class="row__aside">{{ talk.venue | escape }}
-              {%- if talk.status == 'upcoming' %} <span class="badge badge--ok">upcoming</span>{% endif %}
-              {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
-              &middot; {% include safe-link.html url=talk.event_url text=talk_progsched_safe target="_blank" rel="noopener" %}
-              {%- if talk.archive_url %} &middot; {% include safe-link.html url=talk.archive_url text=talk_archive_safe target="_blank" rel="noopener" %}{% endif %}
-              {%- if talk.slides_url %} &middot; {% include safe-link.html url=talk.slides_url text="slides" target="_blank" rel="noopener" %}{% endif %}
-            </span>
-            {%- if talk.evidence_level == 'official_program_listing' and talk.note %}
-            <p class="row__note">{{ talk.note | escape }}</p>
-            {%- endif %}
-          </li>
-          {%- endfor %}
-        </ul>
-        {%- comment -%} MB2: on a phone the pane shows three rows and this native
-        <details> holds the rest. It is inert at every other width and with JavaScript
-        off (features/mobile.css section 1), and it is rendered closed, so nothing
-        collapses after load. mobile.js opens it when the topic filter, the year
-        scrubber or a chart hit lands inside. Worker MB. {%- endcomment %}
-        <details class="disclose" data-mobile-more="talks">
-          <summary class="disclose__summary">show {{ mobile_more_talks }} more</summary>
-          <div class="disclose__body">
-        {%- if visible_talks > mobile_visible %}
-        <ul class="rows" data-talks>
-          {%- for talk in ordered offset:mobile_visible limit:more_visible_talks %}
-          {%- if talk.date %}{% assign talk_year = talk.date | slice: 0, 4 %}{% else %}{% assign talk_year = talk.date_label | slice: -4, 4 %}{% endif %}
-          {%- assign talk_topic = topic_talks[talk.id].topic | default: "other" -%}
-          {%- assign talk_def = topicdefs | where: "id", talk_topic | first -%}
-          {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-          {%- capture talk_progsched_safe %}{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}{% endcapture %}
-          {%- capture talk_archive_safe %}{{ talk.archive_label | default: "archive" | escape }}{% endcapture %}
-          <li class="row" data-kind="talk" data-topic="{{ talk_topic }}" data-id="{{ talk.id }}" data-year="{{ talk_year }}" data-status="{{ talk.status }}" data-cmd="cat talks/{{ talk.id }}">
-            {%- if talk.date %}
-            <time class="row__date" datetime="{{ talk.date }}" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date }}</time>
-            {%- else %}
-            <span class="row__date" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date_label | escape }}</span>
-            {%- endif %}
-            {% include safe-link.html url=talk.event_url text=talk_title_safe class="row__title" target="_blank" rel="noopener" %}
-            <span class="row__aside">{{ talk.venue | escape }}
-              {%- if talk.status == 'upcoming' %} <span class="badge badge--ok">upcoming</span>{% endif %}
-              {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
-              &middot; {% include safe-link.html url=talk.event_url text=talk_progsched_safe target="_blank" rel="noopener" %}
-              {%- if talk.archive_url %} &middot; {% include safe-link.html url=talk.archive_url text=talk_archive_safe target="_blank" rel="noopener" %}{% endif %}
-              {%- if talk.slides_url %} &middot; {% include safe-link.html url=talk.slides_url text="slides" target="_blank" rel="noopener" %}{% endif %}
-            </span>
-            {%- if talk.evidence_level == 'official_program_listing' and talk.note %}
-            <p class="row__note">{{ talk.note | escape }}</p>
-            {%- endif %}
-          </li>
-          {%- endfor %}
-        </ul>
-        {%- endif %}
-        {%- if more_talks > 0 or leads.size > 0 %}
-        <details class="more" data-more>
-          <summary class="btn more__summary" data-open-label="show fewer" data-closed-label="show {{ more_talks }} more">show {{ more_talks }} more</summary>
-          <div class="more__body">
-            {%- if more_talks > 0 %}
-            <ul class="rows" data-talks>
-              {%- for talk in ordered offset:visible_talks %}
-              {%- if talk.date %}{% assign talk_year = talk.date | slice: 0, 4 %}{% else %}{% assign talk_year = talk.date_label | slice: -4, 4 %}{% endif %}
-              {%- assign talk_topic = topic_talks[talk.id].topic | default: "other" -%}
-              {%- assign talk_def = topicdefs | where: "id", talk_topic | first -%}
-              {%- capture talk_title_safe %}{{ talk.title | escape }}{% endcapture %}
-              {%- capture talk_progsched_safe %}{% if talk.evidence_level == 'official_program_listing' %}program{% else %}schedule{% endif %}{% endcapture %}
-              {%- capture talk_archive_safe %}{{ talk.archive_label | default: "archive" | escape }}{% endcapture %}
-              <li class="row" tabindex="-1" data-kind="talk" data-topic="{{ talk_topic }}" data-id="{{ talk.id }}" data-year="{{ talk_year }}" data-status="{{ talk.status }}" data-cmd="cat talks/{{ talk.id }}">
-                {%- if talk.date %}
-                <time class="row__date" datetime="{{ talk.date }}" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date }}</time>
-                {%- else %}
-                <span class="row__date" data-year="{{ talk_year }}"><span class="mark mark--{{ talk_def.shape }} row__mark" data-topic="{{ talk_topic }}" aria-hidden="true"></span>{{ talk.date_label | escape }}</span>
-                {%- endif %}
-                {% include safe-link.html url=talk.event_url text=talk_title_safe class="row__title" target="_blank" rel="noopener" %}
-                <span class="row__aside">{{ talk.venue | escape }}
-                  {%- if talk.evidence_level == 'official_program_listing' %} <span class="badge">program listing</span>{% endif %}
-                  &middot; {% include safe-link.html url=talk.event_url text=talk_progsched_safe target="_blank" rel="noopener" %}
-                  {%- if talk.archive_url %} &middot; {% include safe-link.html url=talk.archive_url text=talk_archive_safe target="_blank" rel="noopener" %}{% endif %}
-                  {%- if talk.slides_url %} &middot; {% include safe-link.html url=talk.slides_url text="slides" target="_blank" rel="noopener" %}{% endif %}
-                </span>
-                {%- if talk.evidence_level == 'official_program_listing' and talk.note %}
-                <p class="row__note">{{ talk.note | escape }}</p>
-                {%- endif %}
-              </li>
-              {%- endfor %}
-            </ul>
-            {%- endif %}
-            {%- if leads.size > 0 %}
-            <h3 class="pane__section" id="talks-leads-title">archive leads</h3>
-            <p class="meta">Remembered appearances still being reconstructed. No title or date is claimed without a recovered record.</p>
-            <ul class="rows" data-leads aria-labelledby="talks-leads-title">
-              {%- for lead in leads %}
-              {%- assign era_year = lead.era | slice: -4, 4 %}
-              {%- assign lead_topic = topic_talks[lead.id].topic | default: "other" -%}
-              {%- assign lead_def = topicdefs | where: "id", lead_topic | first -%}
-              <li class="row" data-kind="talk" data-topic="{{ lead_topic }}" data-id="{{ lead.id }}" data-status="lead"{% if era_year contains "20" %} data-year="{{ era_year }}"{% endif %} data-cmd="cat talks/{{ lead.id }}">
-                <span class="row__date"{% if era_year contains "20" %} data-year="{{ era_year }}"{% endif %}><span class="mark mark--{{ lead_def.shape }} mark--ring row__mark" data-topic="{{ lead_topic }}" aria-hidden="true"></span>{{ lead.era | escape }}</span>
-                <span class="row__title">{{ lead.label | escape }}</span>
-                <p class="row__note">{{ lead.detail | escape }}</p>
-              </li>
-              {%- endfor %}
-            </ul>
-            {%- endif %}
-            <p class="meta" data-talks-caveat>Schedule records establish scheduling, not delivery. Source: <a href="/data/talks.json">talks.json</a>.</p>
-          </div>
-        </details>
-        {%- endif %}
-          </div>
-        </details>
-        {%- endif %}
-      </div>
-    </section>
-
-    <section class="pane" id="writing" tabindex="-1" aria-labelledby="writing-title" data-kind="post">
-      <h2 class="pane__title" id="writing-title"><span class="pane__key">2</span>writing<span class="pane__meta" data-pane-meta>{{ site.posts.size }} posts</span></h2>
-      <div class="pane__body" data-pane-body>
-        {%- comment -%} W1: the day calendar. Height is reserved by --chart-h; the post
-        list below keeps its room. chart-writing.js fills the plot. Worker W. {%- endcomment %}
-        <div class="chart" data-chart="writing">
-          <div class="chart__plot" data-cal></div>
-          <p class="chart__hint" data-cal-hint><span class="chart__hint-lg">one cell a day, coloured by topic and shaded by reading length. hover or focus a cell for the post.</span><span class="chart__hint-sm">one cell a day. tap a cell for the post.</span></p>
-        </div>
-        {%- comment -%} All posts are in the DOM. Rows past the first five carry data-rest and
-        are hidden at rest; zoom.js (Z4) reveals them while the writing pane is zoomed.
-        Rows four and five sit inside the phone disclosure (MB2). {%- endcomment %}
-        <ul class="rows" data-posts>
-          {%- for post in site.posts limit:mobile_visible %}
-          {%- assign words = post.content | strip_html | number_of_words %}
-          {%- assign minutes = words | plus: 199 | divided_by: 200 %}
-          {%- assign slug = post.url | split: '/' | last %}
-          {%- assign post_topic = topic_posts[slug].topic | default: "other" -%}
-          {%- assign post_def = topicdefs | where: "id", post_topic | first -%}
-          <li class="row" data-kind="post" data-topic="{{ post_topic }}" data-slug="{{ slug }}" data-year="{{ post.date | date: '%Y' }}" data-cmd="cat writing/{{ slug }}">
-            <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}" data-year="{{ post.date | date: '%Y' }}"><span class="mark mark--{{ post_def.shape }} row__mark" data-topic="{{ post_topic }}" aria-hidden="true"></span>{{ post.date | date: "%Y-%m-%d" }}</time>
-            <a class="row__title" href="{{ post.url | escape }}" data-post="{{ slug }}">{{ post.title | escape }}</a>
-            <span class="row__aside" data-minutes="{{ minutes }}">{{ minutes }} min</span>
-          </li>
-          {%- endfor %}
-        </ul>
-        {%- comment -%} MB2: the phone disclosure. Inert at every other width and with
-        JavaScript off; rendered closed. Worker MB. {%- endcomment %}
-        <details class="disclose" data-mobile-more="writing">
-          <summary class="disclose__summary">show {{ mobile_more_posts }} more</summary>
-          <div class="disclose__body">
-            <ul class="rows" data-posts>
-              {%- for post in site.posts offset:mobile_visible limit:mobile_initial_posts %}
-              {%- assign words = post.content | strip_html | number_of_words %}
-              {%- assign minutes = words | plus: 199 | divided_by: 200 %}
-              {%- assign slug = post.url | split: '/' | last %}
-              {%- assign post_topic = topic_posts[slug].topic | default: "other" -%}
-              {%- assign post_def = topicdefs | where: "id", post_topic | first -%}
-              <li class="row" data-kind="post" data-topic="{{ post_topic }}" data-slug="{{ slug }}" data-year="{{ post.date | date: '%Y' }}" data-cmd="cat writing/{{ slug }}">
-                <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}" data-year="{{ post.date | date: '%Y' }}"><span class="mark mark--{{ post_def.shape }} row__mark" data-topic="{{ post_topic }}" aria-hidden="true"></span>{{ post.date | date: "%Y-%m-%d" }}</time>
-                <a class="row__title" href="{{ post.url | escape }}" data-post="{{ slug }}">{{ post.title | escape }}</a>
-                <span class="row__aside" data-minutes="{{ minutes }}">{{ minutes }} min</span>
-              </li>
-              {%- endfor %}
-            </ul>
-        {%- comment -%} The tail: in the DOM for the palette, the reader and the zoomed
-        pane, hidden at rest exactly as in phase 2. {%- endcomment %}
-        <ul class="rows" data-posts>
-          {%- for post in site.posts offset:visible_posts %}
-          {%- assign words = post.content | strip_html | number_of_words %}
-          {%- assign minutes = words | plus: 199 | divided_by: 200 %}
-          {%- assign slug = post.url | split: '/' | last %}
-          {%- assign post_topic = topic_posts[slug].topic | default: "other" -%}
-          {%- assign post_def = topicdefs | where: "id", post_topic | first -%}
-          <li class="row" data-kind="post" data-topic="{{ post_topic }}" data-slug="{{ slug }}" data-year="{{ post.date | date: '%Y' }}" data-cmd="cat writing/{{ slug }}" data-rest hidden>
-            <time class="row__date" datetime="{{ post.date | date_to_xmlschema }}" data-year="{{ post.date | date: '%Y' }}"><span class="mark mark--{{ post_def.shape }} row__mark" data-topic="{{ post_topic }}" aria-hidden="true"></span>{{ post.date | date: "%Y-%m-%d" }}</time>
-            <a class="row__title" href="{{ post.url | escape }}" data-post="{{ slug }}">{{ post.title | escape }}</a>
-            <span class="row__aside" data-minutes="{{ minutes }}">{{ minutes }} min</span>
-          </li>
-          {%- endfor %}
-        </ul>
-        <p class="actions"><a class="btn" href="/blog/">all posts</a> <a href="/feed.xml">rss</a></p>
-          </div>
-        </details>
-        {%- comment -%} Reader (R1): reader.js renders a post here inside the zoomed writing
-        pane. Hidden at rest. Worker A. {%- endcomment %}
-        <div class="reader" data-reader role="region" aria-label="Post reader" tabindex="-1" hidden></div>
-      </div>
-    </section>
-
-    <section class="pane" id="cv" tabindex="-1" aria-labelledby="cv-title" data-kind="cv">
-      <h2 class="pane__title" id="cv-title"><span class="pane__key">3</span>cv</h2>
-      <div class="pane__body" data-pane-body>
-        {%- comment -%} CV1: three lanes on one axis, then the computed summary line.
-        Height is reserved by --chart-h; the role rows below keep their room.
-        chart-cv.js fills the lanes and the summary. Worker CV. {%- endcomment %}
-        <div class="chart" data-chart="cv">
-          <div class="chart__plot" data-career>
-            <div class="career__lane"><span class="career__label">roles</span><div class="career__bar" data-career-roles role="group" aria-label="Years by role, {{ career_start | slice: 0, 4 }} to now"></div></div>
-            <div class="career__lane"><span class="career__label">talks</span><div class="career__ticks" data-career-talks aria-hidden="true"></div></div>
-            <div class="career__lane"><span class="career__label">posts</span><div class="career__ticks" data-career-posts aria-hidden="true"></div></div>
-            <div class="career__axis" data-career-axis aria-hidden="true"></div>
-            <span class="career__scrub" data-career-scrub aria-hidden="true"></span>
-          </div>
-          <p class="chart__sum" data-career-sum></p>
-        </div>
-        <p data-cv-headline data-cmd="cat cv/headline">Staff platform engineer working across data systems, DevOps, and AI-native systems.</p>
-        {%- assign role_lore_topic = topic_facts.role.topic | default: "other" -%}
-        {%- assign role_lore_def = topicdefs | where: "id", role_lore_topic | first -%}
-        <ul class="rows" data-cv-roles>
-          <li class="row row--current" data-kind="cv" data-topic="{{ role_lore_topic }}" data-id="role-lore" data-year="2026" data-from="2026-06" data-cmd="cat cv/role-lore">
-            <span class="row__date" data-year="2026"><span class="mark mark--{{ role_lore_def.shape }} row__mark" data-topic="{{ role_lore_topic }}" aria-hidden="true"></span>2026-06 to now</span>
-            <span class="row__title">Staff Data Engineer, Lore</span>
-            <p class="row__note">Managed PostgreSQL platforms, data access governance, and operational automation on GCP and GKE.</p>
-          </li>
-          <li class="row" data-kind="cv" data-topic="reliability" data-id="role-dbre" data-year="2013" data-from="{{ career_start | slice: 0, 4 }}" data-to="2026-06" data-cmd="cat cv/role-dbre">
-            <span class="row__date" data-year="2013"><span class="mark mark--square row__mark" data-topic="reliability" aria-hidden="true"></span>{{ career_start | slice: 0, 4 }} to 2026-06</span>
-            <span class="row__title">Senior Database Reliability Engineer, OmniTI to Credativ to Instaclustr (NetApp)</span>
-            <p class="row__note">PostgreSQL reliability, data integrity, capacity, performance, audit, access control, and migration.</p>
-          </li>
-        </ul>
-        {%- comment -%} MB2: the phone disclosure over the cv tail. Inert at every other
-        width and with JavaScript off; rendered closed. Worker MB. {%- endcomment %}
-        <details class="disclose" data-mobile-more="cv">
-          <summary class="disclose__summary">show 3 more</summary>
-          <div class="disclose__body">
-        <p class="meta" data-cmd="cat cv/education">M.S. Computer Science, UMBC. B.E. Computer Science, Panjab University.</p>
-        <p class="actions"><a class="btn" href="/data/cv.pdf" download="payal-singh-cv.pdf">download pdf</a></p>
-        {%- comment -%} Zoomed cv controls (Z2): print only the cv, copy as text. Hidden at
-        rest; zoom.js reveals and wires them. Worker A. {%- endcomment %}
-        <p class="actions" data-cv-zoom-actions hidden><button class="btn" type="button" data-cv-print>print cv</button> <button class="btn" type="button" data-cv-copy>copy as text</button></p>
-        <details class="more" data-more>
-          <summary class="btn more__summary" data-open-label="hide full cv" data-closed-label="full cv">full cv</summary>
-          <div class="more__body prose prose--mono" tabindex="-1" data-cv-full>
-            {%- comment -%} cv.md opens with an h1 and uses h2/h3 below it. Inside the cv pane
-            the h2 pane title already heads this block, so the h1 is dropped and the rest
-            moves down one level. data/cv.md itself is unchanged. {%- endcomment %}
-            {{ cv_markdown | markdownify | split: '</h1>' | last | replace: '<h3', '<h4' | replace: '</h3>', '</h4>' | replace: '<h2', '<h3' | replace: '</h2>', '</h3>' }}
-          </div>
-        </details>
-          </div>
-        </details>
-      </div>
-    </section>
-
-    {%- comment -%} LK1: the links pane became one line inside the console frame,
-    directly above the status bar. No pane border and no tall cell, a top rule only.
-    The id did not change, so key 4, #links, the status bar item and the palette entry
-    all still focus it. Architect; finished. {%- endcomment %}
-    <div class="linksrow" id="links" tabindex="-1" aria-labelledby="links-label" data-kind="link">
-      <span class="linksrow__label" id="links-label"><kbd class="linksrow__key">4</kbd>links</span>
-      <ul class="links" data-links>
-        <li><a href="https://github.com/payals" target="_blank" rel="noopener" data-link="github" data-kind="link">github<span class="links__host">/payals</span></a></li>
-        <li><a href="https://codeberg.org/sillygoose" target="_blank" rel="noopener" data-link="codeberg" data-kind="link">codeberg<span class="links__host">/sillygoose</span></a></li>
-        <li><a href="https://linkedin.com/in/payalsingh" target="_blank" rel="noopener" data-link="linkedin" data-kind="link">linkedin<span class="links__host">/in/payalsingh</span></a></li>
-        <li><a href="https://medium.com/@reliable-by-design" target="_blank" rel="noopener" data-link="medium" data-kind="link">medium<span class="links__host">/@reliable-by-design</span></a></li>
-        <li><a href="https://penningpence.blogspot.com" target="_blank" rel="noopener" data-link="older" data-kind="link">older<span class="links__host">/penningpence</span></a></li>
-        <li><a href="/reading/" data-link="reading" data-kind="link">reading<span class="links__host">/books</span></a></li>
-        <li><a href="mailto:psinghpayal@outlook.com" data-link="email" data-kind="link">email</a></li>
-        <li><a href="/feed.xml" data-link="rss" data-kind="link">rss</a></li>
-      </ul>
-    </div>
-
-    <section class="pane pane--terminal pane--span" id="terminal" tabindex="-1" aria-labelledby="terminal-title" data-kind="cmd">
-      <h2 class="pane__title" id="terminal-title">terminal<span class="pane__meta" data-pane-meta><span class="wide-only">boot log is the career log. type help</span><span class="narrow-only">career log. type help</span></span></h2>
-      <div class="pane__body" data-pane-body>
-        {%- comment -%} MB3: the scrollback sits inside the phone log disclosure. The
-        disclosure is inert at every other width and with JavaScript off, and it takes
-        the scrollback's place in the terminal's flex column (console.css section 9).
-        Worker MB owns the behaviour, worker TS owns what the log prints. {%- endcomment %}
-        <details class="disclose disclose--log" data-mobile-more="terminal">
-          <summary class="disclose__summary">show log</summary>
-          <div class="disclose__body">
-            <div class="scrollback" role="log" aria-live="polite" aria-label="Terminal output" data-scrollback>
-              <noscript><p class="scrollback__line scrollback__line--dim">The terminal needs JavaScript. Everything else on this page works without it.</p></noscript>
-            </div>
-          </div>
-        </details>
-        {%- comment -%} Constellation (signature canvas): lives in the terminal pane's idle area
-        between the scrollback and the prompt, shrinking as output grows. Hidden until
-        constellation.js sizes it. Worker D. {%- endcomment %}
-        <div class="constellation" data-constellation hidden>
-          <canvas class="constellation__canvas" data-constellation-canvas role="img" aria-label="Constellation of posts and talks, connected by shared topic or year. The writing and talks panes list the same items."></canvas>
-          <p class="constellation__tip" data-constellation-tip role="status" aria-live="polite" hidden></p>
-        </div>
-        <div class="prompt" data-prompt>
-          <label class="prompt__ps1" for="terminal-input">payal@payalsingh.me:~$</label>
-          <span class="prompt__field">
-            <span class="prompt__mirror" data-mirror data-placeholder="type help" aria-hidden="true"></span><span class="cursor" data-cursor aria-hidden="true"></span>
-            <input class="prompt__input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="type help" aria-label="Enter a command" data-input>
-          </span>
-        </div>
-        {%- comment -%} Visitor top strip (V1): one row at the bottom of the terminal pane on
-        desktop, a collapsed disclosure below 1024px. Values are filled by topstats.js from
-        events on this page only; nothing is stored or sent. Hidden until JS runs. Worker C. {%- endcomment %}
-        <section class="top" data-top aria-labelledby="top-title" hidden>
-          <h3 class="top__title" id="top-title"><button class="top__toggle" type="button" data-top-toggle aria-expanded="false" aria-controls="top-body">top</button></h3>
-          <div class="top__body" id="top-body" data-top-body>
-            <dl class="top__fields">
-              <dt>viewport</dt><dd data-top-viewport>0x0</dd>
-              <dt>on page</dt><dd data-top-elapsed>0s</dd>
-              <dt>panes viewed</dt><dd data-top-panes>0</dd>
-              <dt>commands</dt><dd data-top-commands>0</dd>
-              <dt>keys</dt><dd data-top-keys>0</dd>
-            </dl>
-            <p class="top__note">This session only. Nothing is stored or sent anywhere.</p>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    </div>
-
-  </main>
-
-  {%- comment -%} Which-key tray: opened by ? or the help item, closed by the next key or
-  Escape. Static content; palette.js toggles it. Worker B. {%- endcomment %}
-  <div class="keytray" data-keytray role="status" hidden>
-    <ul class="keytray__list">
-      <li><kbd class="kbd">/</kbd> search</li>
-      <li><kbd class="kbd">0</kbd> to <kbd class="kbd">4</kbd> jump to a pane, twice to zoom it</li>
-      <li><kbd class="kbd">j</kbd> <kbd class="kbd">k</kbd> next and previous pane</li>
-      <li><kbd class="kbd">z</kbd> or <kbd class="kbd">enter</kbd> zoom the focused pane</li>
-      <li><kbd class="kbd">esc</kbd> or <kbd class="kbd">q</kbd> restore the grid, close, leave the prompt</li>
-      <li><kbd class="kbd">:</kbd> focus the prompt</li>
-      <li><kbd class="kbd">t</kbd> focus the year timeline</li>
-      <li>press a topic chip, or type <kbd class="kbd">filter</kbd>, to light one topic across every pane</li>
-      <li><kbd class="kbd">j</kbd> <kbd class="kbd">k</kbd> <kbd class="kbd">space</kbd> scroll inside the reader</li>
-      <li><kbd class="kbd">ctrl+b</kbd> <kbd class="kbd">z</kbd> zoom alias</li>
-      <li><kbd class="kbd">?</kbd> this tray</li>
-    </ul>
-  </div>
-
-  <nav class="statusbar" aria-label="Panes" data-statusbar>
-    <a class="statusbar__item" href="#now" data-pane="now"><kbd class="statusbar__key">0</kbd>now</a>
-    <a class="statusbar__item" href="#talks" data-pane="talks"><kbd class="statusbar__key">1</kbd>talks</a>
-    <a class="statusbar__item" href="#writing" data-pane="writing"><kbd class="statusbar__key">2</kbd>writing</a>
-    <a class="statusbar__item" href="#cv" data-pane="cv"><kbd class="statusbar__key">3</kbd>cv</a>
-    <a class="statusbar__item" href="#links" data-pane="links"><kbd class="statusbar__key">4</kbd>links</a>
-    {%- comment -%} L5: below 768px the bar wraps to two rows and this empty
-    flex line is the break, so the five pane items are row one and the three
-    tools are row two at every phone width. Inert from 768px up. {%- endcomment %}
-    <span class="statusbar__break" aria-hidden="true"></span>
-    <button class="statusbar__item statusbar__search" type="button" data-open-palette aria-keyshortcuts="/ Meta+K Control+K" aria-label="search" hidden><kbd class="statusbar__key">/</kbd><span class="statusbar__search-label">search</span></button>
-    {%- comment -%} TB3: `t` focuses the year slider. Hidden until scrubber.js
-    unhides it, the way the search button waits for palette.js. Worker TS. {%- endcomment %}
-    <button class="statusbar__item" type="button" data-focus-scrubber aria-keyshortcuts="t" hidden><kbd class="statusbar__key">t</kbd>timeline</button>
-    <a class="statusbar__item" href="#terminal" data-pane="terminal" data-help><kbd class="statusbar__key">?</kbd>help</a>
-    <span class="statusbar__toast" data-toast role="status" aria-live="polite" hidden></span>
-    <span class="statusbar__hint" data-hint>keys work while the prompt is not focused</span>
   </nav>
 
-</div>
-
-{%- comment -%} Palette (P1, P2): a dialog over the console. palette.js fills the listbox,
-traps focus, and returns it to the opener. Hidden at rest. Worker B. {%- endcomment %}
-<div class="palette" data-palette role="dialog" aria-modal="true" aria-labelledby="palette-label" hidden>
-  <div class="palette__box">
-    <div class="palette__head">
-      <span class="palette__glyph" aria-hidden="true">/</span>
-      <label class="sr-only" id="palette-label" for="palette-input">Search everything</label>
-      <input class="palette__input" id="palette-input" type="text" role="combobox" aria-controls="palette-results" aria-autocomplete="list" aria-expanded="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="posts, talks, cv, links, commands" data-palette-input>
-      <span class="palette__count" data-palette-count aria-live="polite"></span>
+  <section class="prompt js-only" aria-label="Command prompt">
+    <form class="prompt-line" id="prompt-form" autocomplete="off">
+      <label class="ps1" for="cmd" aria-hidden="true"><span>payal@payalsingh.me</span>:<span class="p-path" id="ps1-path">~</span>$</label>
+      <span class="cmd-wrap">
+        <input class="cmd" id="cmd" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="go" placeholder="" aria-label="Command. Type help to list commands." aria-describedby="cmd-out">
+        <span class="ghost" id="ghost" aria-hidden="true"><span class="typed"></span><span class="cursor"></span><span class="rest"></span></span>
+      </span>
+    </form>
+    <div class="try">
+      <span class="try-label">Try</span>
+      <a class="chip cmd-chip" href="#talks" data-cmd="talks" style="--hue:var(--talks)"><span class="dot" aria-hidden="true"></span>talks</a>
+      <a class="chip cmd-chip" href="#writing" data-cmd="writing" style="--hue:var(--writing)"><span class="dot" aria-hidden="true"></span>writing</a>
+      <a class="chip cmd-chip" href="#cv" data-cmd="cv" style="--hue:var(--cv)"><span class="dot" aria-hidden="true"></span>cv</a>
+      <a class="chip cmd-chip" href="#now" data-cmd="now" style="--hue:var(--now)"><span class="dot" aria-hidden="true"></span>now</a>
+      <button class="chip cmd-chip" type="button" data-cmd="help">help</button>
     </div>
-    <ul class="palette__results" id="palette-results" role="listbox" aria-label="Results" data-palette-results></ul>
-    <p class="palette__foot"><kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> move <kbd class="kbd">enter</kbd> open or run <kbd class="kbd">esc</kbd> close</p>
-  </div>
+    <output class="cmd-out" id="cmd-out" aria-live="polite"></output>
+  </section>
+
+  {%- comment -%} Below 768px the hero's contact chips hide and these three
+  phone-only items take their place after the doors, so the phone reads name,
+  role, now, next talk, doors, links in DOM order. display:none keeps exactly
+  one copy in the accessibility tree at any width. {%- endcomment %}
+  <ul class="elsewhere" id="links" aria-label="Links" role="list">
+    <li class="phone-only"><a href="mailto:{{ site.email | escape }}">Email</a></li>
+    {%- for l in site.profile_links.contact %}
+    <li class="phone-only"><a href="{{ l.url | escape }}">{{ l.label | escape }}</a></li>
+    {%- endfor %}
+    {%- for l in site.profile_links.elsewhere %}
+    <li><a href="{{ l.url | escape }}">{{ l.label | escape }}</a></li>
+    {%- endfor %}
+  </ul>
 </div>
 
-{%- comment -%} Inline data so no module fetches at boot. Same records as data/*.json and the
-post front matter; the panes above are the rendered form of the same facts. {%- endcomment %}
-{%- comment -%} The topic key, flattened for the chart modules: id to topic, with
-the topic definitions in their fixed order. Same records as data/topics.json.
-{%- endcomment -%}
-<script type="application/json" id="topics-data">{"topics":{{ topicdefs | jsonify | replace: "</", "<\/" }},"talks":{ {%- for pair in topic_talks -%}{{ pair[0] | jsonify }}:{{ pair[1].topic | jsonify }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%} },"posts":{ {%- for pair in topic_posts -%}{{ pair[0] | jsonify }}:{{ pair[1].topic | jsonify }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%} },"facts":{ {%- for pair in topic_facts -%}{{ pair[0] | jsonify }}:{{ pair[1].topic | jsonify }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%} }}</script>
-<script type="application/json" id="timeline-data">{{ site.data.timeline | jsonify | replace: "</", "<\/" }}</script>
-<script type="application/json" id="talks-data">{{ talks | jsonify | replace: "</", "<\/" }}</script>
-<script type="application/json" id="posts-data">[{% for post in site.posts %}{% assign words = post.content | strip_html | number_of_words %}{% assign minutes = words | plus: 199 | divided_by: 200 %}{"slug":{{ post.url | split: '/' | last | jsonify | replace: "</", "<\/" }},"url":{{ post.url | jsonify | replace: "</", "<\/" }},"title":{{ post.title | jsonify | replace: "</", "<\/" }},"subtitle":{{ post.subtitle | default: "" | jsonify | replace: "</", "<\/" }},"date":{{ post.date | date: "%Y-%m-%d" | jsonify | replace: "</", "<\/" }},"tags":{{ post.tags | jsonify | replace: "</", "<\/" }},"series":{{ post.series | default: "" | jsonify | replace: "</", "<\/" }},"part":{{ post.part | default: 0 | jsonify | replace: "</", "<\/" }},"minutes":{{ minutes }}}{% unless forloop.last %},{% endunless %}{% endfor %}]</script>
+<div class="sections">
+  <section class="panel" id="talks" style="--hue:var(--talks)" aria-labelledby="talks-h" data-list="talks">
+    <header class="panel-head">
+      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="talks-h" tabindex="-1">Talks</h2></div>
+      <div class="panel-tools js-only" data-tools></div>
+      <p class="filter-status" aria-live="polite"></p>
+    </header>
+    <div class="panel-body">
+      <div class="plot js-only" hidden></div>
+      {% include command/talk-rows.html %}
+      {% include command/talk-leads.html %}
+      <p class="panel-note">Schedule records establish scheduling, not delivery.</p>
+      <p class="panel-foot"><a class="chip" href="/talks/">Talks page</a><a class="chip" href="/data/talks.json">Talk records (JSON)</a></p>
+    </div>
+  </section>
 
-{%- comment -%} PP2 / adversarial-review-4 finding 2: main.js is no longer
-a plain module script. A phone below 768px without ?console=1 must fetch
-none of the console's dozen-odd modules -- not even main.js itself, and
-not the modulepreload hints in head.html, which that same file now
-injects with JS gated on this identical test. This inline importer is
-the only thing that decides whether main.js is ever requested.
+  <section class="panel" id="writing" style="--hue:var(--writing)" aria-labelledby="writing-h" data-list="writing">
+    <header class="panel-head">
+      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="writing-h" tabindex="-1">Writing</h2></div>
+      <div class="panel-tools js-only" data-tools></div>
+      <p class="filter-status" aria-live="polite"></p>
+    </header>
+    <div class="panel-body">
+      {% include command/post-list.html ids=true %}
+      <p class="panel-foot"><a class="chip" href="/blog/">All posts</a><a class="chip" href="/blog/topics/">Tags</a><a class="chip" href="/feed.xml">RSS</a></p>
+    </div>
+  </section>
 
-Crossing 768px upward while mounted (a rotation, a resize, a reduced
-browser zoom) dynamically imports main.js and calls the initConsole() it
-now exports, guarded by `loaded` so a second matchMedia change cannot
-double-init it -- idempotent init is the chosen strategy for this
-direction. Crossing back down after the console has already booted
-cannot be undone in place the same way: main.js wires roughly a dozen
-modules' worth of document-level keydown, hashchange and click listeners
-with no teardown path, so silencing them would mean threading a
-dispose() through zoom.js, panes.js, palette.js, clicks.js, topstats.js,
-all three chart modules, mobile.js, scrubber.js and constellation.js. A
-single deterministic reload is the documented choice for that direction
-instead: the phone page comes back with zero console listeners attached,
-at the cost of one navigation on that (rare) downward crossing. A phone
-carrying ?console=1 never reaches any of this: forced() short-circuits
-straight to boot() and no matchMedia listener is ever registered, so the
-console it explicitly asked for cannot be reloaded away by a later
-resize. {%- endcomment %}
-<script type="module">
-(function () {
-  function forced() {
-    return document.documentElement.classList.contains('console-forced');
-  }
-  var wideQuery = window.matchMedia ? window.matchMedia('(min-width: 768px)') : null;
-  function wide() {
-    return Boolean(wideQuery && wideQuery.matches);
-  }
-  var loaded = false;
-  function boot() {
-    if (loaded) return;
-    loaded = true;
-    import('/assets/js/main.js').then(function (mod) {
-      if (!mod || typeof mod.initConsole !== 'function') return;
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mod.initConsole, { once: true });
-      } else {
-        mod.initConsole();
-      }
-    });
-  }
-  if (forced() || wide()) {
-    boot();
-    return;
-  }
-  if (!wideQuery) return;
-  function onChange(event) {
-    if (event.matches) {
-      boot();
-    } else if (loaded) {
-      location.reload();
-    }
-  }
-  if (wideQuery.addEventListener) wideQuery.addEventListener('change', onChange);
-  else wideQuery.addListener(onChange);
-})();
-</script>
-{%- comment -%} PP2 (phase-3, updated for PM1): the phone landing's only
-other script. PM1 replaced the five m--prefixed sections a fragment like
-#talks or #cv used to scroll to with two real pages (PM2: /talks/,
-/cv/), so a shared link, a status-bar click carried over from another
-page's navbar (which still points at /#talks and /#cv, navbar.html), or
-a hand-typed hash now has nowhere on this document to land. Only #talks
-and #cv are handled: navbar.html never links this page to /#now,
-/#writing or /#links, so those never need a phone-landing target.
+  <section class="panel" id="cv" style="--hue:var(--cv)" aria-labelledby="cv-h">
+    <header class="panel-head">
+      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="cv-h" tabindex="-1">CV</h2></div>
+    </header>
+    <div class="panel-body">
+      <div class="cv-top"><a class="btn" href="/data/cv.pdf" download="payal-singh-cv.pdf">Download PDF</a><a class="chip" href="/cv/">Full CV page</a></div>
+      {%- if c_cv_roles_count > 0 %}
+      {% include command/cv-body.html h="h3" prefix="home-cv-" talks_href="#talks" %}
+      {%- else %}
+      <div class="cv-fallback">{{ c_cv_body_html }}</div>
+      {%- endif %}
+    </div>
+  </section>
 
-Decision: navigate straight to /talks/ or /cv/ instead of scrolling to
-the matching door card. The door card is a two-line summary, not the
-content the link promised -- a visitor who followed /#talks from a blog
-post wants the talks list, not a card that itself just links to it.
-location.replace so the mid-navigation hash never becomes a dead back-
-button entry. Everywhere else (768px and up, or console=1) this is a
-no-op because forced() is true or isPhone() is false. Nothing here
-imports, fetches, or times anything, and it runs whether or not the
-importer above decided to boot the console.
-
-The leading-segment parser is unchanged from the pre-PM1 version
-(adversarial-review-4 finding 5): the console's hash grammar composes a
-year and a topic onto the leading segment with `&` (#cv&year=2018&topic=
-security), and a post reader nests a slug under a slash (#writing/<slug>).
-Taking only the segment before the first `&`, then only the segment
-before its first `/`, means #cv&year=2018&topic=ai and #talks&topic=
-security still resolve like the bare #cv and #talks they compose with,
-should either ever reach this page. decodeURIComponent can throw on a
-malformed percent-escape from a hand-edited URL; that is caught and
-treated as no segment at all, same as an absent hash, rather than
-aborting the whole handler. {%- endcomment %}
-<script>
-(function () {
-  var MAP = { talks: '/talks/', cv: '/cv/' };
-  function isPhone() {
-    return window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
-  }
-  function forced() {
-    return document.documentElement.classList.contains('console-forced');
-  }
-  function leadingSegment() {
-    var raw = (location.hash || '').replace(/^#/, '').split('&')[0] || '';
-    try {
-      raw = decodeURIComponent(raw);
-    } catch (err) {
-      return '';
-    }
-    return raw.split('/')[0];
-  }
-  function go() {
-    if (!isPhone() || forced()) return;
-    var dest = MAP[leadingSegment()];
-    if (!dest) return;
-    location.replace(dest);
-  }
-  window.addEventListener('hashchange', go);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', go);
-  } else {
-    go();
-  }
-})();
-</script>
-</body>
-</html>
+  <section class="panel" id="now" style="--hue:var(--now)" aria-labelledby="now-h">
+    <header class="panel-head">
+      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="now-h" tabindex="-1">Now</h2></div>
+    </header>
+    <div class="panel-body">
+      <dl class="now-list">
+        {%- if c_now.shipping and c_now.shipping != "" %}
+        <div><dt>Shipping</dt><dd>{{ c_now.shipping | slice: 0 | upcase | escape }}{{ c_now.shipping | slice: 1, 9999 | escape }}</dd></div>
+        {%- endif %}
+        {%- if reading != "" %}
+        <div><dt>Reading</dt><dd>{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}">{{ reading_title | escape }}</a>{% else %}{{ reading_title | escape }}{% endif %}{% if reading_has_by %} by {{ reading_author | escape }}{% endif %}<span class="aside"><a href="/reading/">Everything I'm reading</a></span></dd></div>
+        {%- endif %}
+        {%- if c_posts_latest %}
+        <div><dt>Latest post</dt><dd><a href="{{ c_posts_latest.url | escape }}">{{ c_posts_latest.title | escape }}</a><span class="aside"><time class="mono" datetime="{{ c_posts_latest.date | date: '%Y-%m-%d' }}">{{ c_posts_latest.date | date: "%b %-d, %Y" }}</time></span></dd></div>
+        {%- endif %}
+        {%- if c_now.state and c_now.state != "" %}
+        <div><dt>Based in</dt><dd>{{ c_now.state | escape }}</dd></div>
+        {%- endif %}
+      </dl>
+      {%- if start_year > 0 %}
+      <p class="uptime">Career uptime since {{ start_year }}, all of it around Postgres.</p>
+      {%- endif %}
+    </div>
+  </section>
+</div>
+{% include command/talk-json.html %}

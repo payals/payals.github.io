@@ -1,0 +1,84 @@
+{%- comment -%}
+command/talk-rows.html: the talks list, one row per talk family (L1), each a
+<details> that opens to its venues, dates, caveats and links (L2). Used by the
+home Talks drawer and by /talks/, so both read the same records the same way.
+Families come from data/talk_families.json in first-appearance order over
+data/talks.json (upcoming first, then past, as that file is ordered); a talk in
+no family is a one-venue row. Needs command/data.html first.
+
+The open body adds only what the row does not show: the full date (the row
+shows the year), venues, caveats and links. The topic is the row's shape.
+
+Hover (fine pointer) and keyboard focus slide the row and show its tail (the
+link kinds inside) with no reflow; click, Enter or tap opens it. Works with
+JavaScript off: it is plain <details>. A #talk-<id> link then scrolls to the
+row and marks it (.row:target) without opening it; command.js opens it.
+data-records lists the talks.json record ids in the family, so an old home
+link to /#<record id> still finds its row (command.js, legacy ids).
+{%- endcomment -%}
+<ol class="rows" role="list">
+{%- for fid in c_fam_ids -%}
+{%- assign fam = c_fam_defs | where: "id", fid | first -%}
+{%- if fam -%}
+{%- assign members = c_ordered | where_exp: "m", "fam.talks contains m.id" -%}
+{%- assign ftitle = fam.title -%}
+{%- else -%}
+{%- assign members = c_ordered | where: "id", fid -%}
+{%- assign ftitle = members.first.title -%}
+{%- endif -%}
+{%- assign lead_t = members | first -%}
+{% include command/topic-of.html talk=lead_t.id %}
+{%- assign ymin = 9999 -%}{%- assign ymax = 0 -%}
+{%- assign has_up = false -%}{%- assign has_slides = false -%}{%- assign has_sched = false -%}{%- assign has_prog = false -%}{%- assign has_arch = false -%}
+{%- capture keys -%}
+{%- for m in members -%}
+{%- if m.date -%}{%- assign y = m.date | slice: 0, 4 | plus: 0 -%}{%- else -%}{%- assign y = m.date_label | slice: -4, 4 | plus: 0 -%}{%- endif -%}
+{%- if y < ymin -%}{%- assign ymin = y -%}{%- endif -%}{%- if y > ymax -%}{%- assign ymax = y -%}{%- endif -%}
+{%- if m.status == "upcoming" -%}{%- assign has_up = true -%}{%- endif -%}
+{%- if m.slides_url and m.slides_url != "" -%}{%- assign has_slides = true -%}{%- endif -%}
+{%- if m.evidence_level == "official_program_listing" -%}{%- assign has_prog = true -%}{%- else -%}{%- assign has_sched = true -%}{%- endif -%}
+{%- if m.archive_url and m.archive_url != "" -%}{%- assign has_arch = true -%}{%- endif -%}
+{{ y }} {{ m.venue }} {{ m.title }} {% endfor -%}
+{{ c_topic_label }}
+{%- endcapture -%}
+{%- if ymin == ymax -%}{%- assign years = ymin -%}{%- else -%}{%- capture years -%}{{ ymin }}–{{ ymax }}{%- endcapture -%}{%- endif -%}
+{%- assign tail = "" -%}
+{%- if has_slides -%}{%- assign tail = tail | append: ", slides" -%}{%- endif -%}
+{%- if has_sched -%}{%- assign tail = tail | append: ", schedule" -%}{%- endif -%}
+{%- if has_prog -%}{%- assign tail = tail | append: ", program listing" -%}{%- endif -%}
+{%- if has_arch -%}{%- assign tail = tail | append: ", archive" -%}{%- endif -%}
+{%- assign tail = tail | remove_first: ", " | capitalize -%}
+{%- if members.size > 1 -%}
+{%- capture sub -%}{{ members.size }} venues: {% for m in members %}{{ m.venue | split: "," | first }}{% unless forloop.last %}, {% endunless %}{% endfor %}{%- endcapture -%}
+{%- else -%}
+{%- assign sub = lead_t.venue -%}
+{%- endif %}
+<li data-topic="{{ c_topic }}"><details class="row talk" id="talk-{{ fid | escape }}" data-slug="{{ fid | escape }}" data-records="{{ members | map: "id" | join: " " | escape }}" data-shape="{{ c_shape }}" data-title="{{ ftitle | escape }}" data-sub="{{ sub | escape }}" data-keys="{{ keys | normalize_whitespace | escape }}"><summary><span class="row-lead mono">{{ years }}</span><span class="row-main"><span class="row-title"><svg class="shape" aria-hidden="true" focusable="false"><use href="#s-{{ c_shape }}"/></svg><span class="sr-only">{{ c_topic_label }}: </span><span>{{ ftitle | escape }}</span></span><span class="row-meta">
+{%- if members.size > 1 -%}<span>{{ members.size }} venues</span>
+{%- else -%}<span>{{ lead_t.venue | escape }}</span>{%- if lead_t.evidence_level == "official_program_listing" -%}<span class="badge badge--prog">Program listing</span>{%- endif -%}
+{%- endif -%}
+{%- if has_up -%}<span class="badge badge--up">Upcoming</span>{%- endif -%}
+{%- if tail != "" -%}<span class="row-tail" aria-hidden="true">{{ tail }}</span>{%- endif -%}
+</span></span><svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary><div class="row-body">
+{%- if members.size > 1 -%}
+<ol class="venues" role="list">
+{%- for m in members -%}
+<li class="venue"><p class="venue-head"><span class="venue-name">{{ m.venue | escape }}</span>
+{%- if m.date -%}<time class="mono" datetime="{{ m.date | escape }}">{{ m.date | date: "%b %-d, %Y" }}</time>{%- elsif m.date_label -%}<span class="mono">{{ m.date_label | escape }}</span>{%- endif -%}
+{%- if m.status == "upcoming" -%}<span class="badge badge--up">Upcoming</span>{%- endif -%}
+{%- if m.evidence_level == "official_program_listing" -%}<span class="badge badge--prog">Program listing</span>{%- endif -%}
+</p>
+{%- assign _mt = m.title | downcase -%}{%- assign _ft = ftitle | downcase -%}
+{%- if _mt != _ft -%}<p class="venue-title">Listed as “{{ m.title | escape }}”</p>{%- endif -%}
+{%- if m.evidence_level == "official_program_listing" -%}<p class="caveat">Official program listing only; no dated slot survives, so delivery is not claimed.</p>{%- endif -%}
+{% include command/talk-link-chips.html t=m %}</li>
+{%- endfor -%}
+</ol>
+{%- else -%}
+{%- if lead_t.date -%}<p class="facts-line"><time class="mono" datetime="{{ lead_t.date | escape }}">{{ lead_t.date | date: "%b %-d, %Y" }}</time></p>{%- elsif lead_t.date_label -%}<p class="facts-line"><span class="mono">{{ lead_t.date_label | escape }}</span></p>{%- endif -%}
+{%- if lead_t.evidence_level == "official_program_listing" -%}<p class="caveat">Official program listing only; no dated slot survives, so delivery is not claimed.</p>{%- endif -%}
+{% include command/talk-link-chips.html t=lead_t %}
+{%- endif -%}
+</div></details></li>
+{%- endfor %}
+</ol>

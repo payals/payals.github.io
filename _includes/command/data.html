@@ -1,0 +1,80 @@
+{%- comment -%}
+command/data.html: the shared derived values for the command layout pages
+(/, /talks/, /cv/). Every value here is computed from data/*.json and the
+posts; nothing is typed in. Jekyll includes share the page's variable scope,
+so the c_* names assigned here are readable by the page and by the other
+command/ includes after this one runs. Include it once per render, before
+anything that reads c_*.
+
+  c_talks, c_sourced, c_leads, c_upcoming, c_ordered   data/talks.json slices
+  c_next, c_next_is_upcoming   upcoming talk by `status` (never by comparing
+                               dates), else the latest sourced talk
+  c_fam_ids      family ids in first-appearance order over c_ordered
+                 (data/talk_families.json; an unlisted talk is its own family)
+  c_talk_first_year, c_brands   "12 talk records since 2015", "SCaLE, PGCon, ..."
+  c_posts_first, c_posts_latest
+{%- endcomment -%}
+{%- assign c_now = site.data.now -%}
+{%- assign c_talks = site.data.talks -%}
+{%- assign c_sourced = c_talks | where: "record_type", "sourced" -%}
+{%- assign c_leads = c_talks | where: "record_type", "archive_lead" -%}
+{%- assign c_upcoming = c_sourced | where: "status", "upcoming" -%}
+{%- assign c_past = c_sourced | where: "status", "past" -%}
+{%- assign c_ordered = c_upcoming | concat: c_past -%}
+{%- assign c_fam_defs = site.data.talk_families.families -%}
+{%- assign c_topicdefs = site.data.topics.topics -%}
+{%- assign c_topic_talks = site.data.topics.talks -%}
+{%- assign c_topic_posts = site.data.topics.posts -%}
+{%- assign c_topic_tags = site.data.topics.tags -%}
+{%- assign c_tag_precedence = site.data.topics.tag_precedence -%}
+
+{%- if c_upcoming.size > 0 -%}
+{%- assign c_next = c_upcoming | first -%}
+{%- assign c_next_is_upcoming = true -%}
+{%- else -%}
+{%- assign c_next = c_past | first -%}
+{%- assign c_next_is_upcoming = false -%}
+{%- endif -%}
+
+{%- assign _seen = "|" -%}
+{%- capture _fam_csv -%}
+{%- for t in c_ordered -%}
+{%- assign _fid = t.id -%}
+{%- for f in c_fam_defs -%}{%- if f.talks contains t.id -%}{%- assign _fid = f.id -%}{%- break -%}{%- endif -%}{%- endfor -%}
+{%- capture _key -%}|{{ _fid }}|{%- endcapture -%}
+{%- unless _seen contains _key -%}{{ _fid }},{%- assign _seen = _seen | append: _fid | append: "|" -%}{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- assign c_fam_ids = _fam_csv | split: "," -%}
+{%- if c_next -%}
+{%- assign c_next_fid = c_next.id -%}
+{%- for f in c_fam_defs -%}{%- if f.talks contains c_next.id -%}{%- assign c_next_fid = f.id -%}{%- break -%}{%- endif -%}{%- endfor -%}
+{%- endif -%}
+
+{%- comment -%} First talk year and the venue series that recur (two or more
+records): "SCaLE 16x" and "SCaLE 23x" are both "SCaLE", so the series name is
+the pre-comma venue with a trailing edition token (anything with a digit)
+dropped. {%- endcomment -%}
+{%- assign c_talk_first_year = 9999 -%}
+{%- capture _brand_csv -%}
+{%- for t in c_sourced -%}
+{%- if t.date -%}{%- assign _y = t.date | slice: 0, 4 | plus: 0 -%}{%- else -%}{%- assign _y = t.date_label | slice: -4, 4 | plus: 0 -%}{%- endif -%}
+{%- if _y > 0 and _y < c_talk_first_year -%}{%- assign c_talk_first_year = _y -%}{%- endif -%}
+{%- assign _venue = t.venue | split: "," | first | strip -%}
+{%- assign _words = _venue | split: " " -%}
+{%- assign _last = _words | last -%}
+{%- assign _digits = _last | remove: "0" | remove: "1" | remove: "2" | remove: "3" | remove: "4" | remove: "5" | remove: "6" | remove: "7" | remove: "8" | remove: "9" -%}
+{%- if _digits != _last and _words.size > 1 -%}{%- assign _cut = _venue.size | minus: _last.size | minus: 1 -%}{%- assign _brand = _venue | slice: 0, _cut | strip -%}{%- else -%}{%- assign _brand = _venue -%}{%- endif -%}
+{{ _brand }}|
+{%- endfor -%}
+{%- endcapture -%}
+{%- assign _brand_all = _brand_csv | split: "|" -%}
+{%- assign _brand_uniq = _brand_all | uniq -%}
+{%- assign c_brands = "" -%}
+{%- for b in _brand_uniq -%}
+{%- assign _n = _brand_all | where_exp: "x", "x == b" | size -%}
+{%- if _n > 1 -%}{%- if c_brands != "" -%}{%- assign c_brands = c_brands | append: ", " -%}{%- endif -%}{%- assign c_brands = c_brands | append: b -%}{%- endif -%}
+{%- endfor -%}
+
+{%- assign c_posts_latest = site.posts | first -%}
+{%- assign c_posts_first = site.posts | last -%}

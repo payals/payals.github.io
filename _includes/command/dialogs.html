@@ -1,0 +1,40 @@
+{%- comment -%} The "/" palette and the "?" keys sheet, shared by every command page.
+Both are <dialog>s (focus trapped, Esc closes, focus returns to the opener) and
+need JavaScript; with it off they are never opened. include.home adds the prompt
+commands and the ` key, which only exist on the home page. {%- endcomment %}
+<dialog class="palette" id="palette" aria-label="Search talks, posts, and sections">
+  <div class="pal-field">
+    <svg aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
+    <input class="pal-input" id="pal-input" type="text" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" aria-label="Search talks, posts, and sections" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Search talks and posts">
+    <button class="icon-btn pal-close" type="button" data-close aria-label="Close search"><svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+  </div>
+  <ul class="pal-list" id="pal-list" role="listbox" aria-label="Results"></ul>
+  <p class="pal-foot mono" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>Enter</kbd> open <kbd>Esc</kbd> close</p>
+</dialog>
+
+<dialog class="help" id="help" aria-labelledby="help-h">
+  <h2 id="help-h">Keyboard shortcuts</h2>
+  <button class="icon-btn close-btn" type="button" data-close aria-label="Close keyboard shortcuts"><svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+  <dl class="keys">
+    <dt><kbd>/</kbd></dt><dd>Search talks, posts, and sections</dd>
+    <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>{% if include.home %}Open{% else %}Go to{% endif %} Talks, Writing, CV, or Now</dd>
+    {%- if include.home %}
+    <dt><kbd>`</kbd></dt><dd>Jump to the prompt</dd>
+    {%- endif %}
+    <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Close whatever is on top</dd>
+  </dl>
+  {%- if include.home %}
+  <h3>The prompt understands</h3>
+  <dl class="cmds">
+    <dt>talks [topic]</dt><dd>Open talks, optionally filtered: ai, postgres, security, platform, reliability, other</dd>
+    <dt>writing [topic]</dt><dd>Open writing, optionally filtered</dd>
+    <dt>cv, now</dt><dd>Open the CV or what I'm doing now</dd>
+    <dt>open &lt;slug&gt;</dt><dd>Open one talk or post, for example open securing-your-data</dd>
+    <dt>theme light|dark|system</dt><dd>Change the theme</dd>
+    <dt>help, ls, clear</dt><dd>List commands, list sections, clear the output</dd>
+  </dl>
+  {%- endif %}
+  <label class="switch"><input type="checkbox" id="keys-toggle" checked> Single-key shortcuts</label>
+  <p class="help-note">Turn these off if they clash with a screen reader or voice control. They never fire while you are typing in a field. <kbd>Ctrl</kbd> <kbd>K</kbd> still opens search.</p>
+</dialog>

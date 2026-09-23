@@ -1,0 +1,46 @@
+---
+layout: command
+title: CV
+c_section: cv
+description: "Payal Singh's CV: professional record, selected independent work, writing, speaking, and education."
+permalink: /cv/
+---
+{%- comment -%}
+/cv/: the CV in the command layout. Source is data/cv.md (also the source of
+data/cv.pdf), read by command/cv-data.html: headline and intro, roles,
+independent work, selected writing, speaking and education. On screen,
+Speaking is a count and a link to /talks/; in print it is cv.md's whole
+Speaking section, so the printout carries the same talks as the PDF. Sections
+and roles also carry the kramdown heading ids the old /cv/ had
+(#professional-record, #speaking, #staff-data-engineer-lore, ...), so shared
+links still land. If cv.md's headings ever stop matching, the page renders
+cv.md whole instead of an empty page. Prints on light tokens with no chrome
+and with link targets written out (command.css, print).
+{%- endcomment -%}
+{%- include command/data.html -%}
+{%- capture c_cv_md -%}{% include_relative data/cv.md %}{%- endcapture -%}
+{%- include command/cv-data.html -%}
+<header class="page-head" style="--hue:var(--cv)">
+  <h1 class="page-title">CV</h1>
+  {%- if c_cv_headline != "" %}
+  <p class="page-lede">{{ c_cv_headline }}.</p>
+  {%- endif %}
+  {%- if c_cv_intro != "" %}
+  <p class="page-intro">{{ c_cv_intro }}</p>
+  {%- endif %}
+  <div class="cv-top">
+    <a class="btn" href="/data/cv.pdf" download="payal-singh-cv.pdf">Download PDF</a>
+    <a class="chip" href="mailto:{{ site.email | escape }}">Email</a>
+    {%- for l in site.profile_links.contact %}
+    <a class="chip" href="{{ l.url | escape }}">{{ l.label | escape }}</a>
+    {%- endfor %}
+  </div>
+</header>
+
+<div class="cv-page" style="--hue:var(--cv)">
+{%- if c_cv_roles_count > 0 %}
+{% include command/cv-body.html h="h2" prefix="cv-" anchors=true print_speaking=true %}
+{%- else %}
+<div class="cv-fallback">{{ c_cv_body_html }}</div>
+{%- endif %}
+</div>

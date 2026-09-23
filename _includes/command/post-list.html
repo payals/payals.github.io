@@ -1,0 +1,34 @@
+{%- comment -%}
+command/post-list.html: posts as link rows (/blog/ and the /blog/topics/
+sections). One click reads the post: the title link's ::after covers the
+whole row, so the row is the target. Each row carries data-topic, and the
+list is ol.rows, so a surrounding [data-list] gets command.js's topic filter.
+The topic is its shape plus a screen-reader label (neutral ink, no hue).
+
+  posts    the posts to list (default site.posts, newest first)
+  compact  shape and title only (no subtitle/meta)
+  ids      give each row id="post-<slug>" and data-slug (the home Writing
+           drawer only, where /#post-<slug>, "open <slug>" and the palette
+           find the row; a list that repeats a post, like the tags page,
+           must not set it)
+Every post row (here, the home drawer, the post header) leads with
+"Sep 1, 2026" and orders its meta minutes first, then the series part.
+Needs command/data.html first. Minutes use the home drawer's rounding.
+{%- endcomment -%}
+{%- assign _list = include.posts | default: site.posts -%}
+<ol class="rows plist{% if include.compact %} plist--compact{% endif %}" role="list">
+{%- for post in _list -%}
+{%- assign _slug = post.url | split: '/' | last -%}
+{% include command/topic-of.html post=post %}
+<li data-topic="{{ c_topic }}"><div class="pl-row"{% if include.ids %} id="post-{{ _slug | escape }}" data-slug="{{ _slug | escape }}"{% endif %}>
+<span class="row-lead mono"><time datetime="{{ post.date | date: '%Y-%m-%d' }}">{{ post.date | date: "%b %-d, %Y" }}</time></span>
+<span class="row-main"><span class="row-title"><svg class="shape" aria-hidden="true" focusable="false"><use href="#s-{{ c_shape }}"/></svg><a class="pl-link" href="{{ post.url | escape }}"><span class="sr-only">{{ c_topic_label }}: </span>{{ post.title | escape }}</a></span>
+{%- unless include.compact -%}
+{%- assign _words = post.content | strip_html | number_of_words -%}
+{%- assign _min = _words | plus: 199 | divided_by: 200 -%}
+{%- if post.subtitle and post.subtitle != "" -%}{%- assign _sub = post.subtitle | escape -%}{%- else -%}{%- assign _sub = post.excerpt | strip_html | normalize_whitespace | truncatewords: 30 -%}{%- endif -%}
+<span class="pl-sub">{{ _sub }}</span><span class="row-meta"><span>{{ _min }} min read</span>{% if post.series and post.part %}<span>Part {{ post.part }} of {{ post.series | escape }}</span>{% endif %}</span>
+{%- endunless -%}
+</span></div></li>
+{%- endfor %}
+</ol>

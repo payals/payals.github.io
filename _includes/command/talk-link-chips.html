@@ -1,0 +1,14 @@
+{%- comment -%}
+command/talk-link-chips.html: the schedule or program, slides and archive
+links for one talk record (include.t), as chips. Every URL goes through
+safe-link.html (escape plus an http(s) scheme check).
+{%- endcomment -%}
+{%- assign _t = include.t -%}
+{%- if _t.evidence_level == 'official_program_listing' -%}{%- assign _sched_label = "Program listing" -%}{%- else -%}{%- assign _sched_label = "Schedule" -%}{%- endif -%}
+{%- assign _slides_ext = _t.slides_url | default: "" | downcase | split: "?" | first | slice: -4, 4 -%}
+{%- if _slides_ext == ".pdf" -%}{%- assign _slides_label = "Slides (PDF)" -%}{%- else -%}{%- assign _slides_label = "Slides" -%}{%- endif -%}
+<ul class="links" role="list">
+{%- if _t.slides_url and _t.slides_url != "" %}<li>{% include safe-link.html url=_t.slides_url text=_slides_label class="chip" %}</li>{% endif -%}
+{%- if _t.event_url and _t.event_url != "" %}<li>{% include safe-link.html url=_t.event_url text=_sched_label class="chip" %}</li>{% endif -%}
+{%- if _t.archive_url and _t.archive_url != "" %}<li>{% include safe-link.html url=_t.archive_url text="Archive" class="chip" %}{% if _t.archive_label and _t.archive_label != "" %} <span class="link-note">{{ _t.archive_label | escape }}</span>{% endif %}</li>{% endif -%}
+</ul>

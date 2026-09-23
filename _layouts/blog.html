@@ -1,8 +1,8 @@
 ---
-layout: default
+layout: command
+c_section: writing
+c_kind: index
 ---
-<header class="page__header">
-  <h1 class="page__title">{{ page.title | escape }}</h1>
-  {% if page.description %}<p class="page__subtitle">{{ page.description | escape }}</p>{% endif %}
-</header>
+{%- comment -%} blog.html: the Writing section's own pages (/blog/, /blog/topics/).
+Each page writes its own header, because its lede is computed from the posts. {%- endcomment -%}
 {{ content }}

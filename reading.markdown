@@ -10,7 +10,9 @@ permalink: /reading/
 {% assign reading_url = site.data.now.reading_url | default: "" %}
 {% assign reading_url_head = reading_url | slice: 0, 36 %}
 
-<p class="reading-now">{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}" rel="noopener">{{ site.data.now.reading | escape }}</a>{% else %}{{ site.data.now.reading | escape }}{% endif %}</p>
+{% assign reading = site.data.now.reading | default: "" %}
+{%- include command/reading-split.html %}
+<p class="reading-now">{% if reading_url_head == "https://www.goodreads.com/book/show/" %}<a href="{{ reading_url | escape }}" rel="noopener">{{ reading_title | escape }}</a>{% else %}{{ reading_title | escape }}{% endif %}{% if reading_has_by %} by {{ reading_author | escape }}{% endif %}</p>
 
 ## Finished
 
@@ -24,7 +26,7 @@ permalink: /reading/
 {%- for year in years %}
 {%- assign year_books = books | where: "year", year %}
 <details class="reading-year"{% if forloop.first %} open{% endif %}>
-<summary><span class="reading-year__label">{{ year }}</span> <span class="reading-year__count">{{ year_books.size }} book{% if year_books.size != 1 %}s{% endif %}</span></summary>
+<summary><span class="reading-year__label">{{ year }}</span> <span class="reading-year__count n mono">{{ year_books.size }} book{% if year_books.size != 1 %}s{% endif %}</span></summary>
 <table>
   <thead>
     <tr><th>Book</th><th>Author</th><th>Rating</th></tr>
@@ -62,4 +64,4 @@ permalink: /reading/
 })();
 </script>
 
-Ratings are mine and out of {{ scale }}. Titles link to Goodreads. The current book lives in the now pane on the [home page](/#now).
+Ratings are mine and out of {{ scale }}. Titles link to Goodreads. The current book is also in the Now drawer on the [home page](/#now).

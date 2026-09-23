@@ -1,0 +1,18 @@
+{%- comment -%} Colophon on every page but home (home has its own links row): licence,
+then one list of links as separate items (no "A · B · C" strings): source,
+feed, email, then site.profile_links.elsewhere, skipping the feed (already
+listed) and the page being viewed. Same pattern on every inner page, so no
+page adds its own links row. {%- endcomment %}
+<div class="colophon">
+  <p>&copy; {{ site.author | escape }}. Text under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
+  <ul role="list">
+    <li><a href="{{ site.source_url | escape }}">Source</a></li>
+    <li><a href="/feed.xml">RSS</a></li>
+    <li><a href="mailto:{{ site.email | escape }}">Email</a></li>
+    {%- for l in site.profile_links.elsewhere %}
+    {%- unless l.url == "/feed.xml" or l.url == page.url %}
+    <li><a href="{{ l.url | escape }}">{{ l.label | escape }}</a></li>
+    {%- endunless %}
+    {%- endfor %}
+  </ul>
+</div>

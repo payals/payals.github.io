@@ -1,12 +1,26 @@
-{% if page.tags and page.tags != empty %}
-<p class="post-tags post-tags--footer meta"><span class="post-tags__label">tags</span> {% for tag in page.tags %}<a class="tag-chip" href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% endfor %}</p>
-{% endif %}
-{% if page.series %}
-{% assign series_posts = site.posts | where: "series", page.series | sort: "part" %}
-<nav class="series-box" aria-label="Series navigation">
-<p class="series-box__label">Part {{ page.part }} of the <strong>{{ page.series }}</strong> series</p>
-<ol class="series-box__list">
-{% for p in series_posts %}<li{% if p.url == page.url %} class="is-current" aria-current="page"{% endif %}>{% if p.url == page.url %}Part {{ p.part }}: {{ p.title | split: ": " | last }}{% else %}<a href="{{ p.url }}">Part {{ p.part }}: {{ p.title | split: ": " | last }}</a>{% endif %}</li>{% endfor %}
+{%- comment -%} Included from the end of each post body (the include line is part of
+the post). Tags as one "Tagged" line of links to /blog/topics/ (the facts-line
+pattern), then, for a post with `series:` and `part:`, the series card:
+every part in order, the current one marked and not a link. This markup
+also ships in the feeds, where there is no site CSS, so every cue is text:
+each item reads "Part N: title" (the "Part " and ": " hide on the page) and
+the current one says "(this post)". _layouts/post.html adds the
+id="series" focus target (where the header's "Part N of ..." link lands) on
+the page only. On touch the tag links become chips and the comma
+separators (span.sep) hide. {%- endcomment %}
+<footer class="post-foot">
+{%- if page.tags and page.tags != empty %}
+<p class="post-tags">Tagged {% for tag in page.tags %}<a href="/blog/topics/#{{ tag | slugify }}">{{ tag }}</a>{% unless forloop.last %}<span class="sep">, </span>{% endunless %}{% endfor %}</p>
+{%- endif %}
+{%- if page.series and page.part %}
+{%- assign series_posts = site.posts | where: "series", page.series | sort: "part" %}
+<nav class="series" aria-label="{{ page.series | escape }} series">
+<p class="series-name">{{ page.series | escape }}</p>
+<ol class="series-list" role="list">
+{%- for p in series_posts %}
+<li{% if p.url == page.url %} aria-current="page"{% endif %}><span class="series-n mono"><span class="sr-only">Part </span>{{ p.part }}</span><span class="sep">: </span>{% if p.url == page.url %}<span>{{ p.title | split: ": " | last | escape }}<span class="sr-only"> (this post)</span></span>{% else %}<a href="{{ p.url | escape }}">{{ p.title | split: ": " | last | escape }}</a>{% endif %}</li>
+{%- endfor %}
 </ol>
 </nav>
-{% endif %}
+{%- endif %}
+</footer>

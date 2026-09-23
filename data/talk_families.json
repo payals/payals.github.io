@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "note": "Derived grouping for the talks lists (home Talks drawer and /talks/). It adds no facts: each family names records that already exist in data/talks.json, where the same talk ran at more than one venue with minor wording or casing differences. `title` is the display wording for the family row; every venue keeps its own recorded title in talks.json. `id` is the stable slug used in #talk-<id> links and the prompt's `open <id>`. A sourced talk that is in no family here still renders, as its own one-venue row, with its record id as the slug, so adding a talk never needs an edit here.",
+  "families": [
+    { "id": "control-plane-2026", "title": "Using PostgreSQL as a Control Plane for Reliable AI Workflows", "talks": ["postgressummit-us-2026-control-plane"] },
+    { "id": "ai-control-plane-2026", "title": "Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database", "talks": ["scale-23x-ai-control-plane"] },
+    { "id": "performance-tuning", "title": "Essential Postgres Performance tuning", "talks": ["postgres-conference-2019-performance-tuning"] },
+    { "id": "securing-your-data", "title": "Securing Your Data on PostgreSQL", "talks": ["pgcon-2018-securing-postgresql", "postgresconf-us-2018-securing-postgresql", "scale-16x-securing-postgresql", "pgconf-philly-2017-securing-postgres"] },
+    { "id": "pandas", "title": "Pandas - Lazy at Mating, Lively at Mining!", "talks": ["scale-16x-pandas"] },
+    { "id": "ha-aws-ec2", "title": "Provisioning and Automating High Availability Postgres on AWS EC2", "talks": ["pgcon-2017-ha-aws-ec2", "pgconf-us-2017-ha-aws-ec2"] },
+    { "id": "backups-dr", "title": "Think your Postgres backups and recovery are safe? Let's talk.", "talks": ["scale-15x-postgres-backups", "pgconf-us-2015-postgres-backups"] }
+  ]
+}

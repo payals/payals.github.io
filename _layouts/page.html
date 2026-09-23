@@ -1,9 +1,28 @@
 ---
-layout: default
+layout: command
+c_kind: page
 ---
-<header class="page__header">
-  <h1 class="page__title">{{ page.title | escape }}</h1>
-  {% if page.description %}<p class="page__subtitle">{{ page.description | escape }}</p>{% endif %}
+{%- comment -%}
+page.html: a simple page (/reading/) or an evidence page (c_kind: doc, set
+for evidence/ by a _config.yml default so no evidence file changes). A page
+gets the display title with its section square and its description as the
+lede; a doc gets the post-title step and no lede, and its tables and code
+break out wider than the reading measure. Tables get a scroll wrapper.
+{%- endcomment -%}
+{%- assign _kind = page.c_kind | default: layout.c_kind -%}
+<header class="page-head{% if _kind == "doc" %} doc-head{% endif %}">
+  {%- assign _title = page.title | escape -%}
+  {%- comment -%} keep an evidence page's identifier ("window 2") on one line; balance would split it {%- endcomment -%}
+  {%- if _kind == "doc" and _title contains ", window " -%}
+    {%- assign _tp = _title | split: ", window " -%}
+    {%- assign _tn = _tp[1] | split: " " | first -%}
+    {%- assign _tr = _tp[1] | remove_first: _tn -%}
+    {%- capture _title %}{{ _tp[0] }}, <span class="nowrap">window {{ _tn }}</span>{{ _tr }}{% endcapture -%}
+  {%- endif %}
+  <h1 class="{% if _kind == "doc" %}post-title{% else %}page-title{% endif %}">{{ _title }}</h1>
+  {%- if _kind != "doc" and page.description and page.description != "" %}
+  <p class="page-lede">{{ page.description | escape }}</p>
+  {%- endif %}
 </header>
 <article class="prose">
 {{ content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' }}

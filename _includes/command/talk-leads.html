@@ -1,0 +1,24 @@
+{%- comment -%}
+command/talk-leads.html: archive leads from data/talks.json (record_type
+archive_lead). No topic colour and no links: no title is claimed. mode=section
+renders them as a plain titled section (/talks/, id "archive-leads" as on the
+old page, so shared links still land); anything else renders one
+closed <details> (the home Talks drawer). Needs command/data.html first.
+{%- endcomment -%}
+{%- if c_leads.size > 0 -%}
+{%- capture _lead_items -%}
+<ul role="list">{%- for lead in c_leads -%}<li><p class="lead-head"><span class="lead-name">{{ lead.label | escape }}</span> <span class="mono">{{ lead.era | escape }}</span></p><p class="lead-detail">{{ lead.detail | escape }}</p></li>{%- endfor -%}</ul>
+{%- endcapture -%}
+{%- if include.mode == "section" %}
+<section class="leads leads--section" id="archive-leads" aria-labelledby="leads-h">
+  <h2 id="leads-h">Archive leads <span class="n">{{ c_leads.size }}</span></h2>
+  <p class="lead-intro">Remembered appearances still being reconstructed. No title or date is claimed without a recovered record.</p>
+  {{ _lead_items }}
+</section>
+{%- else %}
+<details class="leads">
+  <summary>Archive leads <span class="n">{{ c_leads.size }}</span><svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
+  {{ _lead_items }}
+</details>
+{%- endif -%}
+{%- endif -%}

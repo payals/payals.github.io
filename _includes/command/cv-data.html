@@ -1,0 +1,91 @@
+{%- comment -%}
+command/cv-data.html: reads data/cv.md, the one CV source (it also feeds the
+PDF), into parts the command layout lays out. The page captures the file
+first, because include_relative resolves against the page, not this include:
+
+  {% capture c_cv_md %}{% include_relative data/cv.md %}{% endcapture %}
+
+cv.md structure this relies on: "# name", a bold headline paragraph, a contact
+paragraph, an intro paragraph, then "## <section>" blocks; roles are
+"### Title, Org" followed by a bold period line and a paragraph. Sections are
+found by heading text. If a heading is renamed, that part is simply absent,
+and /cv/ falls back to rendering cv.md whole (c_cv_roles_count stays 0).
+
+Sets (HTML from markdownify, trusted repo content):
+  c_cv_headline, c_cv_intro (the intro paragraph, whole),
+    c_cv_lede (first sentence of the intro)
+  c_cv_body_html   cv.md from the first "##" on, for the fallback render
+  c_cv_roles_count, c_cv_role_titles / _orgs / _periods / _shorts / _rests
+    (arrays split on the "¦" separator, same index per role)
+  c_cv_now_fact    "Staff Data Engineer at Lore, since June 2026"
+  c_cv_start_year  first year of the earliest role ("2013")
+  c_cv_work, c_cv_writing, c_cv_education   the section lists
+  c_cv_speaking_note   first sentence of the Speaking intro
+  c_cv_speaking_html   the whole Speaking section (print-only on /cv/)
+{%- endcomment -%}
+{%- assign c_cv_html = c_cv_md | markdownify -%}
+{%- assign _cv_parts = c_cv_html | split: "<h2" -%}
+{%- assign _cv_top = _cv_parts | first -%}
+{%- assign c_cv_headline = _cv_top | split: "<strong>" | slice: 1 | first | split: "</strong>" | first | strip -%}
+{%- assign _cv_intro = _cv_top | split: "<hr" | first | split: "<p>" | last | split: "</p>" | first | strip -%}
+{%- assign c_cv_intro = _cv_intro -%}
+{%- assign c_cv_body_html = c_cv_html | remove_first: _cv_top | strip -%}
+{%- if c_cv_body_html == "" -%}{%- assign c_cv_body_html = c_cv_html | split: "</h1>" | last -%}{%- endif -%}
+{%- assign c_cv_lede = _cv_intro | split: ". " | first | strip -%}
+{%- assign _lede_end = c_cv_lede | slice: -1, 1 -%}
+{%- if _lede_end != "." -%}{%- assign c_cv_lede = c_cv_lede | append: "." -%}{%- endif -%}
+{%- assign c_cv_roles_count = 0 -%}
+{%- assign c_cv_work = "" -%}{%- assign c_cv_writing = "" -%}{%- assign c_cv_education = "" -%}{%- assign c_cv_speaking_note = "" -%}{%- assign c_cv_speaking_html = "" -%}
+{%- assign _titles = "" -%}{%- assign _orgs = "" -%}{%- assign _periods = "" -%}{%- assign _shorts = "" -%}{%- assign _rests = "" -%}
+{%- for _part in _cv_parts offset: 1 -%}
+{%- assign _name = _part | split: "</h2>" | first | split: ">" | last | strip | downcase -%}
+{%- assign _body = _part | split: "</h2>" | last | replace: "<hr />", "" -%}
+{%- if _name == "professional record" -%}
+{%- assign _roles = _body | split: "<h3" -%}
+{%- for _role in _roles -%}
+{%- unless _role contains "</h3>" -%}{%- continue -%}{%- endunless -%}
+{%- assign _head = _role | split: "</h3>" | first | split: ">" | last | strip -%}
+{%- assign _rest = _role | split: "</h3>" | last -%}
+{%- assign _title = _head | split: ", " | first -%}
+{%- assign _org = _head | remove_first: _title | remove_first: ", " -%}
+{%- assign _period = _rest | split: "<strong>" | slice: 1 | first | split: "</strong>" | first | strip -%}
+{%- assign _summary = _rest | split: "</strong></p>" | last | strip_html | normalize_whitespace | strip -%}
+{%- assign _short = _summary | split: ". " | first | strip -%}
+{%- assign _short_end = _short | slice: -1, 1 -%}
+{%- if _short_end != "." -%}{%- assign _short = _short | append: "." -%}{%- endif -%}
+{%- assign _more = _summary | remove_first: _short | strip -%}
+{%- assign _titles = _titles | append: _title | append: "¦" -%}
+{%- assign _orgs = _orgs | append: _org | append: "¦" -%}
+{%- assign _periods = _periods | append: _period | append: "¦" -%}
+{%- assign _shorts = _shorts | append: _short | append: "¦" -%}
+{%- assign _rests = _rests | append: _more | append: " ¦" -%}
+{%- assign c_cv_roles_count = c_cv_roles_count | plus: 1 -%}
+{%- endfor -%}
+{%- elsif _name contains "independent work" -%}
+{%- assign c_cv_work = _body | strip | replace_first: "<ul>", '<ul class="bullets">' -%}
+{%- elsif _name contains "writing" -%}
+{%- assign c_cv_writing = _body | strip | replace_first: "<ul>", '<ul class="plain" role="list">' -%}
+{%- elsif _name == "speaking" -%}
+{%- assign c_cv_speaking_html = _body | strip -%}
+{%- assign _sp = _body | split: "<p>" | slice: 1 | first | split: "</p>" | first | strip -%}
+{%- assign c_cv_speaking_note = _sp | split: ". " | first | strip -%}
+{%- assign _sp_end = c_cv_speaking_note | slice: -1, 1 -%}
+{%- if _sp_end != "." -%}{%- assign c_cv_speaking_note = c_cv_speaking_note | append: "." -%}{%- endif -%}
+{%- elsif _name == "education" -%}
+{%- assign c_cv_education = _body | strip | replace_first: "<ul>", '<ul class="plain edu" role="list">' | replace: "<strong>", '<span class="edu-degree">' | replace: "</strong>, ", '</span>, <span class="edu-school">' | replace: "</li>", "</span></li>" -%}
+{%- endif -%}
+{%- endfor -%}
+{%- assign c_cv_role_titles = _titles | split: "¦" -%}
+{%- assign c_cv_role_orgs = _orgs | split: "¦" -%}
+{%- assign c_cv_role_periods = _periods | split: "¦" -%}
+{%- assign c_cv_role_shorts = _shorts | split: "¦" -%}
+{%- assign c_cv_role_rests = _rests | split: "¦" -%}
+{%- if c_cv_roles_count > 0 -%}
+{%- assign _p0 = c_cv_role_periods | first -%}
+{%- assign _since = _p0 | split: "-" | first | strip -%}
+{%- capture c_cv_now_fact -%}{{ c_cv_role_titles | first }} at {{ c_cv_role_orgs | first }}, since {{ _since }}{%- endcapture -%}
+{%- assign c_cv_start_year = c_cv_role_periods | last | slice: 0, 4 -%}
+{%- else -%}
+{%- assign c_cv_now_fact = "" -%}
+{%- assign c_cv_start_year = "" -%}
+{%- endif -%}
