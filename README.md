@@ -11,7 +11,7 @@ All hand-edited content lives in `data/`, `_posts/` and `_config.yml`; the pages
 | File | What it controls |
 |------|-----------------|
 | `data/now.json` | The Now door and drawer: `reading`, `reading_url`, `shipping`, `state`, `updated` |
-| `data/talks.json` | Ordered sourced speaking records followed by clearly labeled archive leads; see `data/talks.README.md`. The next talk in the hero is the record with `status: "upcoming"` |
+| `data/talks.json` | Ordered sourced speaking records followed by clearly labeled archive leads; see `data/talks.README.md`. The hero shows whichever is freshest: an upcoming talk within 14 days, else the newer of the latest post and latest talk if it is within 45 days, else a further-out upcoming talk (`_includes/command/featured.html`, mirrored at runtime in `command.js`) |
 | `data/talk_families.json` | Groups records that are the same talk at several venues into one row (display title and slug); a talk not listed is its own row |
 | `data/topics.json` | Topic (and shape glyph) for every talk and post; new posts fall back to `tag_precedence` |
 | `data/cv.md` | Roles, independent work, selected writing, speaking note and education on `/cv/` and in the CV drawer; its first role is the hero's "Now" line and its intro's first sentence is the hero lede |

@@ -23,7 +23,7 @@ const $$ = (s, el = d) => Array.from(el.querySelectorAll(s));
 const mq = (q) => (window.matchMedia ? matchMedia(q) : { matches: false, addEventListener() {} });
 const reduce = mq('(prefers-reduced-motion: reduce)');
 const phone = mq('(max-width: 767.98px)');
-const SECTIONS = ['talks', 'writing', 'cv', 'now'];
+const SECTIONS = ['writing', 'talks', 'cv', 'now'];
 /* other words a visitor types for a section; the prompt and the palette both accept them */
 const SECTION_ALIAS = { resume: 'cv', blog: 'writing', posts: 'writing' };
 const aliasesOf = (name) => Object.keys(SECTION_ALIAS).filter((k) => SECTION_ALIAS[k] === name);
@@ -41,6 +41,48 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const shapeSvg = (shape) => `<svg aria-hidden="true" focusable="false"><use href="#s-${esc(shape)}"/></svg>`;
 const inRect = (r, x, y) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 const isHome = !!d.getElementById('cmd');
+
+/* Hero "latest" fact: re-run the build's pick (_includes/command/featured.html)
+   against the visitor's clock so it never goes stale between deploys. */
+(function pickFeatured() {
+  const els = {};
+  $$('[data-feat]').forEach((el) => { els[el.dataset.feat] = el; });
+  if (!Object.keys(els).length) return;
+  const DAY = 86400, now = Math.floor(Date.now() / 1000);
+  const when = (k) => (els[k] ? +els[k].dataset.when || 0 : 0);
+  const upS = when('up'), pastS = when('past'), postS = when('post');
+  const upLive = upS > 0 && upS + DAY > now;
+  let lt = 'past', ltS = pastS;
+  if (upS > 0 && !upLive && upS > pastS) { lt = 'up'; ltS = upS; }
+  const newer = ltS > postS ? lt : 'post', newerS = Math.max(ltS, postS);
+  let pick;
+  if (upLive && upS <= now + 14 * DAY) pick = 'up';
+  else if (newerS > 0 && newerS >= now - 45 * DAY) pick = newer;
+  else if (upLive) pick = 'up';
+  else pick = newer;
+  if (!els[pick]) return;
+  Object.entries(els).forEach(([k, el]) => { el.hidden = k !== pick; });
+  if (els.up && !upLive) { const dt = els.up.querySelector('dt'); if (dt && dt.dataset.pastLabel) dt.textContent = dt.dataset.pastLabel; }
+})();
+
+/* Size each hero fact list to its first item plus a small peek of the next,
+   and drop the bottom fade once the list is scrolled to its end. */
+(function factScrolls() {
+  const lists = $$('.fact-scroll');
+  if (!lists.length) return;
+  const PEEK = 22;
+  const fit = () => lists.forEach((ol) => {
+    const first = ol.firstElementChild;
+    if (!first || !ol.offsetParent) return;
+    ol.style.setProperty('--fact-h', `${first.offsetHeight + PEEK}px`);
+    mark(ol);
+  });
+  const mark = (ol) => ol.classList.toggle('at-end', ol.scrollTop + ol.clientHeight >= ol.scrollHeight - 2);
+  lists.forEach((ol) => ol.addEventListener('scroll', () => mark(ol), { passive: true }));
+  fit();
+  if (d.fonts && d.fonts.ready) d.fonts.ready.then(fit);
+  let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(fit, 120); });
+})();
 
 /* ---------- theme ---------- */
 const themeBtns = $$('[data-act="theme"]');
@@ -402,7 +444,7 @@ if (isHome) {
     const done = () => { cmd.value = ''; renderGhost(); };
     switch (c) {
       case 'help': say(HELP, raw); done(); break;
-      case 'ls': say('talks  writing  cv  now', raw); done(); break;
+      case 'ls': say('writing  talks  cv  now', raw); done(); break;
       case 'talks': case 'writing': {
         let topic = 'all';
         if (a0) { topic = TOPIC_ALIAS[a0]; if (!topic) { say(`No topic called "${args[0]}". Topics: ai, postgres, security, platform, reliability, other.`, raw); return; } }

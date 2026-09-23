@@ -10,8 +10,8 @@ section) everywhere else. {%- endcomment -%}
   <a class="topnav-id" href="/"><span class="mono">payal@payalsingh.me:<span class="p-path">~{% if _tp != "" %}/<span class="p-sec"{% if _ts != "" %} style="--hue:var(--{{ _ts }})"{% endif %}>{{ _tp | escape | replace: "/", "/<wbr>" }}</span>{% endif %}</span></span><span class="sr-only"> (home)</span></a>
   <nav class="topnav-links" aria-label="Site">
     <a href="/">Home</a>
-    <a href="/talks/"{% if _ts == "talks" %} aria-current="{% if page.url == "/talks/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--talks)">Talks</a>
     <a href="/blog/"{% if _ts == "writing" %} aria-current="{% if page.url == "/blog/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--writing)">Writing</a>
+    <a href="/talks/"{% if _ts == "talks" %} aria-current="{% if page.url == "/talks/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--talks)">Talks</a>
     <a href="/cv/"{% if _ts == "cv" %} aria-current="{% if page.url == "/cv/" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--cv)">CV</a>
     <a href="/#now"{% if _ts == "now" %} aria-current="{% if page.url == "/#now" %}page{% else %}true{% endif %}"{% endif %} style="--hue:var(--now)">Now</a>
   </nav>

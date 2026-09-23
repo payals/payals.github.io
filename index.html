@@ -36,11 +36,12 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
   {%- endif %}
   <dl class="facts">
     {%- if c_cv_now_fact != "" %}
-    <div class="fact" style="--hue:var(--cv)"><dt>Role</dt><dd>{{ c_cv_now_fact }}</dd></div>
+    <div class="fact" style="--hue:var(--cv)"><dt>Role</dt><dd><ol class="fact-scroll" tabindex="0" aria-label="Roles, newest first">
+      <li><span class="fact-text">{{ c_cv_now_fact }}</span></li>
+      {%- for r in c_cv_role_titles offset: 1 %}{%- assign _ri = forloop.index %}<li><span class="fact-text">{{ r }} at {{ c_cv_role_orgs[_ri] }}</span><span class="fact-meta">{{ c_cv_role_periods[_ri] }}</span></li>{% endfor %}
+      <li class="fact-more"><a href="/cv/">Full CV</a></li></ol></dd></div>
     {%- endif %}
-    {%- if c_next %}
-    <div class="fact" style="--hue:var(--talks)"><dt>{% if c_next_is_upcoming %}Next talk{% else %}Latest talk{% endif %}</dt><dd><a class="fact-link" href="#talk-{{ c_next_fid | escape }}">{{ c_next.title | escape }}</a><span class="fact-meta">{{ c_next.venue | escape }}, {% if c_next.date %}<time datetime="{{ c_next.date | escape }}">{{ c_next.date | date: "%b %-d, %Y" }}</time>{% else %}{{ c_next.date_label | escape }}{% endif %}</span></dd></div>
-    {%- endif %}
+    {%- include command/featured.html %}
   </dl>
   <ul class="contact" aria-label="Contact" role="list">
     <li><a class="chip" href="mailto:{{ site.email | escape }}">Email</a></li>
@@ -53,17 +54,17 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
 <div class="stage">
   <nav class="doors-wrap" aria-label="Sections">
     <ul class="doors" role="list">
-      <li><a class="door" href="#talks" data-section="talks" style="--hue:var(--talks)">
-        <span class="door-name">Talks</span>
-        <span class="door-line">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}</span>
-        {%- if c_brands != "" %}<span class="door-sub">{{ c_brands | escape }}</span>{% endif %}
-        <span class="door-cmd" aria-hidden="true">cat talks</span>
-      </a></li>
       <li><a class="door" href="#writing" data-section="writing" style="--hue:var(--writing)">
         <span class="door-name">Writing</span>
         <span class="door-line">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if c_posts_first %} since {{ c_posts_first.date | date: "%B %Y" }}{% endif %}</span>
         {%- if c_posts_latest %}<span class="door-sub">Latest {{ c_posts_latest.date | date: "%b %-d" }}</span>{% endif %}
         <span class="door-cmd" aria-hidden="true">cat writing</span>
+      </a></li>
+      <li><a class="door" href="#talks" data-section="talks" style="--hue:var(--talks)">
+        <span class="door-name">Talks</span>
+        <span class="door-line">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}</span>
+        {%- if c_brands != "" %}<span class="door-sub">{{ c_brands | escape }}</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat talks</span>
       </a></li>
       <li><a class="door" href="#cv" data-section="cv" style="--hue:var(--cv)">
         <span class="door-name">CV</span>
@@ -90,8 +91,8 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
     </form>
     <div class="try">
       <span class="try-label">Try</span>
-      <a class="chip cmd-chip" href="#talks" data-cmd="talks" style="--hue:var(--talks)"><span class="dot" aria-hidden="true"></span>talks</a>
       <a class="chip cmd-chip" href="#writing" data-cmd="writing" style="--hue:var(--writing)"><span class="dot" aria-hidden="true"></span>writing</a>
+      <a class="chip cmd-chip" href="#talks" data-cmd="talks" style="--hue:var(--talks)"><span class="dot" aria-hidden="true"></span>talks</a>
       <a class="chip cmd-chip" href="#cv" data-cmd="cv" style="--hue:var(--cv)"><span class="dot" aria-hidden="true"></span>cv</a>
       <a class="chip cmd-chip" href="#now" data-cmd="now" style="--hue:var(--now)"><span class="dot" aria-hidden="true"></span>now</a>
       <button class="chip cmd-chip" type="button" data-cmd="help">help</button>
@@ -101,7 +102,7 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
 
   {%- comment -%} Below 768px the hero's contact chips hide and these three
   phone-only items take their place after the doors, so the phone reads name,
-  role, now, next talk, doors, links in DOM order. display:none keeps exactly
+  role, now, latest fact, doors, links in DOM order. display:none keeps exactly
   one copy in the accessibility tree at any width. {%- endcomment %}
   <ul class="elsewhere" id="links" aria-label="Links" role="list">
     <li class="phone-only"><a href="mailto:{{ site.email | escape }}">Email</a></li>

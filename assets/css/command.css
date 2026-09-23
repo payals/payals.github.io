@@ -140,6 +140,21 @@ kbd{font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);display:in
 .fact-link{font-weight:500;text-decoration-color:color-mix(in srgb, var(--hue) 70%, transparent);text-decoration-thickness:2px;text-underline-offset:.25em}
 @media (hover:hover) and (pointer:fine){ .fact-link:hover{text-decoration-color:var(--hue)} }
 .fact-meta{font-size:var(--fs-sm);color:var(--ink-2)}
+/* hero facts scroll: newest item shows, the next peeks under a fade, a thin hue scrollbar appears on hover/focus */
+.fact-scroll{list-style:none;margin:0;padding:0 var(--sp-3) 0 0;max-height:var(--fact-h,5.25em);overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y proximity;scrollbar-width:thin;scrollbar-color:transparent transparent;-webkit-mask-image:linear-gradient(#000 calc(100% - 1.5em),transparent);mask-image:linear-gradient(#000 calc(100% - 1.5em),transparent);transition:scrollbar-color .2s ease-out}
+.fact-scroll.at-end{-webkit-mask-image:none;mask-image:none}
+.fact-scroll>li{scroll-snap-align:start;display:grid;gap:2px;padding-bottom:var(--sp-3)}
+.fact-scroll>li:last-child{padding-bottom:0}
+.fact-text{font-weight:500}
+.fact-more a{font-size:var(--fs-sm);color:var(--ink-2)}
+.fact-scroll:focus-visible{outline:2px solid var(--hue);outline-offset:4px;border-radius:4px}
+.fact:hover .fact-scroll,.fact:focus-within .fact-scroll{scrollbar-color:color-mix(in srgb,var(--hue) 65%,transparent) transparent}
+.fact-scroll::-webkit-scrollbar{width:4px}
+.fact-scroll::-webkit-scrollbar-thumb{background:transparent;border-radius:4px}
+.fact:hover .fact-scroll::-webkit-scrollbar-thumb,.fact:focus-within .fact-scroll::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--hue) 65%,transparent)}
+@media (hover:none){.fact-scroll{scrollbar-color:color-mix(in srgb,var(--hue) 45%,transparent) transparent}}
+@media (prefers-reduced-motion:reduce){.fact-scroll{transition:none}}
+@media print{.fact-scroll{max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none}}
 .contact{display:flex;flex-wrap:wrap;gap:var(--sp-2);list-style:none;margin:0;padding:0}
 
 /* ---------- the prompt ---------- */

@@ -1,0 +1,50 @@
+{%- comment -%}
+command/featured.html: the hero's one "latest" fact. Picks whichever of the
+next talk, the latest past talk and the latest post is freshest:
+  1. a talk coming up within 14 days        -> Upcoming talk
+  2. else anything that happened in 45 days -> the newer of Latest post / Latest talk
+  3. else a talk further out                -> Upcoming talk
+  4. else the newer of post / past talk
+The build makes this choice (it is what JS-off visitors see); command.js
+re-runs the same rule with the visitor's clock so it never goes stale between
+deploys. Keep the two in step (pickFeatured in command.js).
+Each fact is a short scroll list, newest first: only the top item shows, the
+next one peeks under a fade, and a thin scrollbar appears on hover or focus.
+{%- endcomment -%}
+{%- assign _day = 86400 -%}
+{%- assign _now = site.time | date: "%s" | plus: 0 -%}
+{%- assign _up = c_upcoming | first -%}
+{%- assign _past = c_past | first -%}
+{%- assign _post = c_posts_latest -%}
+{%- assign _up_s = 0 -%}{%- if _up and _up.date -%}{%- assign _up_s = _up.date | date: "%s" | plus: 0 -%}{%- endif -%}
+{%- assign _past_s = 0 -%}{%- if _past and _past.date -%}{%- assign _past_s = _past.date | date: "%s" | plus: 0 -%}{%- endif -%}
+{%- assign _post_s = 0 -%}{%- if _post -%}{%- assign _post_s = _post.date | date: "%s" | plus: 0 -%}{%- endif -%}
+{%- assign _up_end = _up_s | plus: _day -%}
+{%- assign _up_live = false -%}{%- if _up_s > 0 and _up_end > _now -%}{%- assign _up_live = true -%}{%- endif -%}
+{%- comment -%} an "upcoming" talk whose day has passed is the latest talk {%- endcomment -%}
+{%- assign _lt = "past" -%}{%- assign _lt_s = _past_s -%}
+{%- if _up_s > 0 and _up_live == false and _up_s > _past_s -%}{%- assign _lt = "up" -%}{%- assign _lt_s = _up_s -%}{%- endif -%}
+{%- assign _newer = "post" -%}{%- assign _newer_s = _post_s -%}
+{%- if _lt_s > _post_s -%}{%- assign _newer = _lt -%}{%- assign _newer_s = _lt_s -%}{%- endif -%}
+{%- assign _soon = _now | plus: 1209600 -%}
+{%- assign _recent = _now | minus: 3888000 -%}
+{%- if _up_live and _up_s <= _soon -%}{%- assign _pick = "up" -%}
+{%- elsif _newer_s > 0 and _newer_s >= _recent -%}{%- assign _pick = _newer -%}
+{%- elsif _up_live -%}{%- assign _pick = "up" -%}
+{%- else -%}{%- assign _pick = _newer -%}{%- endif -%}
+{%- if _up %}
+  {%- assign _list = c_upcoming | concat: c_past %}
+  <div class="fact" style="--hue:var(--talks)" data-feat="up" data-when="{{ _up_s }}"{% unless _pick == "up" %} hidden{% endunless %}><dt data-past-label="Latest talk">{% if _up_live %}Upcoming talk{% else %}Latest talk{% endif %}</dt><dd><ol class="fact-scroll" aria-label="Talks, newest first">
+    {%- for t in _list limit: 8 %}{%- assign _fid = t.id -%}{%- for f in c_fam_defs -%}{%- if f.talks contains t.id -%}{%- assign _fid = f.id -%}{%- break -%}{%- endif -%}{%- endfor -%}<li><a class="fact-link" href="#talk-{{ _fid | escape }}">{{ t.title | escape }}</a><span class="fact-meta">{{ t.venue | escape }}, {% if t.date %}<time datetime="{{ t.date | escape }}">{{ t.date | date: "%b %-d, %Y" }}</time>{% else %}{{ t.date_label | escape }}{% endif %}</span></li>{% endfor %}
+    <li class="fact-more"><a href="/talks/">All talks</a></li></ol></dd></div>
+{%- endif %}
+{%- if _past %}
+  <div class="fact" style="--hue:var(--talks)" data-feat="past" data-when="{{ _past_s }}"{% unless _pick == "past" %} hidden{% endunless %}><dt>Latest talk</dt><dd><ol class="fact-scroll" aria-label="Talks, newest first">
+    {%- for t in c_past limit: 8 %}{%- assign _fid = t.id -%}{%- for f in c_fam_defs -%}{%- if f.talks contains t.id -%}{%- assign _fid = f.id -%}{%- break -%}{%- endif -%}{%- endfor -%}<li><a class="fact-link" href="#talk-{{ _fid | escape }}">{{ t.title | escape }}</a><span class="fact-meta">{{ t.venue | escape }}, {% if t.date %}<time datetime="{{ t.date | escape }}">{{ t.date | date: "%b %-d, %Y" }}</time>{% else %}{{ t.date_label | escape }}{% endif %}</span></li>{% endfor %}
+    <li class="fact-more"><a href="/talks/">All talks</a></li></ol></dd></div>
+{%- endif %}
+{%- if _post %}
+  <div class="fact" style="--hue:var(--writing)" data-feat="post" data-when="{{ _post_s }}"{% unless _pick == "post" %} hidden{% endunless %}><dt>Latest post</dt><dd><ol class="fact-scroll" aria-label="Posts, newest first">
+    {%- for p in site.posts limit: 8 %}<li><a class="fact-link" href="{{ p.url | escape }}">{{ p.title | escape }}</a><span class="fact-meta"><time datetime="{{ p.date | date: '%Y-%m-%d' }}">{{ p.date | date: "%b %-d, %Y" }}</time></span></li>{% endfor %}
+    <li class="fact-more"><a href="/blog/">All posts</a></li></ol></dd></div>
+{%- endif %}

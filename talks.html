@@ -19,7 +19,7 @@ that is itself the fragment target. Every URL goes through safe-link.html.
 {%- include command/data.html -%}
 <header class="page-head" style="--hue:var(--talks)">
   <h1 class="page-title">Talks</h1>
-  <p class="page-lede">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}, grouped into {{ c_fam_ids.size }} talk{% unless c_fam_ids.size == 1 %}s{% endunless %}.{% if c_next and c_next_is_upcoming %} Next: {{ c_next.venue | escape }}, {% if c_next.date %}<time datetime="{{ c_next.date | escape }}">{{ c_next.date | date: "%b %-d, %Y" }}</time>{% else %}{{ c_next.date_label | escape }}{% endif %}.{% endif %} Open a talk for its venues, slides and schedule.</p>
+  <p class="page-lede">{{ c_sourced.size }} talk record{% unless c_sourced.size == 1 %}s{% endunless %} since {{ c_talk_first_year }}, grouped into {{ c_fam_ids.size }} talk{% unless c_fam_ids.size == 1 %}s{% endunless %}.{% if c_next and c_next_is_upcoming %} Upcoming: {{ c_next.venue | escape }}, {% if c_next.date %}<time datetime="{{ c_next.date | escape }}">{{ c_next.date | date: "%b %-d, %Y" }}</time>{% else %}{{ c_next.date_label | escape }}{% endif %}.{% endif %} Open a talk for its venues, slides and schedule.</p>
 </header>
 
 <section class="listing" id="talk-list" style="--hue:var(--talks)" aria-label="All talks" data-list="talks" data-expandable>
