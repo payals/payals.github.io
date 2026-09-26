@@ -48,6 +48,16 @@ content under the doors; `assets/js/command.js` lifts them into drawers
 layer. Styles and both themes (dark "dusk", light "dawn") live in
 `assets/css/command.css`; the two faces are self-hosted under `assets/fonts/`
 (SIL OFL, licences alongside). Shared partials are in `_includes/command/`.
+
+The prompt behaves like a shell. Enter consumes the line: it is echoed above
+the field as `~$ <line>`, cleared, and kept for the Up arrow; Ctrl-C abandons a
+line. Doors, digit keys and the palette echo the command they stand for. Input
+is forgiving (case, quotes and trailing punctuation are ignored), a section name
+anywhere in a line routes to it with an optional topic ("show me your postgres
+talks"), a near miss offers the nearest command with Tab to accept it, and
+`cd`, `pwd`, `ls talks`, `ls blog`, `search <text>`, `close` and `history` do
+what they say. The output block is always its own row under the prompt; it
+never shares a row with the chips.
 Run `python3 scripts/check-contrast.py` after changing any colour token.
 
 A post's front matter may carry `tldr:` (a YAML list of 2 to 4 plain strings) for the "short version" block above its contents, and one paragraph may be followed by a `{:.key}` line to set it as the post's key line.

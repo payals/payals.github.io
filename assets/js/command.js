@@ -283,9 +283,10 @@ const doorFor = (name) => doors.find((x) => x.dataset.section === name);
 if (isHome) {
   const cmd = $('#cmd'), ghost = $('#ghost'), out = $('#cmd-out'), ps1Path = $('#ps1-path'), slPath = $('#sl-path');
   cmdInput = cmd;
-  const COMMANDS = ['help', 'ls', 'cv', 'talks', 'blog', 'now', 'open', 'theme', 'clear', 'cat', 'about', 'contact', 'email', ...Object.keys(SECTION_ALIAS).filter((k) => k !== 'blog')];
+  const COMMANDS = ['help', 'ls', 'cv', 'talks', 'blog', 'now', 'open', 'search', 'theme', 'clear', 'cat', 'about', 'contact', 'email', 'cd', ...Object.keys(SECTION_ALIAS).filter((k) => k !== 'blog')];
   let slugs = [];
   const hist = []; let histIdx = 0;
+  let suggest = null; // { from: what was typed, to: the nearest real command }; Tab or the right arrow accepts it
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((es) => { const e = es[es.length - 1]; promptOnScreen = e.isIntersecting && e.intersectionRatio >= 0.6; },
       { threshold: [0, 0.6, 1], rootMargin: '0px 0px -44px 0px' }).observe($('.prompt'));
@@ -309,14 +310,20 @@ if (isHome) {
     const rest = ghost.children[2];
     ghost.children[0].textContent = v;
     const hint = !focused && !v;
-    rest.textContent = focused ? complete(v) : hint ? 'type help' : '';
+    const sug = focused && suggest && v === suggest.from ? `${v ? '  ' : ''}→ ${suggest.to}` : '';
+    /* a line longer than the field scrolls the input; the ghost is pinned to its start, so it draws nothing then */
+    rest.textContent = cmd.scrollWidth > cmd.clientWidth ? '' : sug || (focused ? complete(v) : hint ? 'type help' : '');
     rest.classList.toggle('hint', hint);
   };
+  /* long output scrolls inside the block (css max-height), so it is focusable only while it overflows;
+     callers that append links after say() call this again through done() */
+  const fitOut = () => { out.tabIndex = out.scrollHeight > out.clientHeight ? 0 : -1; };
   const say = (text, echo) => {
     out.textContent = '';
-    if (!text) return;
+    if (!text && !echo) { fitOut(); return; }
     if (echo) { const e = d.createElement('span'); e.className = 'echo'; e.textContent = `~$ ${echo}\n`; out.append(e); }
-    out.append(d.createTextNode(text));
+    if (text) out.append(d.createTextNode(text));
+    fitOut();
     // output can land below the fold, behind the fixed status line (html scroll-padding-bottom clears it)
     if (out.offsetParent) out.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   };
@@ -359,9 +366,12 @@ if (isHome) {
     'talks [topic]     open talks, e.g. talks security',
     'blog [topic]      open the blog, e.g. blog postgres',
     'open <slug>       open one talk or post',
+    'search <text>     find a talk or post by title (or press /)',
     'about, contact    jump to the intro, list contact links',
     'theme light|dark|system',
     'ls, clear         list sections, clear this output',
+    'cd <section>, pwd   move around like a shell; ls talks or ls blog lists them',
+    'close, exit       close the open panel (Esc works too)',
     'Topics: ai, postgres, security, platform, reliability, other'
   ].join('\n');
   const findSlug = (s) => {
@@ -422,7 +432,11 @@ if (isHome) {
       dlg._modal = modal;
     }
     current = name; syncDoors(); setPath(name);
-    if (!cmd.value) cmd.value = opts.row ? `open ${opts.row.dataset.slug}` : `cat ${name}`;
+    /* every open reads as a command that ran: a door, a digit key or the palette types its
+       command and the prompt echoes it above and clears, the way a shell consumes a line;
+       one typed at the prompt was echoed by run() already, and other text the visitor typed stays */
+    const teach = opts.row ? `open ${opts.row.dataset.slug}` : `cat ${name}`;
+    if (!opts.ran && !booting && (!cmd.value || cmd.value === teach)) { say('', teach); cmd.value = ''; }
     renderGhost();
     /* a plain open (door, digit key, palette, #name) shows everything, like
        "cat <name>"; only "talks <topic>" sets a filter */
@@ -448,66 +462,197 @@ if (isHome) {
     dlg.classList.toggle('instant', opts.via === 'key');
     dlg.close();
   };
+  const KNOWN = [...new Set([...COMMANDS, 'pwd', 'whoami', 'history', 'exit', 'close', 'echo', 'date'])];
+  const label = (c) => { const s = SECTION_ALIAS[c] || c; return s === 'writing' ? 'blog' : s; };
+  /* edit distance where two swapped neighbours ("blgo") count as one edit, the commonest typo */
+  const lev = (a, b) => {
+    const m = a.length, n = b.length;
+    if (!m || !n) return m || n;
+    let prev2 = null, prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], prev2[j - 2] + 1);
+      }
+      prev2 = prev; prev = cur;
+    }
+    return prev[n];
+  };
+  /* the nearest real command: one edit away for short words, two for longer ones, else nothing */
+  const nearest = (w) => {
+    let best = null, bd = Infinity;
+    for (const k of KNOWN) { const dd = lev(w, k); if (dd > 0 && dd < bd) { bd = dd; best = k; } }
+    return best && bd <= (w.length <= 4 ? 1 : 2) ? label(best) : null;
+  };
+  const GREET = /^(hey+|hi+|hello|hiya|heya|yo|sup|howdy|hola|namaste|greetings|good (morning|afternoon|evening|day)|(hey|hi|hello) there|whats up|what's up)$/;
+  const NO_EDITOR = 'No editor here. The posts are under blog.';
+  const NO_NET = 'No network from here.';
+  const STOCK = {
+    psql: 'No database behind this page. The Postgres posts are under blog postgres.',
+    vim: NO_EDITOR, vi: NO_EDITOR, nano: NO_EDITOR, emacs: NO_EDITOR,
+    rm: 'rm: this page is read-only.', mv: 'mv: this page is read-only.', touch: 'touch: this page is read-only.',
+    ssh: NO_NET, curl: NO_NET, wget: NO_NET, ping: NO_NET
+  };
+  const link = (text, command) => { const a = d.createElement('a'); a.href = '#'; a.dataset.run = command; a.textContent = text; return a; };
+  const rowsOf = (section) => $$(ROW).filter((x) => x.dataset.slug && (section === 'talks') === x.classList.contains('talk'));
+  const rowTitle = (x) => {
+    if (x.dataset.title) return x.dataset.title;
+    const a = $('.pl-link', x);
+    return (a ? Array.from(a.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join('') : x.textContent).trim();
+  };
   const run = (line, via, trigger) => {
-    const raw = line.trim();
-    if (!raw) return;
+    const raw = line.trim().slice(0, 200);
+    /* Enter on an empty line is a fresh prompt: stale output goes, the ghost is redrawn */
+    if (!raw) { say(''); cmd.value = ''; renderGhost(); return; }
     if (hist[hist.length - 1] !== raw) hist.push(raw);
     histIdx = hist.length;
-    const args = raw.split(/\s+/);
-    let c = args.shift().toLowerCase();
-    if (c === 'cat') { c = (args.shift() || '').toLowerCase(); if (!c) { say('cat what? Try cat talks.', raw); return; } }
+    suggest = null;
+    /* forgiving parse: case, stray quotes and trailing punctuation do not matter */
+    const norm = raw.toLowerCase().replace(/["'`]/g, '').trim();
+    const args = (norm.replace(/[?!.,;:]+$/, '') || norm).split(/\s+/).filter(Boolean);
+    /* the visitor's own words, case and punctuation kept, for commands that carry text (echo, search) */
+    const rawWords = raw.replace(/["'`]/g, '').split(/\s+/).filter(Boolean);
+    let skip = 1;
+    let c = args.shift();
+    if (c === 'sudo') { c = args.shift(); skip++; if (!c) { say('sudo: nothing to run. Not that it would help here.', raw); cmd.value = ''; renderGhost(); return; } }
+    if (c === 'cat') {
+      c = args.shift(); skip++;
+      if (!c) { say('cat what? Try cat talks.', raw); cmd.value = ''; renderGhost(); return; }
+      if (!SECTIONS.includes(SECTION_ALIAS[c] || c)) { say(`cat: no such section: ${c}. Try cat talks.`, raw); cmd.value = ''; renderGhost(); return; }
+    }
     if (SECTION_ALIAS[c]) c = SECTION_ALIAS[c];
-    const a0 = (args[0] || '').toLowerCase();
-    const done = () => { cmd.value = ''; renderGhost(); };
+    const a0 = args[0] || '';
+    const rawAll = rawWords.slice(skip - 1), rawArgs = rawAll.slice(1);
+    /* a search query drops the words that only ask for the search ("find me a talk about security" looks for security);
+       the palette needs every word to match, so filler would otherwise guarantee "No match" */
+    const STOP = ['search', 'find', 'grep', 'for', 'me', 'a', 'an', 'the', 'about', 'on', 'talk', 'talks', 'post', 'posts', 'blog', 'article'];
+    const query = (ws) => { const kept = ws.filter((w) => !STOP.includes(w.toLowerCase())); return (kept.length ? kept : ws).join(' '); };
+    const done = () => { cmd.value = ''; renderGhost(); fitOut(); };
+    /* a command that ran is consumed the way a shell consumes it: echoed above, cleared from the line, kept in history (Up) */
+    const open = (name, extra) => { say('', raw); done(); openDrawer(name, Object.assign({ via, trigger: trigger || cmd, ran: true }, extra || {})); };
+    const goAbout = () => {
+      say(''); done();
+      const hero = d.getElementById('about');
+      if (hero) { hero.scrollIntoView({ block: 'start', behavior: 'auto' }); hero.focus({ preventScroll: true }); }
+    };
+    const contact = () => {
+      const links = $$('#about .contact a');
+      if (!links.length) { say('No contact links on this page.', raw); done(); return; }
+      say('Contact:', raw);
+      links.forEach((a, i) => { out.append(d.createTextNode(i ? '  ' : ' ')); const l = a.cloneNode(true); l.className = ''; out.append(l); });
+      done();
+    };
     switch (c) {
-      case 'help': say(HELP, raw); done(); break;
-      case 'ls': say('cv  talks  blog  now', raw); done(); break;
+      case 'help': case 'h': case '?': case '-h': case '--help': case 'man': case 'commands': {
+        const w = label(a0);
+        const one = w && HELP.split('\n').find((x) => x.replace(/\[.*?\]|<.*?>/g, '').split(/[\s,]+/).slice(0, 2).includes(w));
+        say(one || HELP, raw); done(); break;
+      }
+      case 'ls': {
+        const what = args.find((x) => !x.startsWith('-')) || '';
+        if (!what) { say('cv  talks  blog  now', raw); done(); break; }
+        const s = SECTION_ALIAS[what] || what;
+        if (s === 'talks' || s === 'writing') {
+          const rows = rowsOf(s);
+          say(`${rows.length} ${s === 'talks' ? 'talks' : 'posts'}. Click one, or type open <slug>.`, raw);
+          rows.forEach((x) => { out.append(d.createTextNode('\n  ')); out.append(link(rowTitle(x), `open ${x.dataset.slug}`)); });
+          done(); break;
+        }
+        if (SECTIONS.includes(s)) { say(`${label(s)} is a page, not a directory. Type ${label(s)} to open it.`, raw); done(); break; }
+        say(`ls: no such directory: ${what}. Try ls, ls talks or ls blog.`, raw); done(); break;
+      }
+      case 'pwd': say(`~${current ? '/' + (PATH_NAME[current] || current) : ''}`, raw); done(); break;
+      case 'whoami': say('payal', raw); done(); break;
+      case 'cd': {
+        const t = a0.replace(/^~\/?|^\.\/|\/$/g, '');
+        if (!t || t === '..' || t === '-' || t === '~') { if (current) closeDrawer({ via }); say(''); done(); break; }
+        const s = SECTION_ALIAS[t] || t;
+        if (SECTIONS.includes(s)) { open(s); break; }
+        say(`cd: no such directory: ${a0}. Try cd blog.`, raw); done(); break;
+      }
       case 'talks': case 'writing': {
         let topic = 'all';
-        if (a0) { topic = TOPIC_ALIAS[a0]; if (!topic) { say(`No topic called "${args[0]}". Topics: ai, postgres, security, platform, reliability, other.`, raw); return; } }
-        say(''); openDrawer(c, { via, filter: topic, trigger: trigger || cmd }); break;
+        if (a0) { topic = TOPIC_ALIAS[a0]; if (!topic) { say(`No topic called "${a0}". Topics: ai, postgres, security, platform, reliability, other.`, raw); done(); return; } }
+        open(c, { filter: topic }); break;
       }
-      case 'cv': case 'now': say(''); openDrawer(c, { via, trigger: trigger || cmd }); break;
+      case 'cv': case 'now': open(c); break;
       case 'open': {
-        if (!a0) { say('Usage: open <slug>. Try open securing-your-data.', raw); return; }
+        if (!a0) { say('Usage: open <slug>. Try open securing-your-data.', raw); done(); return; }
         const sec0 = SECTION_ALIAS[a0] || a0;
-        if (SECTIONS.includes(sec0)) { say(''); openDrawer(sec0, { via, trigger: trigger || cmd }); break; }
+        if (SECTIONS.includes(sec0)) { open(sec0); break; }
         const hit = findSlug(a0);
-        if (!hit) { say(`Nothing called "${args[0]}". Press / to search by title instead.`, raw); return; }
-        say(''); openDrawer(hit.section, { via, row: hit.el, trigger: trigger || cmd }); break;
+        if (!hit) { say(`Nothing called "${a0}". Type search ${a0} to look by title.`, raw); done(); return; }
+        open(hit.section, { row: hit.el }); break;
       }
+      case 'search': case 'find': case 'grep': case 's': say('', raw); done(); openPalette(query(rawArgs)); break;
       case 'theme': {
-        if (!['light', 'dark', 'system'].includes(a0)) { say('Usage: theme light, theme dark, or theme system.', raw); return; }
+        if (!['light', 'dark', 'system'].includes(a0)) { say('Usage: theme light, theme dark, or theme system.', raw); done(); return; }
         setTheme(a0); say(`Theme set to ${a0}.`, raw); done(); break;
       }
-      case 'about': {
-        say(''); done();
-        const hero = d.getElementById('about');
-        if (hero) { hero.scrollIntoView({ block: 'start', behavior: 'auto' }); hero.focus({ preventScroll: true }); }
-        break;
+      case 'about': goAbout(); break;
+      case 'contact': case 'email': case 'mail': contact(); break;
+      case 'clear': case 'cls': say(''); done(); break;
+      case 'echo': say(rawArgs.join(' '), raw); done(); break;
+      case 'date': say(new Date().toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' }), raw); done(); break;
+      case 'history': say(hist.map((h, i) => `${String(i + 1).padStart(3, ' ')}  ${h}`).join('\n'), raw); done(); break;
+      case 'close': case 'back': case 'q': case 'exit': case 'quit': case 'logout': case ':q': case ':q!': case ':wq': case 'bye':
+        say(current ? '' : 'This is a website. Close the tab when you are done, or type help.', raw); done();
+        if (current) closeDrawer({ via }); break;
+      default: {
+        if (STOCK[c]) { say(STOCK[c], raw); done(); break; }
+        const words = [c, ...args];
+        const flat = words.join(' ');
+        if (GREET.test(flat) || GREET.test(c)) { say('hi. Try cv, talks, blog or now, or type help.', raw); done(); break; }
+        if (/^(thanks|thank you|thx|ty|cheers)$/.test(flat)) { say('You are welcome.', raw); done(); break; }
+        if (/^(who are you|who is this|whoareyou|who dis)$/.test(flat)) { goAbout(); break; }
+        if (/^(what is this|what is this place|where am i)$/.test(flat)) { say('A command line for this site. Type help, or try cv, talks, blog or now.', raw); done(); break; }
+        /* plain language: a section name anywhere in the line is enough, with an optional topic */
+        const secs = [...new Set(words.map((w) => SECTION_ALIAS[w] || (SECTIONS.includes(w) ? w : null)).filter(Boolean))];
+        const topic = words.map((w) => TOPIC_ALIAS[w]).find((t) => t && t !== 'all');
+        if (secs.length === 1) { const s = secs[0]; open(s, s === 'talks' || s === 'writing' ? { filter: topic || 'all' } : null); break; }
+        if (secs.length > 1) { say(`One at a time: ${secs.map(label).join(' or ')}?`, raw); done(); break; }
+        if (words.some((w) => ['contact', 'email', 'mail', 'reach'].includes(w))) { contact(); break; }
+        if (words.some((w) => ['search', 'find'].includes(w))) { say('', raw); done(); openPalette(query(rawAll)); break; }
+        if (topic) {
+          say(`${topic} is a topic. Try `, raw); out.append(link(`talks ${topic}`, `talks ${topic}`)); out.append(d.createTextNode(' or ')); out.append(link(`blog ${topic}`, `blog ${topic}`)); out.append(d.createTextNode('.'));
+          done(); break;
+        }
+        const near = words.length === 1 ? nearest(c) : null;
+        if (near) {
+          suggest = { from: '', to: near };
+          say(`command not found: ${c}. Did you mean `, raw); out.append(link(near, near)); out.append(d.createTextNode('? Tab accepts it.'));
+          done(); break;
+        }
+        say(words.length > 1 ? 'Not a command I know. Try cv, talks, blog or now, or type help.' : `command not found: ${c}. Type help to see what works.`, raw);
+        done();
       }
-      case 'contact': case 'email': {
-        const links = $$('#about .contact a');
-        if (!links.length) { say('No contact links on this page.', raw); done(); break; }
-        say('Contact:', raw);
-        links.forEach((a, i) => { out.append(d.createTextNode(i ? '  ' : ' ')); const l = a.cloneNode(true); l.className = ''; out.append(l); });
-        done(); break;
-      }
-      case 'clear': say(''); done(); break;
-      default: say(`command not found: ${c}. Type help to see what works.`, raw);
     }
+  };
+  const accept = () => {
+    if (!(suggest && cmd.value === suggest.from)) return false;
+    cmd.value = suggest.to; suggest = null; renderGhost(); return true;
   };
   cmd.addEventListener('keydown', (e) => {
     if (e.isComposing) return;
     const g = () => complete(cmd.value);
     if (e.key === 'Enter') { e.preventDefault(); typingToken++; run(cmd.value, 'key', cmd); }
-    else if (e.key === 'Tab' && !e.shiftKey) { const s = g(); if (s) { e.preventDefault(); cmd.value += s; renderGhost(); } }
-    else if (e.key === 'ArrowRight' && cmd.selectionStart === cmd.value.length) { const s = g(); if (s) { e.preventDefault(); cmd.value += s; renderGhost(); } }
+    /* Ctrl-C with nothing selected abandons the line the way a shell does (with a selection it stays copy) */
+    else if (e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'c' && cmd.selectionStart === cmd.selectionEnd) { e.preventDefault(); typingToken++; say('', `${cmd.value}^C`); suggest = null; cmd.value = ''; renderGhost(); }
+    else if (e.key === 'Tab' && !e.shiftKey) { if (accept()) e.preventDefault(); else { const s = g(); if (s) { e.preventDefault(); cmd.value += s; renderGhost(); } } }
+    else if (e.key === 'ArrowRight' && cmd.selectionStart === cmd.value.length) { if (accept()) e.preventDefault(); else { const s = g(); if (s) { e.preventDefault(); cmd.value += s; renderGhost(); } } }
     else if (e.key === 'ArrowUp') { if (hist.length) { e.preventDefault(); histIdx = Math.max(0, histIdx - 1); cmd.value = hist[histIdx]; renderGhost(); } }
     else if (e.key === 'ArrowDown') { if (hist.length) { e.preventDefault(); histIdx = Math.min(hist.length, histIdx + 1); cmd.value = hist[histIdx] || ''; renderGhost(); } }
     else if (e.key === 'Escape') { e.preventDefault(); if (current) closeDrawer({ via: 'key' }); else if (cmd.value) { cmd.value = ''; renderGhost(); } else cmd.blur(); }
   });
-  cmd.addEventListener('input', () => { typingToken++; renderGhost(); });
+  cmd.addEventListener('input', () => { typingToken++; suggest = null; renderGhost(); });
+  /* links the output prints (did-you-mean, ls blog) run their command as if typed */
+  out.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-run]');
+    if (!a) return;
+    e.preventDefault(); suggest = null;
+    typeInto(a.dataset.run, false).then(() => run(a.dataset.run, 'pointer', cmd));
+  });
   cmd.addEventListener('focus', () => { cmd.placeholder = 'type help'; renderGhost(); });
   cmd.addEventListener('blur', () => { cmd.placeholder = ''; renderGhost(); });
   $('#prompt-form').addEventListener('submit', (e) => e.preventDefault());
@@ -852,14 +997,15 @@ function choose(i) {
   if (r.it.cmd && cmdInput) { typingToken++; cmdInput.value = r.it.cmd; renderGhost(); }
   r.it.run();
 }
-function openPalette() {
+function openPalette(q) {
   if (!pal || pal.open || typeof pal.showModal !== 'function') return;
   palReturn = d.activeElement;
   pal._ran = false;
-  palInput.value = ''; active = 0;
+  palInput.value = typeof q === 'string' ? q : ''; active = 0;
   renderPal();
   pal.showModal();
   palInput.focus();
+  try { palInput.setSelectionRange(palInput.value.length, palInput.value.length); } catch (e) { /* not a text control */ }
 }
 if (pal) {
   pal.addEventListener('close', () => { if (!pal._ran && palReturn && palReturn.isConnected) palReturn.focus({ preventScroll: true }); });
