@@ -274,6 +274,7 @@ function revealRow(row) {
 
 /* ---------- home: prompt + drawers ---------- */
 let openDrawer = null, closeDrawer = null, current = null, lastTrigger = null, cmdInput = null, typingToken = 0, renderGhost = () => {};
+let promptOnScreen = false;
 const doors = $$('.door');
 const doorFor = (name) => doors.find((x) => x.dataset.section === name);
 
@@ -283,7 +284,6 @@ if (isHome) {
   const COMMANDS = ['help', 'ls', 'talks', 'writing', 'cv', 'now', 'open', 'theme', 'clear', 'cat', 'about', 'contact', 'email', ...Object.keys(SECTION_ALIAS)];
   let slugs = [];
   const hist = []; let histIdx = 0;
-  let promptOnScreen = false;
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((es) => { const e = es[es.length - 1]; promptOnScreen = e.isIntersecting && e.intersectionRatio >= 0.6; },
       { threshold: [0, 0.6, 1], rootMargin: '0px 0px -44px 0px' }).observe($('.prompt'));
@@ -676,6 +676,12 @@ if (isHome) {
   });
   renderGhost();
   if (location.hash) route(location.hash, 'key');
+  /* the prompt reads as live (its ghost caret blinks), so on a wide screen
+     with a real keyboard it takes focus once the page has loaded, unless a
+     hash is routing somewhere else. Phones never: the keyboard would pop. */
+  else if (!phone.matches && mq('(hover: hover) and (pointer: fine)').matches) {
+    settle(() => { if (!current && !isTyping(d.activeElement) && cmd.offsetParent) cmd.focus({ preventScroll: true }); });
+  }
   booting = false;
 } else {
   /* /talks/ and /cv/: a #talk-<id> (or any row id) opens that row in place */
@@ -884,6 +890,13 @@ d.addEventListener('keydown', (e) => {
     if (!isHome) { go(PAGE_FOR[name]); return; }
     if (current === name) closeDrawer({ via: 'key' });
     else { typingToken++; cmdInput.value = `cat ${name}`; renderGhost(); openDrawer(name, { via: 'key', trigger: doorFor(name) }); }
+  }
+  /* type anywhere: on the home page, with the prompt in view and no drawer
+     open, any other printable key focuses the prompt and the browser's own
+     default action then inserts it, so Shift, dead keys and IMEs all keep
+     working. Space stays a page scroll. */
+  else if (isHome && cmdInput && !current && promptOnScreen && k.length === 1 && k !== ' ' && cmdInput.offsetParent) {
+    cmdInput.focus({ preventScroll: true });
   }
 });
 
