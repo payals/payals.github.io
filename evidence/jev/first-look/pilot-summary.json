@@ -1,0 +1,336 @@
+{
+  "scope": "Synthetic toy diagnostic only; no qualification, generalization, calibration, or authorization claim.",
+  "source_sha256": {
+    "cases": "c8ce8586f34e4613ab1717c2bbd7984114c0e71b9d592b432cf5059bb8d96c18",
+    "manifest": "be0e480bef8ac19b505e6d18dc51f986352398ec5ee7c53937fad5392eb471fd",
+    "responses": "2f68202bc12e7225ec45aac6490b531d50f77c2f8467dfd438d38f3f8e0bfb0e"
+  },
+  "verification": {
+    "case_hash_matches_frozen_manifest": true,
+    "request_hashes_verified": 16,
+    "requests_match_frozen_states_questions_and_model": true,
+    "local_expected_rationale_family_excluded_from_requests": true,
+    "original_case_count": 12,
+    "repeat_case_count": 4,
+    "repeat_ids": [
+      "s01",
+      "s02",
+      "s03",
+      "s04"
+    ],
+    "http_status_counts": {
+      "200": 16
+    },
+    "all_json_shapes_expected": true,
+    "finite_bounded_probability_values_checked": 144,
+    "all_choice_distributions_normalized": true,
+    "all_choices_are_argmax": true,
+    "request_bytes_min": 3049,
+    "request_bytes_max": 3542,
+    "request_bytes_cap": 12000,
+    "automatic_retries_manifest": 0
+  },
+  "requested_model": "typesafe/jev-1.13",
+  "observed_models": [
+    "typesafe/jev-1.13-20260917"
+  ],
+  "observed_providers": [
+    "TypeSafe"
+  ],
+  "original12": {
+    "ground_truth_counts": {
+      "supported": 4,
+      "contradicted": 4,
+      "insufficient": 4
+    },
+    "metrics": {
+      "semantic": {
+        "correct": 10,
+        "total": 12,
+        "accuracy": 0.8333333333333334,
+        "confusion_rows_expected_columns_predicted": {
+          "supported": {
+            "supported": 4,
+            "contradicted": 0,
+            "insufficient": 0
+          },
+          "contradicted": {
+            "supported": 0,
+            "contradicted": 4,
+            "insufficient": 0
+          },
+          "insufficient": {
+            "supported": 0,
+            "contradicted": 2,
+            "insufficient": 2
+          }
+        },
+        "false_supported_case_ids": [],
+        "false_supported_denominator": 8,
+        "error_case_ids": [
+          "i03",
+          "i04"
+        ]
+      },
+      "neutral": {
+        "correct": 11,
+        "total": 12,
+        "accuracy": 0.9166666666666666,
+        "confusion_rows_expected_columns_predicted": {
+          "supported": {
+            "supported": 4,
+            "contradicted": 0,
+            "insufficient": 0
+          },
+          "contradicted": {
+            "supported": 0,
+            "contradicted": 4,
+            "insufficient": 0
+          },
+          "insufficient": {
+            "supported": 0,
+            "contradicted": 1,
+            "insufficient": 3
+          }
+        },
+        "false_supported_case_ids": [],
+        "false_supported_denominator": 8,
+        "error_case_ids": [
+          "i03"
+        ]
+      }
+    },
+    "semantic_neutral_disagreement_count": 1,
+    "semantic_neutral_disagreements": [
+      {
+        "case_id": "i04",
+        "expected": "insufficient",
+        "semantic": "contradicted",
+        "neutral": "insufficient",
+        "semantic_probabilities": {
+          "supported": 0,
+          "contradicted": 0.54,
+          "insufficient": 0.46
+        },
+        "neutral_probabilities": {
+          "insufficient": 0.59,
+          "contradicted": 0.41,
+          "supported": 0
+        }
+      }
+    ],
+    "noul_values_by_case": {
+      "s01": 0.94,
+      "s02": 0.81,
+      "s03": 0.83,
+      "s04": 0.94,
+      "c01": 0.02,
+      "c02": 0.02,
+      "c03": 0.02,
+      "c04": 0.02,
+      "i01": 0.04,
+      "i02": 0.07,
+      "i03": 0.03,
+      "i04": 0.03
+    }
+  },
+  "repeat_details": [
+    {
+      "case_id": "s01",
+      "identical_request_hash": true,
+      "semantic": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.0,
+          "contradicted": 0,
+          "insufficient": 0.0
+        },
+        "max_absolute_probability_delta": 0.0,
+        "original_confidence": 0.96,
+        "repeat_confidence": 0.97
+      },
+      "neutral": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.01,
+          "contradicted": 0,
+          "insufficient": -0.01
+        },
+        "max_absolute_probability_delta": 0.01,
+        "original_confidence": 0.97,
+        "repeat_confidence": 0.98
+      },
+      "noul": {
+        "original": 0.94,
+        "repeat": 0.93,
+        "delta": -0.01
+      }
+    },
+    {
+      "case_id": "s02",
+      "identical_request_hash": true,
+      "semantic": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.0,
+          "contradicted": 0,
+          "insufficient": 0.0
+        },
+        "max_absolute_probability_delta": 0.0,
+        "original_confidence": 0.87,
+        "repeat_confidence": 0.86
+      },
+      "neutral": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.02,
+          "contradicted": 0,
+          "insufficient": -0.02
+        },
+        "max_absolute_probability_delta": 0.02,
+        "original_confidence": 0.79,
+        "repeat_confidence": 0.81
+      },
+      "noul": {
+        "original": 0.81,
+        "repeat": 0.82,
+        "delta": 0.01
+      }
+    },
+    {
+      "case_id": "s03",
+      "identical_request_hash": true,
+      "semantic": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.0,
+          "contradicted": 0,
+          "insufficient": 0.0
+        },
+        "max_absolute_probability_delta": 0.0,
+        "original_confidence": 0.96,
+        "repeat_confidence": 0.97
+      },
+      "neutral": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.0,
+          "contradicted": 0,
+          "insufficient": 0.0
+        },
+        "max_absolute_probability_delta": 0.0,
+        "original_confidence": 0.94,
+        "repeat_confidence": 0.94
+      },
+      "noul": {
+        "original": 0.83,
+        "repeat": 0.83,
+        "delta": 0.0
+      }
+    },
+    {
+      "case_id": "s04",
+      "identical_request_hash": true,
+      "semantic": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.0,
+          "contradicted": 0,
+          "insufficient": 0.0
+        },
+        "max_absolute_probability_delta": 0.0,
+        "original_confidence": 0.97,
+        "repeat_confidence": 0.98
+      },
+      "neutral": {
+        "original_choice": "supported",
+        "repeat_choice": "supported",
+        "label_changed": false,
+        "probability_deltas": {
+          "supported": 0.01,
+          "contradicted": 0,
+          "insufficient": -0.01
+        },
+        "max_absolute_probability_delta": 0.01,
+        "original_confidence": 0.97,
+        "repeat_confidence": 0.98
+      },
+      "noul": {
+        "original": 0.94,
+        "repeat": 0.92,
+        "delta": -0.02
+      }
+    }
+  ],
+  "repeat_summary": {
+    "semantic_label_changes": 0,
+    "neutral_label_changes": 0,
+    "semantic_max_absolute_probability_change": 0.0,
+    "neutral_max_absolute_probability_change": 0.02,
+    "noul_max_absolute_change": 0.02,
+    "scope": "All four repeated cases have supported ground truth; i03 and i04 were not repeated."
+  },
+  "resources": {
+    "all16": {
+      "calls": 16,
+      "latency_seconds": {
+        "median": 0.26580549986101687,
+        "min": 0.21176075004041195,
+        "max": 0.30823870887979865
+      },
+      "input_tokens": 16212,
+      "output_tokens": 1576,
+      "response_reported_cost_usd": "0.000680904"
+    },
+    "original12": {
+      "calls": 12,
+      "latency_seconds": {
+        "median": 0.24089752044528723,
+        "min": 0.21176075004041195,
+        "max": 0.30804724991321564
+      },
+      "input_tokens": 12095,
+      "output_tokens": 1188,
+      "response_reported_cost_usd": "0.000507990"
+    },
+    "repeated4": {
+      "calls": 4,
+      "latency_seconds": {
+        "median": 0.27678608312271535,
+        "min": 0.2685958328656852,
+        "max": 0.30823870887979865
+      },
+      "input_tokens": 4117,
+      "output_tokens": 388,
+      "response_reported_cost_usd": "0.000172914"
+    },
+    "accounting_limit": "Usage and cost are response-reported values; no independent billing reconciliation was performed."
+  },
+  "failure_explanations": {
+    "i03": "Current policy p2 adds migration. The old p1 record establishes unit and lint only; no migration outcome is recorded. This leaves the current-policy completion claim insufficient, not contradicted. Both Choice arms incorrectly returned contradicted.",
+    "i04": "The independent receipt records unit and lint as passed; security_scan execution and outcome are unrecorded. Missing evidence does not refute the claim that security_scan passed. Semantic Choice incorrectly returned contradicted; neutral Choice correctly returned insufficient."
+  },
+  "limits": [
+    "Hand-authored balanced cases do not represent deployment prevalence or difficulty.",
+    "Synthetic source labels and illustrative digests are stipulated fixture facts, not authenticated external evidence.",
+    "Two hostile text distractions were classified correctly, but this does not establish prompt-injection robustness.",
+    "No probability threshold was selected or tuned. Noul is descriptive, not a second independently validated acceptance test.",
+    "One semantic/neutral disagreement is observed, but no causal naming-sensitivity claim follows from a single stochastic comparison; the disagreeing case was not repeated.",
+    "Only supported cases were repeated, and distributions changed despite stable labels.",
+    "No baseline model or actual Hobnail integration was exercised."
+  ]
+}

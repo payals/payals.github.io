@@ -501,7 +501,7 @@ html:not(.c-ready) .listing-tools{display:none}
 .prose > p{margin-bottom:1.3em}
 /* the one line a reader should leave with; the post marks it with {:.key} */
 .prose p.key{padding-left:var(--sp-4);border-left:2px solid var(--line);font-weight:500;color:var(--ink)}
-.prose > :is(.table-wrap,.highlighter-rouge,pre,figure,.reading-years){max-width:var(--wide)}
+.prose > :is(.table-wrap,.highlighter-rouge,pre,figure,.reading-years,details){max-width:var(--wide)}
 .prose p{text-wrap:pretty;hanging-punctuation:first}
 .prose h2{position:relative;margin:2.4em 0 .6em;font-size:var(--fs-lg);line-height:1.3;scroll-margin-top:var(--sp-5)}
 .prose h3{margin:2em 0 .5em;font-size:var(--fs-md);scroll-margin-top:var(--sp-5)}
@@ -551,6 +551,8 @@ html:not(.c-ready) .listing-tools{display:none}
 .prose .h-anchor::before{content:"#"}
 @media (hover:hover) and (pointer:fine){
   .prose .h-anchor{opacity:0;transition:opacity 120ms var(--ease-out)}
+/* in a post, code in a table of four or more columns stays whole at every width; the table scrolls in .table-wrap if it must */
+.c-post .prose table:has(tr > :nth-child(4)) td code{white-space:nowrap;overflow-wrap:normal}
   .prose h2:hover .h-anchor,.prose .h-anchor:focus-visible{opacity:1}
   .prose .h-anchor:hover{color:var(--hue, var(--ink))}
 }
@@ -600,7 +602,7 @@ html:not(.c-ready) .listing-tools{display:none}
 /* ---------- evidence pages (c-doc): tables and code wider than the measure ---------- */
 .doc-head{padding-bottom:var(--sp-5)}
 .doc-head .nowrap{white-space:nowrap}
-.c-doc .prose > :is(.table-wrap,.highlighter-rouge,pre){max-width:var(--wide-doc)}
+.c-doc .prose > :is(.table-wrap,.highlighter-rouge,pre,details){max-width:var(--wide-doc)}
 .c-doc .prose table{min-width:36rem}
 .c-doc .prose td:first-child{white-space:nowrap}
 
@@ -701,15 +703,18 @@ html:not(.c-ready) .listing-tools{display:none}
   /* evidence tables: each row stacks (file, then what it is, then source) at full
      width, so nothing pins, scrolls or cuts; the header row stays for screen
      readers only, and the third cell carries its own "Source:" label */
-  .c-doc .prose table{min-width:0}
-  .c-doc .prose :is(table,thead,tbody){display:block}
-  .c-doc .prose tr{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
-  .c-doc .prose thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .c-doc .prose :is(th,td){display:block;padding:0;border:0}
-  .c-doc .prose :is(th,td):first-child{position:static;background:none}
-  .c-doc .prose td:first-child{white-space:normal;font-weight:500}
-  .c-doc .prose td:last-child{color:var(--ink-2)}
-  .c-doc .prose td:nth-child(3):last-child::before{content:"Source: ";color:var(--ink-3)}
+  /* stack tables of three columns or fewer (the evidence Files tables); wider data tables keep their columns and scroll */
+  .c-doc .prose table:not(:has(tr > :nth-child(4))){min-width:0}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))), .c-doc .prose table:not(:has(tr > :nth-child(4))) :is(thead,tbody){display:block}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) tr{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) :is(th,td){display:block;padding:0;border:0}
+  .c-doc .prose :is(th,td):first-child{position:static;background:none} /* no pinned first column on a phone-width evidence table */
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) td:first-child{white-space:normal;font-weight:500}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) td:last-child{color:var(--ink-2)}
+  .c-doc .prose table:not(:has(tr > :nth-child(4))) td:nth-child(3):last-child::before{content:"Source: ";color:var(--ink-3)}
+  /* code in a table of four or more columns stays whole on phones; the table scrolls in its wrapper instead of splitting identifiers */
+  .prose table:has(tr > :nth-child(4)) td code{white-space:nowrap;overflow-wrap:normal}
   .statusline{position:static;margin-top:var(--sp-7);height:auto;min-height:44px;padding:0 var(--gutter) env(safe-area-inset-bottom);background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
   .sl-btn.kbd-only{display:none}
   .sl-btn kbd{display:none}
