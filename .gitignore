@@ -32,3 +32,7 @@ __pycache__/
 
 # Playwright MCP snapshots and logs
 .playwright-mcp/
+
+# Private scratch dump from phone LLM: never publish
+Untitled.txt
+Untitled.md
