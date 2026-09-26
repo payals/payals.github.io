@@ -74,18 +74,6 @@ alone. {%- endcomment -%}
   <p class="post-sub">{{ page.subtitle | escape }}</p>
   {%- endif %}
   <p class="post-meta"><time class="mono" datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time><span>{{ minutes }} min read</span><span class="tag"><svg class="shape" aria-hidden="true" focusable="false"><use href="#s-{{ c_shape }}"/></svg>{{ c_topic_label }}</span>{% if page.series and page.part %}<a href="#series">Part {{ page.part }} of {{ page.series | escape }}</a>{% endif %}</p>
-  {%- if page.tldr and page.tldr != empty %}
-  <aside class="tldr" aria-labelledby="tldr-h">
-    <p class="tldr-h" id="tldr-h">The short version</p>
-    <ul class="tldr-list">{% for l in page.tldr %}<li>{{ l | escape }}</li>{% endfor %}</ul>
-  </aside>
-  {%- endif %}
-  {%- if _toc_n >= 4 %}
-  <details class="more toc-fold">
-    <summary>Contents <span class="n mono">{{ _toc_n }}</span> sections<svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
-    <ol class="toc-list" role="list">{{ _toc }}</ol>
-  </details>
-  {%- endif %}
 </header>
 {%- if _toc_n >= 4 %}
 <nav class="toc-rail" aria-label="Contents">
@@ -94,6 +82,23 @@ alone. {%- endcomment -%}
 </nav>
 {%- endif %}
 <article class="prose">
+{%- comment -%} The findings block lives inside the article as a <section>, not as an
+<aside> in the header: reader modes (Mozilla Readability, which Firefox Reader View
+and most reader extensions use) delete every <aside>, so as an aside it vanished
+from the reader view of every post. The narrow-screen contents fold follows it so
+the findings read first; the wide-screen rail is outside the article. {%- endcomment -%}
+{%- if page.tldr and page.tldr != empty %}
+<section class="tldr" aria-labelledby="tldr-h">
+  <p class="tldr-h" id="tldr-h">The short version</p>
+  <ul class="tldr-list">{% for l in page.tldr %}<li>{{ l | escape }}</li>{% endfor %}</ul>
+</section>
+{%- endif %}
+{%- if _toc_n >= 4 %}
+<details class="more toc-fold">
+  <summary>Contents <span class="n mono">{{ _toc_n }}</span> sections<svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
+  <ol class="toc-list" role="list">{{ _toc }}</ol>
+</details>
+{%- endif %}
 {{ _article }}
 </article>
 {%- if page.previous or page.next %}

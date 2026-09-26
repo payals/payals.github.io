@@ -471,6 +471,8 @@ html:not(.c-ready) .listing-tools{display:none}
 .toc-fold{margin-top:var(--sp-3)}
 .toc-fold > summary .n{margin-left:2px}
 .toc-fold .toc-list{margin:var(--sp-1) 0 var(--sp-2)}
+/* the fold sits inside .prose on posts; keep the prose list spacing off its rows */
+.prose .toc-fold li+li{margin-top:0}
 .toc-rail{display:none}
 .toc-h{margin-bottom:var(--sp-2);font-size:var(--fs-sm);color:var(--ink-3)}
 .toc-list{list-style:none;margin:0;padding:0;display:grid}
