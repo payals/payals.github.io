@@ -8,6 +8,8 @@ next talk, the latest past talk and the latest post is freshest:
 The build makes this choice (it is what JS-off visitors see); command.js
 re-runs the same rule with the visitor's clock so it never goes stale between
 deploys. Keep the two in step (pickFeatured in command.js).
+  no_post=true   the post never wins the build's pick (a page that lists the
+                 posts itself passes it; command.js lifts it on phones)
 Each fact is a short scroll list, newest first: only the top item shows, the
 next one peeks under a fade, and a thin scrollbar appears on hover or focus.
 {%- endcomment -%}
@@ -19,6 +21,10 @@ next one peeks under a fade, and a thin scrollbar appears on hover or focus.
 {%- assign _up_s = 0 -%}{%- if _up and _up.date -%}{%- assign _up_s = _up.date | date: "%s" | plus: 0 -%}{%- endif -%}
 {%- assign _past_s = 0 -%}{%- if _past and _past.date -%}{%- assign _past_s = _past.date | date: "%s" | plus: 0 -%}{%- endif -%}
 {%- assign _post_s = 0 -%}{%- if _post -%}{%- assign _post_s = _post.date | date: "%s" | plus: 0 -%}{%- endif -%}
+{%- comment -%} no_post: the post sits out of the pick; its markup still
+renders, hidden, with its real date (data-when) for command.js. {%- endcomment -%}
+{%- assign _post_when = _post_s -%}
+{%- if include.no_post -%}{%- assign _post_s = 0 -%}{%- endif -%}
 {%- assign _up_end = _up_s | plus: _day -%}
 {%- assign _up_live = false -%}{%- if _up_s > 0 and _up_end > _now -%}{%- assign _up_live = true -%}{%- endif -%}
 {%- comment -%} an "upcoming" talk whose day has passed is the latest talk {%- endcomment -%}
@@ -32,6 +38,8 @@ next one peeks under a fade, and a thin scrollbar appears on hover or focus.
 {%- elsif _newer_s > 0 and _newer_s >= _recent -%}{%- assign _pick = _newer -%}
 {%- elsif _up_live -%}{%- assign _pick = "up" -%}
 {%- else -%}{%- assign _pick = _newer -%}{%- endif -%}
+{%- comment -%} no talk record at all: with no_post nothing wins, rather than the post the page already lists {%- endcomment -%}
+{%- if include.no_post and _pick == "post" -%}{%- assign _pick = "" -%}{%- endif -%}
 {%- if _up %}
   {%- assign _list = c_upcoming | concat: c_past %}
   <div class="fact" style="--hue:var(--talks)" data-feat="up" data-when="{{ _up_s }}"{% unless _pick == "up" %} hidden{% endunless %}><dt data-past-label="Latest talk">{% if _up_live %}Upcoming talk{% else %}Latest talk{% endif %}</dt><dd><ol class="fact-scroll" aria-label="Talks, newest first">
@@ -44,7 +52,7 @@ next one peeks under a fade, and a thin scrollbar appears on hover or focus.
     <li class="fact-more"><a href="/talks/">All talks</a></li></ol></dd></div>
 {%- endif %}
 {%- if _post %}
-  <div class="fact" style="--hue:var(--writing)" data-feat="post" data-when="{{ _post_s }}"{% unless _pick == "post" %} hidden{% endunless %}><dt>Latest post</dt><dd><ol class="fact-scroll" aria-label="Posts, newest first">
+  <div class="fact" style="--hue:var(--writing)" data-feat="post" data-when="{{ _post_when }}"{% unless _pick == "post" %} hidden{% endunless %}><dt>Latest post</dt><dd><ol class="fact-scroll" aria-label="Posts, newest first">
     {%- for p in site.posts limit: 8 %}<li><a class="fact-link" href="{{ p.url | escape }}">{{ p.title | escape }}</a><span class="fact-meta"><time datetime="{{ p.date | date: '%Y-%m-%d' }}">{{ p.date | date: "%b %-d, %Y" }}</time></span></li>{% endfor %}
     <li class="fact-more"><a href="/blog/">All posts</a></li></ol></dd></div>
 {%- endif %}

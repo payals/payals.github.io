@@ -45,14 +45,21 @@ const inRect = (r, x, y) => x >= r.left && x <= r.right && y >= r.top && y <= r.
 const isHome = !!d.getElementById('cmd');
 
 /* Hero "latest" fact: re-run the build's pick (_includes/command/featured.html)
-   against the visitor's clock so it never goes stale between deploys. */
-(function pickFeatured() {
+   against the visitor's clock so it never goes stale between deploys. Where the
+   page shows the home Latest block the post fact sits out, as the build's
+   no_post does; wherever that block is display:none (under 1280px wide or
+   760px tall; latestHidden mirrors the rule in command.css) the post is
+   eligible again, and the pick re-runs when that flips. */
+const latestBlock = $('.latest');
+const latestHidden = mq('(max-width: 1279.98px), (max-height: 759.98px)');
+function pickFeatured() {
   const els = {};
   $$('[data-feat]').forEach((el) => { els[el.dataset.feat] = el; });
   if (!Object.keys(els).length) return;
   const DAY = 86400, now = Math.floor(Date.now() / 1000);
   const when = (k) => (els[k] ? +els[k].dataset.when || 0 : 0);
-  const upS = when('up'), pastS = when('past'), postS = when('post');
+  const noPost = !!latestBlock && !latestHidden.matches;
+  const upS = when('up'), pastS = when('past'), postS = noPost ? 0 : when('post');
   const upLive = upS > 0 && upS + DAY > now;
   let lt = 'past', ltS = pastS;
   if (upS > 0 && !upLive && upS > pastS) { lt = 'up'; ltS = upS; }
@@ -62,10 +69,14 @@ const isHome = !!d.getElementById('cmd');
   else if (newerS > 0 && newerS >= now - 45 * DAY) pick = newer;
   else if (upLive) pick = 'up';
   else pick = newer;
-  if (!els[pick]) return;
+  /* no talk record at all: with the block on, nothing wins rather than the post the block already lists */
+  if (noPost && pick === 'post') pick = '';
+  if (pick && !els[pick]) return;
   Object.entries(els).forEach(([k, el]) => { el.hidden = k !== pick; });
   if (els.up && !upLive) { const dt = els.up.querySelector('dt'); if (dt && dt.dataset.pastLabel) dt.textContent = dt.dataset.pastLabel; }
-})();
+}
+pickFeatured();
+if (latestBlock) latestHidden.addEventListener('change', pickFeatured);
 
 /* Size each hero fact list to its first item plus a small peek of the next,
    and drop the bottom fade once the list is scrolled to its end. */
@@ -277,6 +288,7 @@ function revealRow(row) {
 /* ---------- home: prompt + drawers ---------- */
 let openDrawer = null, closeDrawer = null, current = null, lastTrigger = null, cmdInput = null, typingToken = 0, renderGhost = () => {};
 let promptOnScreen = false;
+let revealPrompt = () => false; /* set on the home page: bring a below-the-fold prompt into view for type-anywhere */
 const doors = $$('.door');
 const doorFor = (name) => doors.find((x) => x.dataset.section === name);
 
@@ -287,10 +299,36 @@ if (isHome) {
   let slugs = [];
   const hist = []; let histIdx = 0;
   let suggest = null; // { from: what was typed, to: the nearest real command }; Tab or the right arrow accepts it
+  const SL_H = 44; /* the fixed status line covers the bottom 44px (--sl-h) */
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((es) => { const e = es[es.length - 1]; promptOnScreen = e.isIntersecting && e.intersectionRatio >= 0.6; },
-      { threshold: [0, 0.6, 1], rootMargin: '0px 0px -44px 0px' }).observe($('.prompt'));
+      { threshold: [0, 0.6, 1], rootMargin: `0px 0px -${SL_H}px 0px` }).observe($('.prompt'));
   }
+  const promptInView = () => { const b = $('.prompt').getBoundingClientRect(), lim = innerHeight - SL_H; return b.height > 0 && (Math.min(b.bottom, lim) - Math.max(b.top, 0)) / b.height >= 0.6; };
+  /* a pointer door click with the prompt under that gate (on short screens the
+     Latest block leaves it just below the fold) brings it in first, instantly,
+     so the type-into and the tip run as they always have; when it is already in
+     view nothing moves. ROOM keeps the echo line say() adds on open (.cmd-out,
+     52px with its gap, plus 16px air) clear of the status line too, so say()'s
+     own scrollIntoView has nothing left to do: one jump, not two. */
+  const ROOM = 68;
+  const showPrompt = () => {
+    if (promptOnScreen || !cmd.offsetParent) return;
+    if (!promptInView()) {
+      const p = $('.prompt'); p.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      const over = p.getBoundingClientRect().bottom - (innerHeight - SL_H - ROOM);
+      if (over > 0) scrollBy({ top: over, left: 0, behavior: 'auto' });
+    }
+    promptOnScreen = promptInView();
+  };
+  /* type-anywhere with the prompt just below the fold (the Latest block on laptop screens): scroll it in, the same
+     jump a door click makes. A prompt the visitor has scrolled past (its top above the window) is left alone. */
+  revealPrompt = () => {
+    if (promptOnScreen) return true;
+    if ($('.prompt').getBoundingClientRect().top < 0) return false;
+    showPrompt();
+    return promptOnScreen;
+  };
   const complete = (v) => {
     if (!v || /\s{2,}/.test(v)) return '';
     const parts = v.split(' ');
@@ -668,6 +706,7 @@ if (isHome) {
   const doorActivate = (door, via) => {
     const name = door.dataset.section;
     if (current === name) { lastTrigger = door; closeDrawer({ via }); return; }
+    if (via === 'pointer') showPrompt();
     const animate = via === 'pointer' && !reduce.matches && promptOnScreen;
     typeInto(`cat ${name}`, animate).then((ok) => { if (ok) openDrawer(name, { via, trigger: door, fromDoor: via === 'pointer' }); });
   };
@@ -1072,11 +1111,12 @@ d.addEventListener('keydown', (e) => {
     if (current === name) closeDrawer({ via: 'key' });
     else { typingToken++; cmdInput.value = `cat ${name}`; renderGhost(); openDrawer(name, { via: 'key', trigger: doorFor(name) }); }
   }
-  /* type anywhere: on the home page, with the prompt in view and no drawer
-     open, any other printable key focuses the prompt and the browser's own
-     default action then inserts it, so Shift, dead keys and IMEs all keep
-     working. Space stays a page scroll. */
-  else if (isHome && cmdInput && !current && promptOnScreen && k.length === 1 && k !== ' ' && cmdInput.offsetParent) {
+  /* type anywhere: on the home page, with the prompt in view (or just below
+     the fold, which revealPrompt scrolls in) and no drawer open, any other
+     printable key focuses the prompt and the browser's own default action then
+     inserts it, so Shift, dead keys and IMEs all keep working. Space stays a
+     page scroll. */
+  else if (isHome && cmdInput && !current && k.length === 1 && k !== ' ' && cmdInput.offsetParent && (promptOnScreen || revealPrompt())) {
     cmdInput.focus({ preventScroll: true });
   }
 });

@@ -41,7 +41,7 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
       {%- for r in c_cv_role_titles offset: 1 %}{%- assign _ri = forloop.index %}<li><span class="fact-text">{{ r }} at {{ c_cv_role_orgs[_ri] }}</span><span class="fact-meta">{{ c_cv_role_periods[_ri] }}</span></li>{% endfor %}
       <li class="fact-more"><a href="/cv/">Full CV</a></li></ol></dd></div>
     {%- endif %}
-    {%- include command/featured.html %}
+    {%- include command/featured.html no_post=true %}
   </dl>
   <ul class="contact" aria-label="Contact" role="list">
     <li><a class="chip" href="mailto:{{ site.email | escape }}">Email</a></li>
@@ -50,6 +50,24 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
     {%- endfor %}
   </ul>
 </header>
+
+{%- comment -%} Latest posts, 1280px wide and 760px tall and up: the newest
+posts as one-line rows (date, title) between the hero and the doors; five on
+screens 1000px and taller, three under that, so the doors stay inside the
+first screen. The rows are the compact post-list rows /blog/topics/ uses. No
+ids (the Writing drawer's rows own /#post-<slug>), so command.js's row
+routing, palette and topic filter leave these alone; each row is a plain link
+to its post and the hue marks the label only. "All posts" comes last in the
+DOM, as the hero facts end in "All posts" / "All talks"; the CSS grid puts it
+top right. Below either bound (tablets, short laptop screens, the approved
+phone card) the block is display:none and command.js lets the hero's "Latest post" fact win
+again (featured.html no_post keeps it out of the build's pick). {%- endcomment %}
+{%- assign latest_posts = site.posts | slice: 0, 5 %}
+<section class="latest" aria-labelledby="latest-h">
+  <h2 class="latest-label" id="latest-h" style="--hue:var(--writing)"><span class="hue-dot" aria-hidden="true"></span>Latest posts</h2>
+  {% include command/post-list.html posts=latest_posts compact=true %}
+  <a class="latest-all" href="/blog/">All posts</a>
+</section>
 
 <div class="stage">
   <nav class="doors-wrap" aria-label="Sections">

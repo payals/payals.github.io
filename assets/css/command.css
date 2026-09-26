@@ -157,6 +157,28 @@ kbd{font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);display:in
 @media print{.fact-scroll{max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none}}
 .contact{display:flex;flex-wrap:wrap;gap:var(--sp-2);list-style:none;margin:0;padding:0}
 
+/* ---------- latest posts (1280px and up): the newest posts as one-line rows between the hero and the doors ---------- */
+/* the hero's measure. A grid so the DOM can end in "All posts" (rows first, as the hero facts do) while the link sits top right.
+   The rows pull their own padding out (as .tagsec .plist does) so dates align with the hero's left edge. */
+.latest{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"head all" "list list";align-items:center;column-gap:var(--sp-3);max-width:52rem;margin-top:var(--sp-5)}
+/* the label reads at the weight of a .fact dt: small mono, tertiary ink; the hue sits on its mark only (--hue is scoped to the h2 inline) */
+.latest-label{grid-area:head;display:inline-flex;align-items:center;gap:var(--sp-2);min-height:24px;font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);font-weight:500;letter-spacing:.01em;color:var(--ink-3);text-wrap:nowrap}
+.latest-label .hue-dot{width:8px;height:8px;border-radius:2px}
+.latest-all{grid-area:all;justify-self:end;display:inline-flex;align-items:center;min-height:24px;padding:0 var(--sp-2);border-radius:8px;font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+@media (hover:hover) and (pointer:fine){ .latest-all:hover{color:var(--ink);text-decoration:underline} }
+/* one line per post, date and title, 28px rows: this block only (the /blog/ and drawer rows keep their 44px).
+   Three-class selectors so these beat .plist--compact's own padding, which comes later in the file. */
+.latest .plist{grid-area:list;gap:0;margin:var(--sp-1) calc(var(--sp-3) * -1) 0}
+.latest .plist .pl-row{min-height:0;padding-block:2px}
+.latest .plist .row-lead{padding-top:.2rem}
+.latest .plist .pl-link{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* shown from 1280px wide and 760px tall; five rows at 1000px tall and up, three below that. Below either bound (tablets, short
+   laptop screens such as 1366x768 and 1280x800, phones) the block is off and the hero's "Latest post" fact is eligible again;
+   command.js (latestHidden) mirrors this rule. With the block on, the doors stay inside the first screen (measured: 1280x900,
+   1440x789, 1280x1050); the prompt starts just below the fold, and a pointer door click or type-anywhere scrolls it in. */
+@media (min-width:768px) and (max-height:999.98px){ .latest .plist > li:nth-child(n+4){display:none} }
+@media (max-width:1279.98px), (max-height:759.98px){ .latest{display:none} }
+
 /* ---------- the prompt ---------- */
 .stage{display:flex;flex-direction:column;gap:var(--sp-5);margin-top:var(--sp-6)}
 .prompt{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3) var(--sp-4);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);box-shadow:var(--shadow-sm)}
@@ -529,6 +551,8 @@ html:not(.c-ready) .listing-tools{display:none}
 .prose th{vertical-align:bottom;font-weight:600;color:var(--ink-2)}
 .prose :is(th,td):first-child{position:sticky;left:0;z-index:1;padding-left:0;background:var(--bg)}
 .prose td code{font-size:.9em}
+/* in a post, code in a table of four or more columns stays whole at every width; the table scrolls in .table-wrap if it must */
+.c-post .prose table:has(tr > :nth-child(4)) td code{white-space:nowrap;overflow-wrap:normal}
 .prose blockquote{margin-inline:0;padding-left:20px;border-left:2px solid color-mix(in srgb, var(--hue, var(--ink-3)) 55%, transparent);color:var(--ink-2)}
 .prose blockquote > :last-child{margin-bottom:0}
 .prose :is(img,video){display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:var(--r-md)}
@@ -551,8 +575,6 @@ html:not(.c-ready) .listing-tools{display:none}
 .prose .h-anchor::before{content:"#"}
 @media (hover:hover) and (pointer:fine){
   .prose .h-anchor{opacity:0;transition:opacity 120ms var(--ease-out)}
-/* in a post, code in a table of four or more columns stays whole at every width; the table scrolls in .table-wrap if it must */
-.c-post .prose table:has(tr > :nth-child(4)) td code{white-space:nowrap;overflow-wrap:normal}
   .prose h2:hover .h-anchor,.prose .h-anchor:focus-visible{opacity:1}
   .prose .h-anchor:hover{color:var(--hue, var(--ink))}
 }
@@ -725,6 +747,7 @@ html:not(.c-ready) .listing-tools{display:none}
   .c-home .lede{font-size:var(--fs-base)}
   .facts{grid-template-columns:minmax(0,1fr);gap:var(--sp-3);margin-top:0}
   .c-home .contact{display:none}
+  .latest{display:none}
   .elsewhere .phone-only{display:list-item}
   .stage{margin-top:var(--sp-5)}
   .c-home .prompt{display:none!important}
@@ -775,6 +798,7 @@ html:not(.c-ready) .listing-tools{display:none}
 @media (min-width:768px) and (max-height:860px){
   .hero{padding-top:clamp(24px, 5vh, 48px);gap:var(--sp-4)}
   .hero-role{margin-top:calc(var(--sp-2) * -1)}
+  .latest{margin-top:var(--sp-4)}
   .stage{margin-top:var(--sp-5)}
   .door{min-height:8.5rem}
 }
