@@ -18,7 +18,7 @@ The contract is a short markdown file the implementing model reads before every 
 
 The facts table that follows is marked as verified on a date, to be re-verified rather than trusted. Versions, namespaces, how many applications were failing, how many had automated prune. The model measures each one before it acts, because the numbers drift. The failing-app count moved by one between two reads on the same afternoon, and the baseline notes it wandering across three values as conditions refreshed.
 
-These are ordinary production change control rules: scope the change and keep irreversible decisions with a person, and never mask a fault to make a dashboard green. The only new part is who reads them, and a rule the model has read is cheaper than a gate it has to discover by hitting it. Mitchell Hashimoto calls this rig-around-the-model work [harness engineering](https://mitchellh.com/writing/my-ai-adoption-journey). The contract is my harness for one job: a model running mutating commands against a live cluster.
+These are ordinary production change control rules: scope the change and keep irreversible decisions with a person, and never mask a fault to make a dashboard green. The only new part is who reads them, and a rule the model has read is cheaper than a gate it has to discover by hitting it. This rig around the model is what people now call harness engineering. The contract is my harness for one job: a model running mutating commands against a live cluster.
 
 ## The hard rules and the question each one encodes
 

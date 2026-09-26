@@ -53,5 +53,6 @@
 - 2026-08-31 Repo surprise: `_config.yml` sets `markdown_ext: "markdown"`, so `.md` pages outside `_posts` are copied as static files, not rendered. Use `.markdown` for any page (evidence/soak-1/window-2/index.markdown). Build with rbenv ruby 3.3.11 (`~/.rbenv/shims`), `bundle exec jekyll build --future` for future-dated drafts.
 
 ## User Corrections
+- 2026-09-25 Payal does not introduce a term by name-dropping who coined it ("Mitchell Hashimoto calls this... harness engineering" read to her as a random unrelated fact). Say "what people now call harness engineering" and move on; keep attributions for actual quotations only.
 - 2026-09-25 Two voice tics Payal rejected in drafts: the hypothetical "the clause I would keep if I could keep only one" / "the part I would keep if I had to throw away everything else" (she says "the most important clause is" or "I find X the most important"), and compressed lines whose meaning is not recoverable ("the cheapest fix I ever shipped was never a parameter"). Write the plain version.
 - 2026-09-25 I summarized Pi as "setting standards for a fast team with no memory"; she corrected: memory is half the practice (obsidian-lore vault, nightly sync jobs, squad repo maps, router checking Linear/Obsidian/GitHub/past work). When describing her method, name both halves: standards (contract) and memory (vault + correction loop).
