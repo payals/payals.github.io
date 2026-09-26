@@ -146,6 +146,10 @@ Run `python3 scripts/check-contrast.py` after changing any colour. It fails unde
 - Post prose: 18px from 768px, 17px below, line-height 1.7, `text-wrap: pretty`, measure `--measure` (600px, about 70 characters). Post titles use their own step (32 to 44px, max 24ch) because post titles run to 80 characters; page titles use the display size with the section square.
 - Emphasis in prose (`em`, `i`, `cite`) is italic in body ink. Onest has no italic face, so the browser slants the roman (`font-synthesis-style: auto`). A paragraph that is emphasis from end to end gets `p-aside` from `post.html` and sets in `--ink-2` as an aside.
 - Sentence case everywhere, no all-caps labels, no "A · B · C" strings: separate spans with space, or a sentence.
+- Post code blocks set at `--fs-sm` (15px), not the 13px mono minimum: in several posts the code is the payload.
+- Paragraph gap in prose is 1.3em against a 1.7 leading, so paragraphs read as separate blocks on a phone.
+- "The short version": a post with `tldr:` front matter (2 to 4 plain strings) gets a findings block above the contents, on `--surface` with a `--line` hairline, label in `--ink-3`, items in body ink. No hue.
+- Key line: one paragraph per post marked `{:.key}` sets at weight 500 behind a 2px `--line` rule. Hairline, not hue, not amber.
 
 ## Layout
 

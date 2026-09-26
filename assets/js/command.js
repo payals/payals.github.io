@@ -597,6 +597,14 @@ if (isHome) {
       close.setAttribute('aria-label', `Close ${LABEL[name]}`);
       close.innerHTML = '<svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg>';
       close.addEventListener('click', (e) => closeDrawer({ via: e.detail === 0 ? 'key' : 'pointer' }));
+      /* the drawer is a preview; the section's own page opens from the top right */
+      if (PAGE_FOR[name] && !PAGE_FOR[name].includes('#')) {
+        const open = d.createElement('a');
+        open.className = 'chip open-page';
+        open.href = PAGE_FOR[name];
+        open.innerHTML = `<svg aria-hidden="true" focusable="false"><use href="#i-expand"/></svg>Open ${esc(PAGE_FOR[name])}`;
+        head.append(open);
+      }
       head.append(close);
       dlg.append(grab, sec);
       d.body.append(dlg);

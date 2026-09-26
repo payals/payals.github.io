@@ -5,7 +5,9 @@ c_kind: post
 ---
 {%- comment -%}
 post.html: one post in the command layout. Header (title, subtitle, a meta
-row of separate spans: date, minutes, topic, series part), a contents list
+row of separate spans: date, minutes, topic, series part), "The short
+version" (a findings list from tldr: front matter, 2 to 4 plain strings,
+escaped on output), a contents list
 built from the post's own h2s when it has four or more (a sticky rail from
 1280px, a closed <details> below), the body in .prose, then the pager.
 
@@ -25,7 +27,7 @@ home drawer and the /blog/ list (words plus 199, divided by 200).
 {%- assign _words = content | strip_html | number_of_words -%}
 {%- assign minutes = _words | plus: 199 | divided_by: 200 -%}
 {%- if minutes < 1 -%}{%- assign minutes = 1 -%}{%- endif -%}
-{%- assign _body = content | replace: '<table>', '<div class="table-wrap"><table>' | replace: '</table>', '</table></div>' | replace_first: '<nav class="series" ', '<nav class="series" id="series" tabindex="-1" ' -%}
+{%- assign _body = content | replace: '<table>', '<div class="table-wrap" tabindex="0"><table>' | replace: '</table>', '</table></div>' | replace: '<pre class="highlight">', '<pre class="highlight" tabindex="0">' | replace_first: '<nav class="series" ', '<nav class="series" id="series" tabindex="-1" ' -%}
 {%- comment -%} A paragraph that is emphasis from end to end (the Medium
 closing note, a disclaimer) gets class p-aside, so .prose can set it as a
 quiet aside while an inline <em> stays stressed. A paragraph that only opens
@@ -72,9 +74,15 @@ alone. {%- endcomment -%}
   <p class="post-sub">{{ page.subtitle | escape }}</p>
   {%- endif %}
   <p class="post-meta"><time class="mono" datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time><span>{{ minutes }} min read</span><span class="tag"><svg class="shape" aria-hidden="true" focusable="false"><use href="#s-{{ c_shape }}"/></svg>{{ c_topic_label }}</span>{% if page.series and page.part %}<a href="#series">Part {{ page.part }} of {{ page.series | escape }}</a>{% endif %}</p>
+  {%- if page.tldr and page.tldr != empty %}
+  <aside class="tldr" aria-labelledby="tldr-h">
+    <p class="tldr-h" id="tldr-h">The short version</p>
+    <ul class="tldr-list">{% for l in page.tldr %}<li>{{ l | escape }}</li>{% endfor %}</ul>
+  </aside>
+  {%- endif %}
   {%- if _toc_n >= 4 %}
   <details class="more toc-fold">
-    <summary>Contents<span class="n mono">{{ _toc_n }}</span><svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
+    <summary>Contents <span class="n mono">{{ _toc_n }}</span> sections<svg class="chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></summary>
     <ol class="toc-list" role="list">{{ _toc }}</ol>
   </details>
   {%- endif %}

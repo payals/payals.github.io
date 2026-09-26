@@ -50,6 +50,8 @@ layer. Styles and both themes (dark "dusk", light "dawn") live in
 (SIL OFL, licences alongside). Shared partials are in `_includes/command/`.
 Run `python3 scripts/check-contrast.py` after changing any colour token.
 
+A post's front matter may carry `tldr:` (a YAML list of 2 to 4 plain strings) for the "short version" block above its contents, and one paragraph may be followed by a `{:.key}` line to set it as the post's key line.
+
 The `post`, `page` and `blog` layouts sit on top of `command.html` and set
 its section, kind and prompt path through their front matter (`c_section`,
 `c_kind`, `c_path`; `_config.yml` defaults cover `evidence/` and

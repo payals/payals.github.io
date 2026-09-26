@@ -226,6 +226,10 @@ kbd{font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);display:in
 .panel-body{padding:var(--sp-3) var(--sp-3) var(--sp-7)}
 .panel-body > * + *{margin-top:var(--sp-5)}
 .close-btn{position:absolute;top:var(--sp-4);right:var(--sp-4)}
+/* "Open /blog/": the section's full page, beside the close button */
+.open-page{position:absolute;top:calc(var(--sp-4) + 5px);right:calc(var(--sp-4) + 52px);font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs)}
+.open-page svg{width:14px;height:14px}
+.js .drawer .panel-title{padding-right:200px}
 .grab{display:none}
 
 /* tools: topic tags, expand all, timeline (JS only) */
@@ -455,6 +459,11 @@ html:not(.c-ready) .listing-tools{display:none}
 @media (hover:hover) and (pointer:fine){ .post-meta a:hover{color:var(--ink);text-decoration-color:var(--hue)} }
 @media (pointer:coarse){ .post-meta a{display:inline-block;padding-block:12px} }
 @media (pointer:fine){ .post-meta a{position:relative} .post-meta a::before{content:"";position:absolute;inset:-10px -4px} }
+/* "The short version": 2 to 4 findings above the contents, in body ink on the surface tone */
+.tldr{max-width:var(--measure);margin-top:var(--sp-5);padding:var(--sp-4) var(--sp-5);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.tldr-h{margin:0 0 var(--sp-2);font-size:var(--fs-sm);color:var(--ink-3)}
+.tldr-list{margin:0;padding-left:1.2em;display:grid;gap:var(--sp-2);font-size:var(--fs-base);line-height:1.55;color:var(--ink)}
+.tldr-list li::marker{color:var(--ink-3)}
 .toc-fold{margin-top:var(--sp-3)}
 .toc-fold > summary .n{margin-left:2px}
 .toc-fold .toc-list{margin:var(--sp-1) 0 var(--sp-2)}
@@ -483,6 +492,9 @@ html:not(.c-ready) .listing-tools{display:none}
 @media (min-width:768px){ .prose{font-size:1.125rem} }
 .prose > *{max-width:var(--measure);margin:0 0 1em}
 .prose > :first-child{margin-top:0}
+.prose > p{margin-bottom:1.3em}
+/* the one line a reader should leave with; the post marks it with {:.key} */
+.prose p.key{padding-left:var(--sp-4);border-left:2px solid var(--line);font-weight:500;color:var(--ink)}
 .prose > :is(.table-wrap,.highlighter-rouge,pre,figure,.reading-years){max-width:var(--wide)}
 .prose p{text-wrap:pretty;hanging-punctuation:first}
 .prose h2{position:relative;margin:2.4em 0 .6em;font-size:var(--fs-lg);line-height:1.3;scroll-margin-top:var(--sp-5)}
@@ -501,7 +513,7 @@ html:not(.c-ready) .listing-tools{display:none}
 /* a paragraph that is all emphasis (a closing note or disclaimer) reads as an aside; post.html adds the class */
 .prose p.p-aside{color:var(--ink-2)}
 .prose :not(pre) > code{padding:.1em .35em;border-radius:6px;background:var(--surface);color:var(--ink);font-family:var(--mono);font-stretch:87.5%;font-size:.84em;overflow-wrap:anywhere}
-.prose pre{margin:0;padding:var(--sp-4) 20px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md);font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-xs);line-height:1.6;letter-spacing:.01em;tab-size:2;color:var(--ink);--cover:var(--surface)}
+.prose pre{margin:0;padding:var(--sp-4) 20px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md);font-family:var(--mono);font-stretch:87.5%;font-size:var(--fs-sm);line-height:1.6;letter-spacing:.01em;tab-size:2;color:var(--ink);--cover:var(--surface)}
 .prose pre code{font:inherit;letter-spacing:inherit}
 /* scroll cue, no JS: covers scroll with the content, shadows stay at the edges */
 .prose pre,.prose .table-wrap{background:linear-gradient(to right, var(--cover) 40%, transparent) left center / 32px 100% no-repeat local,linear-gradient(to left, var(--cover) 40%, transparent) right center / 32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) left center / 12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) right center / 12px 100% no-repeat scroll,var(--cover)}
