@@ -23,11 +23,13 @@ const $$ = (s, el = d) => Array.from(el.querySelectorAll(s));
 const mq = (q) => (window.matchMedia ? matchMedia(q) : { matches: false, addEventListener() {} });
 const reduce = mq('(prefers-reduced-motion: reduce)');
 const phone = mq('(max-width: 767.98px)');
-const SECTIONS = ['writing', 'talks', 'cv', 'now'];
+const SECTIONS = ['cv', 'talks', 'writing', 'now'];
 /* other words a visitor types for a section; the prompt and the palette both accept them */
-const SECTION_ALIAS = { resume: 'cv', blog: 'writing', posts: 'writing', writings: 'writing', post: 'writing', talk: 'talks' };
+/* the section's id stays "writing" in the DOM and the hash; "blog" is the word the site shows and the command it lists first */
+const SECTION_ALIAS = { resume: 'cv', blog: 'writing', writing: 'writing', writings: 'writing', posts: 'writing', post: 'writing', talk: 'talks' };
+const PATH_NAME = { writing: 'blog' };
 const aliasesOf = (name) => Object.keys(SECTION_ALIAS).filter((k) => SECTION_ALIAS[k] === name);
-const LABEL = { talks: 'Talks', writing: 'Writing', cv: 'CV', now: 'Now' };
+const LABEL = { talks: 'Talks', writing: 'Blog', cv: 'CV', now: 'Now' };
 const PAGE_FOR = { talks: '/talks/', writing: '/blog/', cv: '/cv/', now: '/#now' };
 const TOPIC_ORDER = ['ai', 'postgres', 'security', 'platform', 'reliability', 'other'];
 const TOPIC_LABEL = { ai: 'AI', postgres: 'Postgres', security: 'Security', platform: 'Platform', reliability: 'Reliability', other: 'Other' };
@@ -281,7 +283,7 @@ const doorFor = (name) => doors.find((x) => x.dataset.section === name);
 if (isHome) {
   const cmd = $('#cmd'), ghost = $('#ghost'), out = $('#cmd-out'), ps1Path = $('#ps1-path'), slPath = $('#sl-path');
   cmdInput = cmd;
-  const COMMANDS = ['help', 'ls', 'talks', 'writing', 'cv', 'now', 'open', 'theme', 'clear', 'cat', 'about', 'contact', 'email', ...Object.keys(SECTION_ALIAS)];
+  const COMMANDS = ['help', 'ls', 'cv', 'talks', 'blog', 'now', 'open', 'theme', 'clear', 'cat', 'about', 'contact', 'email', ...Object.keys(SECTION_ALIAS).filter((k) => k !== 'blog')];
   let slugs = [];
   const hist = []; let histIdx = 0;
   if ('IntersectionObserver' in window) {
@@ -297,7 +299,8 @@ if (isHome) {
     let c = low[0], i = 1;
     if (c === 'cat') { if (parts.length === 2) return pick(SECTIONS, low[1]); c = low[1]; i = 2; }
     if (parts.length !== i + 1) return '';
-    const pool = (c === 'talks' || c === 'writing') ? TOPIC_ORDER : c === 'theme' ? ['light', 'dark', 'system'] : c === 'open' ? slugs : [];
+    const cc = SECTION_ALIAS[c] || c;
+    const pool = (cc === 'talks' || cc === 'writing') ? TOPIC_ORDER : c === 'theme' ? ['light', 'dark', 'system'] : c === 'open' ? slugs : [];
     return pick(pool, low[i]);
   };
   renderGhost = () => {
@@ -319,8 +322,9 @@ if (isHome) {
   };
   const setPath = (name) => {
     if (name) {
-      ps1Path.innerHTML = `~/<span class="p-sec" style="--hue:var(--${name})">${name}</span>`;
-      slPath.innerHTML = `~/<span class="sec" style="--hue:var(--${name})">${name}</span>`;
+      const shown = PATH_NAME[name] || name;
+      ps1Path.innerHTML = `~/<span class="p-sec" style="--hue:var(--${name})">${shown}</span>`;
+      slPath.innerHTML = `~/<span class="sec" style="--hue:var(--${name})">${shown}</span>`;
     } else { ps1Path.textContent = '~'; slPath.textContent = '~'; }
   };
   /* the signature: a door or chip click types its command first (<=180ms total).
@@ -351,9 +355,9 @@ if (isHome) {
     });
   };
   const HELP = [
-    'talks [topic]     open talks, e.g. talks security',
-    'writing [topic]   open writing, e.g. writing postgres',
     'cv, now           open the CV or what I am doing now',
+    'talks [topic]     open talks, e.g. talks security',
+    'blog [topic]      open the blog, e.g. blog postgres',
     'open <slug>       open one talk or post',
     'about, contact    jump to the intro, list contact links',
     'theme light|dark|system',
@@ -457,7 +461,7 @@ if (isHome) {
     const done = () => { cmd.value = ''; renderGhost(); };
     switch (c) {
       case 'help': say(HELP, raw); done(); break;
-      case 'ls': say('writing  talks  cv  now', raw); done(); break;
+      case 'ls': say('cv  talks  blog  now', raw); done(); break;
       case 'talks': case 'writing': {
         let topic = 'all';
         if (a0) { topic = TOPIC_ALIAS[a0]; if (!topic) { say(`No topic called "${args[0]}". Topics: ai, postgres, security, platform, reliability, other.`, raw); return; } }
@@ -768,7 +772,7 @@ function buildIndex() {
       else if (el) { history.replaceState(null, '', `#talk-${t.slug}`); revealRow(el); }
       else go(t.url);
     } }));
-  idx.posts.forEach((p) => items.push({ kind: 'Post', group: 'Writing', title: p.title, sub: p.sub, keys: p.keys, shape: p.shape, cmd: isHome ? `open ${p.slug}` : null,
+  idx.posts.forEach((p) => items.push({ kind: 'Post', group: 'Blog', title: p.title, sub: p.sub, keys: p.keys, shape: p.shape, cmd: isHome ? `open ${p.slug}` : null,
     run: () => {
       const el = d.getElementById(`post-${p.slug}`);
       if (el && isHome && openDrawer) openDrawer('writing', { via: 'key', row: el, trigger: palTrigger() });

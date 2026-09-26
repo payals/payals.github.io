@@ -17,7 +17,7 @@ commands and the ` key, which only exist on the home page. {%- endcomment %}
   <button class="icon-btn close-btn" type="button" data-close aria-label="Close keyboard shortcuts"><svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
   <dl class="keys">
     <dt><kbd>/</kbd></dt><dd>Search talks, posts, and sections</dd>
-    <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>{% if include.home %}Open{% else %}Go to{% endif %} Writing, Talks, CV, or Now</dd>
+    <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>{% if include.home %}Open{% else %}Go to{% endif %} CV, Talks, Blog, or Now</dd>
     {%- if include.home %}
     <dt><kbd>`</kbd></dt><dd>Jump to the prompt</dd>
     <dt><kbd>a</kbd>&hellip;<kbd>z</kbd></dt><dd>Start typing a command; the prompt takes it</dd>
@@ -29,7 +29,7 @@ commands and the ` key, which only exist on the home page. {%- endcomment %}
   <h3>The prompt understands</h3>
   <dl class="cmds">
     <dt>talks [topic]</dt><dd>Open talks, optionally filtered: ai, postgres, security, platform, reliability, other</dd>
-    <dt>writing [topic]</dt><dd>Open writing, optionally filtered</dd>
+    <dt>blog [topic]</dt><dd>Open the blog, optionally filtered</dd>
     <dt>cv, now</dt><dd>Open the CV or what I'm doing now</dd>
     <dt>open &lt;slug&gt;</dt><dd>Open one talk or post, for example open securing-your-data</dd>
     <dt>theme light|dark|system</dt><dd>Change the theme</dd>

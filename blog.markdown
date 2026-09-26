@@ -1,6 +1,6 @@
 ---
 layout: blog
-title: Writing
+title: Blog
 description: "Notes on Postgres, AI, and systems engineering."
 permalink: /blog/
 ---
@@ -13,7 +13,7 @@ nothing is typed in. Tags live on each post and on /blog/topics/.
 {%- assign _first = site.posts | last -%}
 {%- assign _latest = site.posts | first -%}
 <header class="page-head">
-<h1 class="page-title">Writing</h1>
+<h1 class="page-title">Blog</h1>
 <p class="page-lede">{{ page.description | escape }} {% if site.posts.size > 0 %}{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %} since {{ _first.date | date: "%B %Y" }}, the latest on <time datetime="{{ _latest.date | date: '%Y-%m-%d' }}">{{ _latest.date | date: "%b %-d" }}</time>.{% else %}No posts yet.{% endif %}</p>
 <p class="page-links"><a class="chip" href="/blog/topics/">Tags</a><a class="chip" href="/feed.xml">RSS</a></p>
 </header>

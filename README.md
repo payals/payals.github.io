@@ -40,7 +40,7 @@ Then open <http://localhost:8000>.
 
 Every page uses `_layouts/command.html` (redesign direction C, 2026-09;
 the blog, posts, `/reading/`, the evidence pages and the 404 joined it in the
-sitewide port). The home page has a hero with the key facts, four door cards (Talks, Writing, CV,
+sitewide port). The home page has a hero with the key facts, four door cards (CV, Talks, Blog,
 Now), a command prompt, and a status line with `/` search, `?` keys and a
 theme toggle. With JavaScript off the four sections render as plain page
 content under the doors; `assets/js/command.js` lifts them into drawers

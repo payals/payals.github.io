@@ -1,7 +1,7 @@
 ---
 layout: command
 c_home: true
-description: Payal Singh, staff platform engineer. Postgres, data systems, DevOps, and AI-native systems. Talks, writing, and CV.
+description: Payal Singh, staff platform engineer. Postgres, data systems, DevOps, and AI-native systems. Blog, talks, and CV.
 ---
 {%- comment -%}
 Home, redesign direction C ("command-first", 2026-09). One hero with the
@@ -54,11 +54,11 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
 <div class="stage">
   <nav class="doors-wrap" aria-label="Sections">
     <ul class="doors" role="list">
-      <li><a class="door" href="#writing" data-section="writing" style="--hue:var(--writing)">
-        <span class="door-name">Writing</span>
-        <span class="door-line">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if c_posts_first %} since {{ c_posts_first.date | date: "%B %Y" }}{% endif %}</span>
-        {%- if c_posts_latest %}<span class="door-sub">Latest {{ c_posts_latest.date | date: "%b %-d" }}</span>{% endif %}
-        <span class="door-cmd" aria-hidden="true">cat writing</span>
+      <li><a class="door" href="#cv" data-section="cv" style="--hue:var(--cv)">
+        <span class="door-name">CV</span>
+        <span class="door-line">{% if start_year > 0 %}{{ years_pg }} years around Postgres{% else %}Roles and education{% endif %}</span>
+        {%- if c_cv_roles_count > 0 %}<span class="door-sub">{{ roles_word }} role{% unless c_cv_roles_count == 1 %}s{% endunless %}, PDF ready</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat cv</span>
       </a></li>
       <li><a class="door" href="#talks" data-section="talks" style="--hue:var(--talks)">
         <span class="door-name">Talks</span>
@@ -66,11 +66,11 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
         {%- if c_brands != "" %}<span class="door-sub">{{ c_brands | escape }}</span>{% endif %}
         <span class="door-cmd" aria-hidden="true">cat talks</span>
       </a></li>
-      <li><a class="door" href="#cv" data-section="cv" style="--hue:var(--cv)">
-        <span class="door-name">CV</span>
-        <span class="door-line">{% if start_year > 0 %}{{ years_pg }} years around Postgres{% else %}Roles and education{% endif %}</span>
-        {%- if c_cv_roles_count > 0 %}<span class="door-sub">{{ roles_word }} role{% unless c_cv_roles_count == 1 %}s{% endunless %}, PDF ready</span>{% endif %}
-        <span class="door-cmd" aria-hidden="true">cat cv</span>
+      <li><a class="door" href="#writing" data-section="writing" style="--hue:var(--writing)">
+        <span class="door-name">Blog</span>
+        <span class="door-line">{{ site.posts.size }} post{% unless site.posts.size == 1 %}s{% endunless %}{% if c_posts_first %} since {{ c_posts_first.date | date: "%B %Y" }}{% endif %}</span>
+        {%- if c_posts_latest %}<span class="door-sub">Latest {{ c_posts_latest.date | date: "%b %-d" }}</span>{% endif %}
+        <span class="door-cmd" aria-hidden="true">cat blog</span>
       </a></li>
       <li><a class="door" href="#now" data-section="now" style="--hue:var(--now)">
         <span class="door-name">Now</span>
@@ -91,9 +91,9 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
     </form>
     <div class="try">
       <span class="try-label">Try</span>
-      <a class="chip cmd-chip" href="#writing" data-cmd="writing" style="--hue:var(--writing)"><span class="dot" aria-hidden="true"></span>writing</a>
-      <a class="chip cmd-chip" href="#talks" data-cmd="talks" style="--hue:var(--talks)"><span class="dot" aria-hidden="true"></span>talks</a>
       <a class="chip cmd-chip" href="#cv" data-cmd="cv" style="--hue:var(--cv)"><span class="dot" aria-hidden="true"></span>cv</a>
+      <a class="chip cmd-chip" href="#talks" data-cmd="talks" style="--hue:var(--talks)"><span class="dot" aria-hidden="true"></span>talks</a>
+      <a class="chip cmd-chip" href="#writing" data-cmd="blog" style="--hue:var(--writing)"><span class="dot" aria-hidden="true"></span>blog</a>
       <a class="chip cmd-chip" href="#now" data-cmd="now" style="--hue:var(--now)"><span class="dot" aria-hidden="true"></span>now</a>
       <button class="chip cmd-chip" type="button" data-cmd="help">help</button>
     </div>
@@ -133,7 +133,7 @@ and _config.yml (command/data.html, command/cv-data.html); nothing is typed in.
 
   <section class="panel" id="writing" style="--hue:var(--writing)" aria-labelledby="writing-h" data-list="writing">
     <header class="panel-head">
-      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="writing-h" tabindex="-1">Writing</h2></div>
+      <div class="panel-title"><span class="hue-dot" aria-hidden="true"></span><h2 id="writing-h" tabindex="-1">Blog</h2></div>
       <div class="panel-tools js-only" data-tools></div>
       <p class="filter-status" aria-live="polite"></p>
     </header>
