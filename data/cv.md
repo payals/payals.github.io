@@ -40,7 +40,7 @@ I built and operated PostgreSQL systems across reliability, data integrity, capa
 
 ## Speaking
 
-Official dated schedule listings establish scheduling, not independent proof that a session was delivered. Program-only records retain their more specific caveats below.
+Program-only records retain their more specific caveats below.
 
 - **Upcoming:** [Using PostgreSQL as a Control Plane for Reliable AI Workflows](https://postgresql.us/events/postgressummitus2026/schedule/session/2241-using-postgresql-as-a-control-plane-for-reliable-ai-workflows/) - Postgres Summit US 2026, September 30, 2026, New York City
 - [Postgres as an AI Control Plane: Building RAG + MCP Workflows Inside the Database](https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-control-plane-building-rag-mcp-workflows-inside-database) - SCaLE 23x, March 6, 2026 - [Earlier-title metadata capture](https://web.archive.org/web/20260114181720/https://www.socallinuxexpo.org/scale/23x/presentations/postgres-ai-application-server-building-rag-mcp-workflows-inside-database) - [Organizer-hosted slides](https://www.socallinuxexpo.org/sites/default/files/2026-03/postgres_as_an_ai_control_plane.pdf)
