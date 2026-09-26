@@ -33,7 +33,7 @@ OFL). The theme script runs before paint so a stored choice never flashes.
   <script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('ps-theme');if(t==='light'||t==='dark'){r.setAttribute('data-theme',t);var m=document.createElement('meta'),f=document.querySelector('meta[name="theme-color"]');m.name='theme-color';m.id='theme-pick';m.content=t==='light'?'#f6f5fa':'#15141f';f.parentNode.insertBefore(m,f);}}catch(e){}})();</script>
   <link rel="preload" href="/assets/fonts/onest-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/martian-mono-latin-wdth.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/css/command.css">
+  <link rel="stylesheet" href="/assets/css/command.css?v={{ site.time | date: '%s' }}">
 </head>
 <body class="c-body{% if page.c_home %} c-home{% endif %}{% if c_kind != "" %} c-{{ c_kind }}{% endif %}">
 {%- include command/data.html -%}
@@ -55,6 +55,6 @@ OFL). The theme script runs before paint so a stored choice never flashes.
 {% include command/statusline.html section=c_sec path=c_path %}
 {% include command/dialogs.html home=page.c_home %}
 {% include command/search-index.html %}
-<script src="/assets/js/command.js" defer></script>
+<script src="/assets/js/command.js?v={{ site.time | date: '%s' }}" defer></script>
 </body>
 </html>

@@ -676,10 +676,10 @@ if (isHome) {
   });
   renderGhost();
   if (location.hash) route(location.hash, 'key');
-  /* the prompt reads as live (its ghost caret blinks), so on a wide screen
-     with a real keyboard it takes focus once the page has loaded, unless a
-     hash is routing somewhere else. Phones never: the keyboard would pop. */
-  else if (!phone.matches && mq('(hover: hover) and (pointer: fine)').matches) {
+  /* the prompt is the page's one input, so it takes focus once the page has
+     loaded, unless a hash is routing somewhere else. Phones never: the
+     prompt is hidden there and a keyboard would pop. */
+  else if (!phone.matches) {
     settle(() => { if (!current && !isTyping(d.activeElement) && cmd.offsetParent) cmd.focus({ preventScroll: true }); });
   }
   booting = false;

@@ -49,6 +49,7 @@
 - 2026-07-18 post-footer.html renders series nav only when `series:` + `part:` front matter set; the agents/reliability posts (loops, forged-grade, gate-consequence) intentionally use inline links instead.
 
 ## Preferences
+- 2026-09-25 Regulated, cautious startup employer: never add sensitive personal details or company-work specifics to anything public; generalize to the pattern; when in doubt ask Payal with the deep-interview skill (one focused round) instead of guessing. Applies to edits of already-published posts as well.
 - 2026-09-25 Standing rule for every post: first decide whether code blocks, figures or other visuals earn a place and add them; then read the whole draft as a smart human would and fix awkward AI-sounding prose; then the Codex astra/high gate; then one render look. Details in memory note blog-post-visuals-and-human-read.
 - 2026-07-03 Series voice rules live in `drafts/postgres-war-stories-2-outline.md` "Voice / style checklist": first-person practitioner, no em-dashes, one canonical link per incident, exact error strings.
 - 2026-08-31 Repo surprise: `_config.yml` sets `markdown_ext: "markdown"`, so `.md` pages outside `_posts` are copied as static files, not rendered. Use `.markdown` for any page (evidence/soak-1/window-2/index.markdown). Build with rbenv ruby 3.3.11 (`~/.rbenv/shims`), `bundle exec jekyll build --future` for future-dated drafts.
