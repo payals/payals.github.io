@@ -5,7 +5,7 @@ subtitle: "Thirteen years of Postgres left me a short list of questions to ask a
 author: Payal
 date: 2026-09-25 19:30:00 -0400
 categories: [ai]
-tags: [ai, agents, reliability, systems, postgres]
+tags: [ai, agents, reliability, systems]
 ---
 
 A language model is a component, and it belongs to a class I already know: components that report success while failing. An `fsync()` that reported an error once, then returned success on the retry after the kernel had already dropped the pages it was asked to write. A btree index that kept answering queries after a glibc upgrade reordered its collation, missing rows and letting duplicates past unique indexes under a clean log. A backup reported green every night that nobody had ever restored. I spent thirteen years running Postgres in other people's production, and most of that time went into building deterministic checks around components like these. Some I lived through. Some I learned from other people's postmortems and then went looking for on my own clusters.
