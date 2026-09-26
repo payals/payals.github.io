@@ -25,7 +25,7 @@ const reduce = mq('(prefers-reduced-motion: reduce)');
 const phone = mq('(max-width: 767.98px)');
 const SECTIONS = ['writing', 'talks', 'cv', 'now'];
 /* other words a visitor types for a section; the prompt and the palette both accept them */
-const SECTION_ALIAS = { resume: 'cv', blog: 'writing', posts: 'writing' };
+const SECTION_ALIAS = { resume: 'cv', blog: 'writing', posts: 'writing', writings: 'writing', post: 'writing', talk: 'talks' };
 const aliasesOf = (name) => Object.keys(SECTION_ALIAS).filter((k) => SECTION_ALIAS[k] === name);
 const LABEL = { talks: 'Talks', writing: 'Writing', cv: 'CV', now: 'Now' };
 const PAGE_FOR = { talks: '/talks/', writing: '/blog/', cv: '/cv/', now: '/#now' };
@@ -369,16 +369,21 @@ if (isHome) {
 
   const drawers = {};
   let booting = true;
-  let pushed = false, ignorePop = false, taught = false, openedByDoor = false;
+  let pushed = false, ignorePop = false, taught = false, openedByDoor = false, lastVia = 'key';
   const syncDoors = () => doors.forEach((x) => x.setAttribute('aria-expanded', String(x.dataset.section === current)));
   const afterClose = (name, dlg) => {
     if (dlg._silent) { dlg._silent = false; return; }
     if (current !== name) return;
     current = null; syncDoors(); setPath(null);
-    typingToken++; cmd.value = ''; renderGhost();
+    /* the command line is the visitor's: closing a drawer never edits it */
+    typingToken++; renderGhost();
     if (pushed) { pushed = false; ignorePop = true; history.back(); }
     else if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-    let t = lastTrigger;
+    /* a drawer opened by typing or by mouse hands focus back to the prompt;
+       one opened from the keyboard (a door, a digit, the palette) returns to
+       its opener, so keyboard users land where they were */
+    const backToPrompt = !phone.matches && cmd.offsetParent && (lastTrigger === cmd || lastVia === 'pointer');
+    let t = backToPrompt ? cmd : lastTrigger;
     if (!t || !t.isConnected || t.closest('dialog:not([open])') || !t.offsetParent) t = doorFor(name);
     if (t) t.focus({ preventScroll: true });
     lastTrigger = null;
@@ -389,8 +394,14 @@ if (isHome) {
     const dlg = drawers[name];
     if (!dlg) return;
     const via = opts.via || 'key';
+    lastVia = via;
     if (opts.trigger) lastTrigger = opts.trigger;
     openedByDoor = !!opts.fromDoor;
+    /* on a wide screen the drawer is a side panel and the page stays live, so
+       the prompt keeps the keyboard when the visitor typed the command or
+       used the mouse; on a phone it is a modal sheet and the prompt is hidden */
+    const modal = phone.matches;
+    const keepPrompt = !modal && cmd.offsetParent && (opts.trigger === cmd || via === 'pointer');
     const fresh = !dlg.open || current !== name;
     // a drawer already showing owns the current history entry, even one this script did not push
     // (a load-time or Back/Forward hash): replace it, or a later close's back() lands on the old hash
@@ -403,7 +414,8 @@ if (isHome) {
     if (!dlg.open) {
       dlg.classList.toggle('instant', via !== 'pointer');
       dlg.scrollTop = 0;
-      dlg.showModal();
+      if (modal) dlg.showModal(); else dlg.show();
+      dlg._modal = modal;
     }
     current = name; syncDoors(); setPath(name);
     if (!cmd.value) cmd.value = opts.row ? `open ${opts.row.dataset.slug}` : `cat ${name}`;
@@ -413,12 +425,13 @@ if (isHome) {
     if (opts.filter) applyFilter(name, opts.filter);
     else if (fresh) applyFilter(name, 'all');
     if (opts.row) revealRow(opts.row);
-    else {
+    else if (!keepPrompt) {
       const h = $(`#${name}-h`);
       h.focus({ preventScroll: true });
       /* a load-time hash: Chrome's fragment scroll at load drops that focus */
       if (booting) settle(() => { if (current === name && dlg.open && dlg.contains(h) && !dlg.contains(d.activeElement)) h.focus({ preventScroll: true }); });
     }
+    if (keepPrompt) cmd.focus({ preventScroll: true });
     const hash = '#' + (opts.row ? opts.row.id : name);
     if (location.hash !== hash) {
       if (onEntry) history.replaceState({ ps: 1 }, '', hash);
@@ -488,7 +501,7 @@ if (isHome) {
     else if (e.key === 'ArrowRight' && cmd.selectionStart === cmd.value.length) { const s = g(); if (s) { e.preventDefault(); cmd.value += s; renderGhost(); } }
     else if (e.key === 'ArrowUp') { if (hist.length) { e.preventDefault(); histIdx = Math.max(0, histIdx - 1); cmd.value = hist[histIdx]; renderGhost(); } }
     else if (e.key === 'ArrowDown') { if (hist.length) { e.preventDefault(); histIdx = Math.min(hist.length, histIdx + 1); cmd.value = hist[histIdx] || ''; renderGhost(); } }
-    else if (e.key === 'Escape') { e.preventDefault(); if (cmd.value) { cmd.value = ''; renderGhost(); } else cmd.blur(); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (current) closeDrawer({ via: 'key' }); else if (cmd.value) { cmd.value = ''; renderGhost(); } else cmd.blur(); }
   });
   cmd.addEventListener('input', () => { typingToken++; renderGhost(); });
   cmd.addEventListener('focus', () => { cmd.placeholder = 'type help'; renderGhost(); });
@@ -593,6 +606,15 @@ if (isHome) {
       });
       drawers[name] = dlg;
       attachDrag(dlg, [grab, head]);
+    });
+    /* a non-modal drawer has no backdrop: a click outside it, and outside the
+       prompt, the doors and the status line, closes it */
+    d.addEventListener('click', (e) => {
+      if (!current) return;
+      const dlg = drawers[current];
+      if (!dlg || dlg._modal || dlg.contains(e.target)) return;
+      if (e.target.closest('.prompt, .try, .door, .statusline, dialog, a[href^="#"]')) return;
+      closeDrawer({ via: 'pointer' });
     });
     root.classList.add('drawers-ready');
   } else {
@@ -879,6 +901,7 @@ const isTyping = (t) => !!(t && t.closest && t.closest('input:not([type="checkbo
 d.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k') { e.preventDefault(); if (pal && pal.open) pal.close(); else openPalette(); return; }
   if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+  if (e.key === 'Escape' && isHome && current && !(pal && pal.open) && !(help && help.open) && !isTyping(e.target)) { closeDrawer({ via: 'key' }); return; }
   if (isTyping(e.target) || !keysOn || (pal && pal.open) || (help && help.open)) return;
   const k = e.key;
   if (k === '/') { e.preventDefault(); openPalette(); }

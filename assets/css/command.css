@@ -597,7 +597,7 @@ html:not(.c-ready) .listing-tools{display:none}
 .nf-links{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0;padding:0;list-style:none}
 
 /* ---------- drawers (JS) ---------- */
-.js .drawer{position:fixed;inset:0 0 0 auto;margin:0;padding:0;border:0;width:min(38rem, 100%);max-width:100%;height:100%;max-height:100%;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-lg);border-left:1px solid var(--line);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+.js .drawer{position:fixed;inset:0 0 0 auto;z-index:20;margin:0;padding:0;border:0;width:min(38rem, 100%);max-width:100%;height:100%;max-height:100%;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-lg);border-left:1px solid var(--line);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
   transform:translateX(100%);
   transition:transform 180ms var(--ease-out),overlay 180ms allow-discrete,display 180ms allow-discrete}
 .js .drawer[open]{transform:none;transition:transform 260ms var(--ease-drawer),overlay 260ms allow-discrete,display 260ms allow-discrete}
