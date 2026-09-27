@@ -60,6 +60,12 @@ UPDATE steps SET status = 'running' WHERE id = 1 RETURNING old.status AS was, ne
 UPDATE 1
 CREATE TABLE gate_log (step_id bigint, gate text, passed boolean NOT NULL);
 CREATE TABLE
+SELECT bool_and(passed) FROM gate_log WHERE step_id = 1;
+ bool_and 
+----------
+ 
+(1 row)
+
 SELECT bool_and(passed)                                   AS naive_all_passed,
        coalesce(bool_and(passed), false)                  AS safe_all_passed,
        count(*) FILTER (WHERE passed) = count(*) AND count(*) > 0 AS strict_all_passed
@@ -87,7 +93,7 @@ BEGIN
 UPDATE steps SET status = 'verified' WHERE id = 1;
 UPDATE 1
 COMMIT;
-psql:refusals.sql:80: ERROR:  step 1 cannot be verified: no passing verdict row
+psql:refusals.sql:81: ERROR:  step 1 cannot be verified: no passing verdict row
 CONTEXT:  PL/pgSQL function require_verdict() line 4 at RAISE
 SELECT status FROM steps WHERE id = 1;
  status  
@@ -103,10 +109,10 @@ CREATE TRIGGER
 INSERT INTO gate_log VALUES (1, 'grounding', false);
 INSERT 0 1
 UPDATE gate_log SET passed = true WHERE step_id = 1;
-psql:refusals.sql:90: ERROR:  ledger is append-only: UPDATE on gate_log refused
+psql:refusals.sql:91: ERROR:  ledger is append-only: UPDATE on gate_log refused
 CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
 DELETE FROM gate_log WHERE step_id = 1;
-psql:refusals.sql:91: ERROR:  ledger is append-only: DELETE on gate_log refused
+psql:refusals.sql:92: ERROR:  ledger is append-only: DELETE on gate_log refused
 CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agent_role') THEN CREATE ROLE agent_role NOLOGIN; END IF; END $$;
 DO
@@ -123,9 +129,9 @@ GRANT
 SET ROLE agent_role;
 SET
 INSERT INTO gate_log VALUES (1, 'format', true);
-psql:refusals.sql:104: ERROR:  permission denied for table gate_log
+psql:refusals.sql:105: ERROR:  permission denied for table gate_log
 UPDATE steps SET status = 'done';
-psql:refusals.sql:105: ERROR:  permission denied for table steps
+psql:refusals.sql:106: ERROR:  permission denied for table steps
 SELECT record_gate(1, 'format', true);
  record_gate 
 -------------
@@ -148,7 +154,7 @@ UPDATE jobs j SET lease_token = uuidv7(), lease_until = now() + interval '5 min'
 FROM next WHERE j.id = next.id RETURNING j.id, j.lease_token;
  id |             lease_token              
 ----+--------------------------------------
- 10 | 01a0ca35-fbaf-792e-b506-b9ddbfc3aba3
+ 10 | 01a0e023-5028-7316-8b01-06ee51dbaa69
 (1 row)
 
 UPDATE 1
@@ -177,14 +183,14 @@ SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid = 'gate_log'::regclass AN
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'actor_role')  THEN CREATE ROLE actor_role  LOGIN; END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grader_role') THEN CREATE ROLE grader_role LOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'verifier_role') THEN CREATE ROLE verifier_role LOGIN; END IF;
 END $$;
 DO
 ALTER ROLE actor_role LOGIN;
 ALTER ROLE
-ALTER ROLE grader_role LOGIN;
+ALTER ROLE verifier_role LOGIN;
 ALTER ROLE
-GRANT CONNECT ON DATABASE pgtalk_refusals TO actor_role, grader_role;
+GRANT CONNECT ON DATABASE "pgtalk_refusals" TO actor_role, verifier_role;
 GRANT
 CREATE SCHEMA work;
 CREATE SCHEMA
@@ -216,7 +222,7 @@ CREATE TABLE eval.verdicts (
 CREATE TABLE
 CREATE SEQUENCE eval.verdicts_id_seq OWNED BY eval.verdicts.id;
 CREATE SEQUENCE
-GRANT USAGE ON SCHEMA work TO actor_role, grader_role;
+GRANT USAGE ON SCHEMA work TO actor_role, verifier_role;
 GRANT
 GRANT INSERT (step_id, claim) ON work.attempts TO actor_role;
 GRANT
@@ -224,15 +230,15 @@ GRANT SELECT ON work.attempts TO actor_role;
 GRANT
 REVOKE ALL ON SCHEMA eval FROM actor_role, PUBLIC;
 REVOKE
-GRANT SELECT ON work.attempts TO grader_role;
+GRANT SELECT ON work.attempts TO verifier_role;
 GRANT
-GRANT USAGE ON SCHEMA eval TO grader_role;
+GRANT USAGE ON SCHEMA eval TO verifier_role;
 GRANT
-GRANT SELECT ON eval.verdicts TO grader_role;
+GRANT SELECT ON eval.verdicts TO verifier_role;
 GRANT
-GRANT INSERT (attempt_id, passed) ON eval.verdicts TO grader_role;
+GRANT INSERT (attempt_id, passed) ON eval.verdicts TO verifier_role;
 GRANT
-GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO grader_role;
+GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO verifier_role;
 GRANT
 CREATE FUNCTION eval.seal_verdict() RETURNS trigger
   LANGUAGE plpgsql SET search_path = pg_catalog, eval, work AS $$   -- runs as the inserting role, so current_user is the real judge
@@ -262,23 +268,23 @@ INSERT INTO work.attempts (step_id, claim) VALUES (7, 'fix applied, tests green'
 
 INSERT 0 1
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true);
-psql:refusals.sql:205: ERROR:  permission denied for schema eval
+psql:refusals.sql:206: ERROR:  permission denied for schema eval
 LINE 1: INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, tr...
                     ^
 SELECT judge, passed FROM eval.verdicts;
-psql:refusals.sql:206: ERROR:  permission denied for schema eval
+psql:refusals.sql:207: ERROR:  permission denied for schema eval
 LINE 1: SELECT judge, passed FROM eval.verdicts;
                                   ^
-SET ROLE grader_role;
-psql:refusals.sql:207: ERROR:  permission denied to set role "grader_role"
-You are now connected to database "pgtalk_refusals" as user "grader_role".
+SET ROLE verifier_role;
+psql:refusals.sql:208: ERROR:  permission denied to set role "verifier_role"
+You are now connected to database "pgtalk_refusals" as user "verifier_role".
 INSERT INTO eval.verdicts (attempt_id, passed, judge) VALUES (1, true, 'auditor');
-psql:refusals.sql:211: ERROR:  permission denied for table verdicts
+psql:refusals.sql:212: ERROR:  permission denied for table verdicts
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true)
   RETURNING id, actor, judge, written_by, left(encode(hash, 'hex'), 12) AS hash;
- id |   actor    |    judge    | written_by  |     hash     
-----+------------+-------------+-------------+--------------
-  1 | actor_role | grader_role | grader_role | d42c211d46d8
+ id |   actor    |     judge     |  written_by   |     hash     
+----+------------+---------------+---------------+--------------
+  1 | actor_role | verifier_role | verifier_role | b9dfafeb0f99
 (1 row)
 
 INSERT 0 1
@@ -286,19 +292,19 @@ You are now connected to database "pgtalk_refusals" as user "pi".
 INSERT INTO work.attempts (step_id, claim) VALUES (8, 'owner did this one');
 INSERT 0 1
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, true);
-psql:refusals.sql:218: ERROR:  new row for relation "verdicts" violates check constraint "no_self_judging"
-DETAIL:  Failing row contains (2, 2, pi, pi, t, pi, null, 2026-09-22 13:42:10.621843-04, \xd42c211d46d8019bac1ad218b7fa9085ebe0b6831fc80e98e5244a6bb50cf3..., \xda5998538e83c17483a475d50dd773fcb80f455545419ce2ccffc797cd049a...).
+psql:refusals.sql:219: ERROR:  new row for relation "verdicts" violates check constraint "no_self_judging"
+DETAIL:  Failing row contains (2, 2, pi, pi, t, pi, null, 2026-09-26 19:53:25.810515-04, \xb9dfafeb0f99b272d3b458b66b8498ed2b2f55fb5530c2ae9c621b9cbf2e44..., \x64cadf38002750ef20f42b792428909712758914cdbba4188997a849b924f2...).
 UPDATE eval.verdicts SET passed = false WHERE id = 1;
-psql:refusals.sql:223: ERROR:  ledger is append-only: UPDATE on verdicts refused
+psql:refusals.sql:224: ERROR:  ledger is append-only: UPDATE on verdicts refused
 CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
 DELETE FROM eval.verdicts WHERE id = 1;
-psql:refusals.sql:224: ERROR:  ledger is append-only: DELETE on verdicts refused
+psql:refusals.sql:225: ERROR:  ledger is append-only: DELETE on verdicts refused
 CONTEXT:  PL/pgSQL function forbid_mutation() line 2 at RAISE
-You are now connected to database "pgtalk_refusals" as user "grader_role".
+You are now connected to database "pgtalk_refusals" as user "verifier_role".
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, false) RETURNING id, left(encode(prev_hash,'hex'),12) AS prev, left(encode(hash,'hex'),12) AS hash;
  id |     prev     |     hash     
 ----+--------------+--------------
-  3 | d42c211d46d8 | d9d2bd9a07d3
+  3 | b9dfafeb0f99 | 068112e7177f
 (1 row)
 
 INSERT 0 1
@@ -327,6 +333,75 @@ SELECT * FROM eval.chain_check;
 
 ALTER TABLE eval.verdicts ENABLE TRIGGER verdicts_immutable;
 ALTER TABLE
+CREATE TABLE work.steps (id bigint PRIMARY KEY, status text NOT NULL DEFAULT 'running');
+CREATE TABLE
+INSERT INTO work.steps (id) VALUES (9), (10);
+INSERT 0 2
+CREATE FUNCTION work.require_passing_verdict() RETURNS trigger
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, work, eval AS $$
+BEGIN
+  IF NEW.status = 'verified' AND NOT EXISTS (
+       SELECT 1 FROM eval.verdicts v JOIN work.attempts a ON a.id = v.attempt_id
+       WHERE a.step_id = NEW.id AND v.passed) THEN
+    RAISE EXCEPTION 'step % cannot be verified: no passing verdict row', NEW.id;
+  END IF;
+  RETURN NULL;
+END $$;
+CREATE FUNCTION
+CREATE CONSTRAINT TRIGGER steps_need_verdict AFTER UPDATE OF status ON work.steps
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION work.require_passing_verdict();
+CREATE TRIGGER
+CREATE FUNCTION work.mark_verified(p_step bigint) RETURNS text
+  LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, work AS
+  $$ UPDATE work.steps SET status = 'verified' WHERE id = p_step RETURNING status $$;
+CREATE FUNCTION
+REVOKE EXECUTE ON FUNCTION work.mark_verified FROM PUBLIC;
+REVOKE
+GRANT  EXECUTE ON FUNCTION work.mark_verified TO verifier_role;
+GRANT
+You are now connected to database "pgtalk_refusals" as user "actor_role".
+INSERT INTO work.attempts (step_id, claim) VALUES (9, 'migration applied'), (10, 'cache warmed') RETURNING id, step_id;
+ id | step_id 
+----+---------
+  3 |       9
+  4 |      10
+(2 rows)
+
+INSERT 0 2
+SELECT work.mark_verified(9);
+psql:refusals.sql:269: ERROR:  permission denied for function mark_verified
+You are now connected to database "pgtalk_refusals" as user "verifier_role".
+BEGIN;
+BEGIN
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (3, true);
+INSERT 0 1
+SELECT work.mark_verified(9);
+ mark_verified 
+---------------
+ verified
+(1 row)
+
+COMMIT;
+COMMIT
+BEGIN;
+BEGIN
+SELECT work.mark_verified(10);
+ mark_verified 
+---------------
+ verified
+(1 row)
+
+COMMIT;
+psql:refusals.sql:280: ERROR:  step 10 cannot be verified: no passing verdict row
+CONTEXT:  PL/pgSQL function require_passing_verdict() line 6 at RAISE
+You are now connected to database "pgtalk_refusals" as user "pi".
+SELECT id, status FROM work.steps ORDER BY id;
+ id |  status  
+----+----------
+  9 | verified
+ 10 | running
+(2 rows)
+
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION
 CREATE TABLE doc (doc_id bigint PRIMARY KEY, title text NOT NULL);

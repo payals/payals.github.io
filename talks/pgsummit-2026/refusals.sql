@@ -1,6 +1,6 @@
 -- Refusals the engine produces, for the talk's slides.
 -- Runs on a throwaway database. Every ERROR line below is real PostgreSQL output.
--- Usage: createdb pgtalk_refusals && psql -X -e -d pgtalk_refusals -f refusals.sql > refusals.out 2>&1
+-- Usage: dropdb --if-exists pgtalk_refusals; createdb pgtalk_refusals && psql -X -e -d pgtalk_refusals -f refusals.sql > refusals.out 2>&1
 \set ON_ERROR_STOP off
 \set VERBOSITY default
 
@@ -57,13 +57,14 @@ UPDATE steps SET status = 'running' WHERE id = 1 RETURNING old.status AS was, ne
 -- ---------------------------------------------------------------
 CREATE TABLE gate_log (step_id bigint, gate text, passed boolean NOT NULL);
 -- zero gate rows for step 1: what does "all gates passed" return?
+SELECT bool_and(passed) FROM gate_log WHERE step_id = 1;   -- the slide's question
 SELECT bool_and(passed)                                   AS naive_all_passed,
        coalesce(bool_and(passed), false)                  AS safe_all_passed,
        count(*) FILTER (WHERE passed) = count(*) AND count(*) > 0 AS strict_all_passed
 FROM gate_log WHERE step_id = 1;
 
 -- ---------------------------------------------------------------
--- 5. A step cannot become "verified" without a verdict row in the same transaction
+-- 5. A step cannot become "verified" unless a passing verdict row exists; the check runs at COMMIT
 -- ---------------------------------------------------------------
 CREATE TABLE verdicts (step_id bigint, judge text NOT NULL, passed boolean NOT NULL);
 CREATE FUNCTION require_verdict() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -133,19 +134,19 @@ SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid = 'gate_log'::regclass AN
 -- 10. Whoever does the work cannot write the verdict, read it, or become the one who can
 -- ---------------------------------------------------------------
 -- Bind each role to an identity the agent cannot forge. That is pg_hba.conf, not SQL:
---   local   all  grader_role  peer                  # the OS user IS the role (same box, different user)
---   hostssl all  grader_role  10.0.2.0/24  cert     # or a second host, with its own client certificate
+--   local   all  verifier_role  peer                  # the OS user IS the role (same box, different user)
+--   hostssl all  verifier_role  10.0.2.0/24  cert     # or a second host, with its own client certificate
 -- The database cannot tell those two apart, and does not need to: identity is the role.
 \set owner :USER
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'actor_role')  THEN CREATE ROLE actor_role  LOGIN; END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grader_role') THEN CREATE ROLE grader_role LOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'verifier_role') THEN CREATE ROLE verifier_role LOGIN; END IF;
 END $$;
-ALTER ROLE actor_role LOGIN; ALTER ROLE grader_role LOGIN;
+ALTER ROLE actor_role LOGIN; ALTER ROLE verifier_role LOGIN;
 -- (LOGIN so this script can connect as each one over the local trust socket; in production pg_hba does the binding)
-GRANT CONNECT ON DATABASE pgtalk_refusals TO actor_role, grader_role;
+GRANT CONNECT ON DATABASE :"DBNAME" TO actor_role, verifier_role;
 CREATE SCHEMA work;   -- what the worker writes
-CREATE SCHEMA eval;   -- what only the grader writes
+CREATE SCHEMA eval;   -- what only the verifier writes
 CREATE TABLE work.attempts (
   id         bigint  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   step_id    bigint  NOT NULL,
@@ -170,16 +171,16 @@ CREATE TABLE eval.verdicts (
 );
 CREATE SEQUENCE eval.verdicts_id_seq OWNED BY eval.verdicts.id;
 -- the worker: one schema, one table, two columns
-GRANT USAGE ON SCHEMA work TO actor_role, grader_role;
+GRANT USAGE ON SCHEMA work TO actor_role, verifier_role;
 GRANT INSERT (step_id, claim) ON work.attempts TO actor_role;
 GRANT SELECT ON work.attempts TO actor_role;                    -- it may read what it filed
 REVOKE ALL ON SCHEMA eval FROM actor_role, PUBLIC;
--- the grader: may read attempts, may add verdicts, may not name the judge or touch the seal
-GRANT SELECT ON work.attempts TO grader_role;
-GRANT USAGE ON SCHEMA eval TO grader_role;
-GRANT SELECT ON eval.verdicts TO grader_role;
-GRANT INSERT (attempt_id, passed) ON eval.verdicts TO grader_role;
-GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO grader_role;     -- the seal needs the next id
+-- the verifier: may read attempts, may add verdicts, may not name the judge or touch the seal
+GRANT SELECT ON work.attempts TO verifier_role;
+GRANT USAGE ON SCHEMA eval TO verifier_role;
+GRANT SELECT ON eval.verdicts TO verifier_role;
+GRANT INSERT (attempt_id, passed) ON eval.verdicts TO verifier_role;
+GRANT USAGE ON SEQUENCE eval.verdicts_id_seq TO verifier_role;     -- the seal needs the next id
 -- every verdict seals the one before it
 CREATE FUNCTION eval.seal_verdict() RETURNS trigger
   LANGUAGE plpgsql SET search_path = pg_catalog, eval, work AS $$   -- runs as the inserting role, so current_user is the real judge
@@ -204,16 +205,16 @@ INSERT INTO work.attempts (step_id, claim) VALUES (7, 'fix applied, tests green'
 -- then reaches for the verdict, three ways
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true);     -- write one
 SELECT judge, passed FROM eval.verdicts;                            -- even read one
-SET ROLE grader_role;                                               -- become the grader
+SET ROLE verifier_role;                                               -- become the verifier
 
--- the grader connects as itself; it may write a verdict, but only the columns it was granted
-\c - grader_role
+-- the verifier connects as itself; it may write a verdict, but only the columns it was granted
+\c - verifier_role
 INSERT INTO eval.verdicts (attempt_id, passed, judge) VALUES (1, true, 'auditor');   -- naming the judge by hand
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (1, true)
   RETURNING id, actor, judge, written_by, left(encode(hash, 'hex'), 12) AS hash;
 \c - :owner
 
--- nobody grades their own work, not even the owner
+-- nobody verifies their own work, not even the owner
 INSERT INTO work.attempts (step_id, claim) VALUES (8, 'owner did this one');
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, true);    -- judge = actor = you
 
@@ -223,7 +224,7 @@ INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, true);    -- judge = a
 UPDATE eval.verdicts SET passed = false WHERE id = 1;
 DELETE FROM eval.verdicts WHERE id = 1;
 -- a second sealed verdict, then walk the chain
-\c - grader_role
+\c - verifier_role
 INSERT INTO eval.verdicts (attempt_id, passed) VALUES (2, false) RETURNING id, left(encode(prev_hash,'hex'),12) AS prev, left(encode(hash,'hex'),12) AS hash;
 \c - :owner
 CREATE VIEW eval.chain_check AS
@@ -239,7 +240,49 @@ SELECT * FROM eval.chain_check;
 ALTER TABLE eval.verdicts ENABLE TRIGGER verdicts_immutable;
 
 -- ---------------------------------------------------------------
--- 12. Hybrid retrieval in one statement (the slide's query, on a three-row fixture)
+-- 12. Only the verifier can mark a step verified, and only with a passing verdict for its attempt
+-- ---------------------------------------------------------------
+CREATE TABLE work.steps (id bigint PRIMARY KEY, status text NOT NULL DEFAULT 'running');
+INSERT INTO work.steps (id) VALUES (9), (10);
+CREATE FUNCTION work.require_passing_verdict() RETURNS trigger
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, work, eval AS $$
+BEGIN
+  IF NEW.status = 'verified' AND NOT EXISTS (
+       SELECT 1 FROM eval.verdicts v JOIN work.attempts a ON a.id = v.attempt_id
+       WHERE a.step_id = NEW.id AND v.passed) THEN
+    RAISE EXCEPTION 'step % cannot be verified: no passing verdict row', NEW.id;
+  END IF;
+  RETURN NULL;
+END $$;
+CREATE CONSTRAINT TRIGGER steps_need_verdict AFTER UPDATE OF status ON work.steps
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION work.require_passing_verdict();
+-- the one door that flips a step: runs as the owner, callable by the verifier only
+CREATE FUNCTION work.mark_verified(p_step bigint) RETURNS text
+  LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, work AS
+  $$ UPDATE work.steps SET status = 'verified' WHERE id = p_step RETURNING status $$;
+REVOKE EXECUTE ON FUNCTION work.mark_verified FROM PUBLIC;   -- EXECUTE is granted to PUBLIC by default
+GRANT  EXECUTE ON FUNCTION work.mark_verified TO verifier_role;
+
+-- the worker files claims for steps 9 and 10, then tries the door
+\c - actor_role
+INSERT INTO work.attempts (step_id, claim) VALUES (9, 'migration applied'), (10, 'cache warmed') RETURNING id, step_id;
+SELECT work.mark_verified(9);                                          -- the worker marks its own step
+
+-- the verifier writes the verdict and flips the step in one transaction
+\c - verifier_role
+BEGIN;
+INSERT INTO eval.verdicts (attempt_id, passed) VALUES (3, true);        -- attempt 3 is step 9
+SELECT work.mark_verified(9);
+COMMIT;                                                                  -- verdict and flip land together
+-- the same door with no passing verdict: accepted now, refused at COMMIT
+BEGIN;
+SELECT work.mark_verified(10);
+COMMIT;
+\c - :owner
+SELECT id, status FROM work.steps ORDER BY id;
+
+-- ---------------------------------------------------------------
+-- 13. Hybrid retrieval in one statement (the slide's query, on a three-row fixture)
 -- ---------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE doc (doc_id bigint PRIMARY KEY, title text NOT NULL);
